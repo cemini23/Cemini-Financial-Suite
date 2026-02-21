@@ -13,10 +13,10 @@ def fetch_db_stream(table_name: str, limit: int = 500):
     host = os.getenv("DB_HOST", "postgres")
     try:
         conn = psycopg2.connect(
-            host=host, 
-            port=5432, 
-            user="admin", 
-            password="quest", 
+            host=host,
+            port=5432,
+            user=os.getenv("QUESTDB_USER", "admin"),
+            password=os.getenv("QUESTDB_PASSWORD", "quest"),
             database="qdb"
         )
         query = f"SELECT * FROM {table_name} ORDER BY timestamp DESC LIMIT {limit}"
@@ -39,25 +39,25 @@ def quant_os_dashboard():
 
     # Price Velocity Chart
     tick_chart = dx.line(
-        raw_ticks, 
-        x="timestamp", 
-        y="price", 
+        raw_ticks,
+        x="timestamp",
+        y="price",
         by="symbol",
         title="Live Tick Firehose (Postgres Feed)"
     )
 
     return ui.flex(
         ui.heading("💎 Cemini Quantitative Dashboard", level=1),
-        
+
         # Row 1: The Firehose
         ui.flex(
             ui.view(tick_chart, flex_grow=1),
             direction="row",
             height="45vh"
         ),
-        
+
         ui.divider(size="M"),
-        
+
         # Row 2: Hard Numbers & AI Reasoning
         ui.flex(
             ui.flex(
@@ -76,7 +76,7 @@ def quant_os_dashboard():
             gap="size-200",
             height="45vh"
         ),
-        
+
         direction="column",
         gap="size-300",
         padding="size-400",

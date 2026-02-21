@@ -5,10 +5,12 @@ import os
 
 def connect_to_db():
     db_host = os.getenv("DB_HOST", "postgres")
-    conn_str = f"postgresql://admin:quest@{db_host}:5432/qdb"
+    db_user = os.getenv("QUESTDB_USER", "admin")
+    db_pass = os.getenv("QUESTDB_PASSWORD", "quest")
+    conn_str = f"postgresql://{db_user}:{db_pass}@{db_host}:5432/qdb"
     try:
         conn = psycopg2.connect(conn_str)
-        conn.autocommit = True 
+        conn.autocommit = True
         return conn
     except Exception as e:
         print(f"❌ Database Connection Failed: {e}")
@@ -27,16 +29,16 @@ def get_live_price(symbol):
 
 def main():
     print("👀 yfinance Ingestor Starting... pulling live free data.")
-    
+
     conn = None
     while not conn:
         conn = connect_to_db()
         if not conn:
             print("⏳ Database not ready. Retrying in 5s...")
             time.sleep(5)
-            
+
     cursor = conn.cursor()
-    
+
     # Ensure our table exists (Universal Postgres Syntax)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS raw_market_ticks (
@@ -47,7 +49,7 @@ def main():
     """)
 
     # Symbols you want to track (e.g., tracking the S&P 500 for Kalshi markets)
-    symbols_to_track = ["SPY", "QQQ"] 
+    symbols_to_track = ["SPY", "QQQ"]
 
     while True:
         for symbol in symbols_to_track:
@@ -58,9 +60,9 @@ def main():
                     (symbol, float(price))
                 )
                 print(f"✅ TICK: {symbol} @ ${price:.2f}")
-        
+
         # Pause to avoid getting rate-limited by Yahoo
-        time.sleep(5) 
+        time.sleep(5)
 
 if __name__ == "__main__":
     main()

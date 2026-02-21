@@ -23,14 +23,14 @@ async def ingest_polygon_ticks():
     Streams raw ticks from Polygon.io into Postgres.
     """
     print(f"📡 Ingestion: Connecting to Polygon WebSocket at {POLYGON_WS_URL}...")
-    
+
     # Connect to Postgres
     try:
         conn = psycopg2.connect(
             host=DB_HOST,
             port=DB_PORT,
-            user="admin",
-            password="quest",
+            user=os.getenv("QUESTDB_USER", "admin"),
+            password=os.getenv("QUESTDB_PASSWORD", "quest"),
             database="qdb"
         )
         conn.autocommit = True
@@ -45,7 +45,7 @@ async def ingest_polygon_ticks():
             # 1. Authentication
             auth_message = {"action": "auth", "params": POLYGON_API_KEY}
             await ws.send(json.dumps(auth_message))
-            
+
             auth_resp = await ws.recv()
             print(f"✅ Ingestion: Auth Status -> {auth_resp}")
 
@@ -59,7 +59,7 @@ async def ingest_polygon_ticks():
                 try:
                     message = await ws.recv()
                     data = json.loads(message)
-                    
+
                     for event in data:
                         # Process Trade Events (T=Stocks, XT=Crypto)
                         if event.get("ev") in ["T", "XT"]:
@@ -68,12 +68,12 @@ async def ingest_polygon_ticks():
                             size = float(event.get("s", 0))
                             timestamp_ms = event.get("t")
                             dt = datetime.fromtimestamp(timestamp_ms / 1000.0, tz=timezone.utc)
-                            
+
                             cursor.execute(
                                 "INSERT INTO raw_market_ticks (symbol, price, volume, timestamp) VALUES (%s, %s, %s, %s)",
                                 (symbol, price, size, dt)
                             )
-                    
+
                 except websockets.exceptions.ConnectionClosed:
                     print("⚠️ Ingestion: Polygon connection lost. Retrying...")
                     break

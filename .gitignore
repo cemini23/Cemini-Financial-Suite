@@ -1,6 +1,8 @@
 # --- SECRETS & CREDENTIALS ---
 .env
 .env.*
+# Allow the example/template file — it has no real values
+!.env.example
 *.pickle
 .tokens/
 *.log

@@ -10,23 +10,23 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 
 def main():
     print("🖋️ The Scribe (Logger) Initialized...")
-    
+
     # 1. Connect to Redis
     r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
     pubsub = r.pubsub()
     pubsub.subscribe("trade_signals")
-    
+
     # 2. Connect to Postgres
     conn = psycopg2.connect(
         host=DB_HOST,
         port=5432,
-        user="admin",
-        password="quest",
+        user=os.getenv("QUESTDB_USER", "admin"),
+        password=os.getenv("QUESTDB_PASSWORD", "quest"),
         database="qdb"
     )
     conn.autocommit = True
     cursor = conn.cursor()
-    
+
     # 3. Ensure trade_history table exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS trade_history (
@@ -48,7 +48,7 @@ def main():
                 data = json.loads(message['data'])
                 # Standardize data extraction from both Pydantic and simplified payloads
                 signal = data.get("pydantic_signal", data)
-                
+
                 timestamp = data.get("timestamp", datetime.now())
                 symbol = signal.get("ticker_or_event") or data.get("symbol")
                 action = (signal.get("action") or data.get("action")).upper()
@@ -62,7 +62,7 @@ def main():
                     (timestamp, symbol, action, price, reason, rsi, strategy)
                 )
                 print(f"📝 Logged: {action} {symbol} @ ${price:.2f}")
-                
+
             except Exception as e:
                 print(f"⚠️ Logger Error: {e}")
 

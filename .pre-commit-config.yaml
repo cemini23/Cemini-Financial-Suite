@@ -1,0 +1,68 @@
+repos:
+
+  # ── 1. SECRET DETECTION (primary gate) ─────────────────────────────────────
+  # Yelp detect-secrets: blocks API keys, passwords, tokens, high-entropy strings
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets
+        args:
+          - --baseline
+          - .secrets.baseline
+        # Exclude files that legitimately contain placeholder/example values
+        exclude: >-
+          (?x)^(
+            QuantOS/\.env\.example|
+            QuantOS/config/config\.json\.template|
+            QuantOS/config/settings_template\.txt\.rtf|
+            QuantOS/docs/.*|
+            .*\.md$|
+            .*TROUBLESHOOTING.*
+          )$
+
+  # ── 2. GENERAL SAFETY HOOKS ────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Block .env files from ever being staged
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+
+      # Catch AWS, GCP, and other key file extensions
+      - id: check-case-conflict
+      - id: check-merge-conflict
+
+      # No debug breakpoints left in committed code
+      - id: debug-statements
+
+      # Validate YAML/JSON structure before commit
+      - id: check-yaml
+        exclude: >-
+          (?x)^(
+            Kalshi by Cemini/.*\.yml$
+          )$
+      - id: check-json
+        exclude: >-
+          (?x)^(
+            QuantOS/config/dynamic_settings\.json$
+          )$
+
+      # Prevent committing directly to main/master
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, master]
+
+      # Encoding / file hygiene
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # ── 3. PYTHON LINTING (flake8 as pre-commit hook) ─────────────────────────
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.2.0
+    hooks:
+      - id: flake8
+        additional_dependencies: []
+        # Uses .flake8 config already in the repo

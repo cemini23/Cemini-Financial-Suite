@@ -16,8 +16,8 @@ def get_db_data(query):
         conn = psycopg2.connect(
             host=os.getenv("DB_HOST", "postgres"),
             database="qdb",
-            user="admin",
-            password="quest"
+            user=os.getenv("QUESTDB_USER", "admin"),
+            password=os.getenv("QUESTDB_PASSWORD", "quest")
         )
         df = pd.read_sql(query, conn)
         conn.close()
@@ -71,7 +71,7 @@ def show_global_metrics():
         net_worth = portfolio['market_value'].sum()
         cash = portfolio[portfolio['symbol'] == 'CASH']['market_value'].iloc[0]
         holdings_val = net_worth - cash
-        
+
         c1, c2, c3 = st.columns(3)
         c1.metric("Global Net Worth", f"${net_worth:,.2f}", delta=f"{(net_worth/5000.0 - 1):.2%}")
         c2.metric("Available Cash", f"${cash:,.2f}")
@@ -83,18 +83,18 @@ def show_global_metrics():
 if page == "Mission Control":
     st.title("🕹️ Mission Control")
     portfolio = show_global_metrics()
-    
+
     st.markdown("---")
     col1, col2 = st.columns(2)
     latest_signals = get_db_data("SELECT symbol, action, confidence, reasoning FROM ai_trade_logs ORDER BY timestamp DESC LIMIT 1")
-    
+
     with col1:
         if not latest_signals.empty:
             sig = latest_signals.iloc[0]
             st.metric("Highest Conviction Signal", f"{sig['action'].upper()} {sig['symbol']}", delta=f"{sig['confidence']:.1%} Confidence")
         else:
             st.metric("Highest Conviction Signal", "WAITING", delta="0% Confidence")
-            
+
     with col2:
         st.info(f"**Strategy Insight:** {latest_signals.iloc[0]['reasoning'] if not latest_signals.empty else 'Scanning market trends...'}")
 
@@ -109,10 +109,10 @@ if page == "Mission Control":
 elif page == "Stock Portfolio":
     st.title("📈 QuantOS Stock Portfolio")
     portfolio = get_db_data("SELECT * FROM portfolio_summary WHERE symbol != 'CASH'")
-    
+
     if not portfolio.empty:
         st.dataframe(portfolio[['symbol', 'entry_price', 'current_price', 'market_value']], use_container_width=True)
-        
+
         # Add a pie chart of holdings
         st.write("### Allocations")
         st.bar_chart(portfolio.set_index('symbol')['market_value'])
@@ -126,7 +126,7 @@ elif page == "Satoshi Vision":
     ticks = get_db_data("SELECT price FROM raw_market_ticks WHERE symbol = 'BTC' ORDER BY timestamp DESC LIMIT 1")
     price = ticks.iloc[0]['price'] if not ticks.empty else None
     real_price = get_real_btc_price()
-    
+
     with col1:
         display_price = real_price if real_price else price
         if display_price:

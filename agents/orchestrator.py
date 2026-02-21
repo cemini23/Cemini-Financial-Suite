@@ -14,13 +14,13 @@ class TradingState(TypedDict):
     symbol: str
     target_system: Literal["QuantOS", "Kalshi By Cemini"]
     raw_market_data: str            # Markdown OHLCV table from Polars
-    technical_analysis: str         
-    fundamental_analysis: str       
-    sentiment_analysis: str         
+    technical_analysis: str
+    fundamental_analysis: str
+    sentiment_analysis: str
     final_decision: Dict[str, Any]  # Output from CIO (Debate) Node
     position_size: float            # Calculated via Kelly Criterion
-    pydantic_signal: TradingSignal  
-    execution_status: str           
+    pydantic_signal: TradingSignal
+    execution_status: str
 
 # --- ANALYST NODES ---
 
@@ -37,13 +37,13 @@ def sentiment_analyst_node(state: TradingState):
 
 def cio_debate_node(state: TradingState):
     """
-    Acts as the Chief Investment Officer. 
+    Acts as the Chief Investment Officer.
     Implements the 'Autopilot Protocol' and 'Hedge Fund Rulebook'.
     """
     tech = state['technical_analysis']
     fund = state['fundamental_analysis']
     sent = state['sentiment_analysis']
-    
+
     # SYSTEM PROMPT FOR CIO LLM
     prompt = f"""
     Evaluate the following analyst reports for {state['symbol']}.
@@ -66,7 +66,7 @@ def cio_debate_node(state: TradingState):
       "reasoning": "Explain the weighted logic applied"
     }}
     """
-    
+
     # Simulated LLM decision logic
     # --- SAFETY: Allowing execution but capped at $4.99 ---
     confidence = 0.85
@@ -80,7 +80,7 @@ def cio_debate_node(state: TradingState):
         "position_size": round(calculated_size, 2),
         "reasoning": f"TESTING: Bullish bias detected. Executing micro-position for {state['symbol']}."
     }
-    
+
     return {
         "final_decision": decision,
         "position_size": decision["position_size"]
@@ -93,7 +93,7 @@ async def publish_signal_to_bus(state: TradingState):
     Publishes the validated trade signal to the Redis 'trade_signals' channel.
     """
     decision = state.get("final_decision")
-    
+
     if decision and decision.get("verdict") == "EXECUTE":
         # --- NEW: Log to Postgres for UI Visualization ---
         try:
@@ -102,13 +102,13 @@ async def publish_signal_to_bus(state: TradingState):
             conn = psycopg2.connect(
                 host=db_host,
                 port=5432,
-                user="admin",
-                password="quest",
+                user=os.getenv("QUESTDB_USER", "admin"),
+                password=os.getenv("QUESTDB_PASSWORD", "quest"),
                 database="qdb"
             )
             conn.autocommit = True
             cursor = conn.cursor()
-            
+
             # Ensure the audit table exists
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ai_trade_logs (
@@ -134,9 +134,9 @@ async def publish_signal_to_bus(state: TradingState):
         # Connect to Redis
         redis_host = os.getenv('REDIS_HOST', 'redis')
         r = redis.from_url(f"redis://{redis_host}:6379", decode_responses=True)
-        
+
         # --- POSITION LOCK CHECK ---
-    
+
     return {"execution_status": "NO_ACTION_TAKEN"}
 
 # --- ROUTER LOGIC ---
@@ -182,7 +182,7 @@ async def main():
     """
     brain = create_cemini_brain()
     print("🧠 Cemini Brain: Orchestrator started. Running workflow every 60 seconds...")
-    
+
     while True:
         try:
             initial_state = {
@@ -196,14 +196,14 @@ async def main():
                 "position_size": 0.0,
                 "execution_status": ""
             }
-            
+
             # Run the workflow
             print(f"🧠 Cemini Brain: Processing {initial_state['symbol']}...")
             await brain.ainvoke(initial_state)
-            
+
         except Exception as e:
             print(f"❌ Cemini Brain: Error in workflow: {e}")
-            
+
         await asyncio.sleep(60)
 
 if __name__ == "__main__":
