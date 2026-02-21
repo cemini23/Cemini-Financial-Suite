@@ -38,7 +38,7 @@ def check_heatseeker_spikes(conn):
         for _, row in df.iterrows():
             ratio = row['recent_count'] / row['baseline_count'] if row['baseline_count'] > 0 else 10.0
             send_heatseeker_alert(row['symbol'], ratio)
-    except Exception as e: 
+    except Exception as e:
         print(f"⚠️ Heatseeker Query Error: {e}")
         conn.rollback()
 
@@ -46,11 +46,16 @@ def improve_logic():
     print("🧠 The Coach (Analyzer) Initialized...")
     while True:
         try:
-            conn = psycopg2.connect(host='postgres', database='qdb', user='admin', password='quest')
-            r = redis.Redis(host='redis', port=6379, decode_responses=True)
+            conn = psycopg2.connect(
+                host=os.getenv('DB_HOST', 'postgres'),
+                database=os.getenv('POSTGRES_DB', 'qdb'),
+                user=os.getenv('POSTGRES_USER', 'admin'),
+                password=os.getenv('POSTGRES_PASSWORD', 'quest')
+            )
+            r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, decode_responses=True)
             break
         except: time.sleep(5)
-    
+
     last_hourly_review = 0
     last_heat_check = 0
     last_corr_check = 0
@@ -58,7 +63,7 @@ def improve_logic():
 
     while True:
         now = time.time()
-        
+
         # 1. Heatseeker Check (Every 15 mins)
         if now - last_heat_check > 900:
             check_heatseeker_spikes(conn)
@@ -79,7 +84,7 @@ def improve_logic():
                         prev_btc_spy_corr = btc_spy
                         r.set("intel:btc_spy_corr", float(btc_spy or 0))
                 last_corr_check = now
-            except Exception as e: 
+            except Exception as e:
                 print(f"⚠️ Correlation Error: {e}")
                 conn.rollback()
 
@@ -91,7 +96,7 @@ def improve_logic():
                     r.set("strategy_mode", "sniper")
                     if DISCORD_WEBHOOK_URL:
                         requests.post(DISCORD_WEBHOOK_URL, json={"username": "Cemini Coach", "content": f"🎯 **SNIPER_MODE ACTIVE**: Market panic detected (FGI: {float(fgi):.1f})."})
-                
+
                 df = pd.read_sql("SELECT * FROM trade_history", conn)
                 if len(df) > 5:
                     sells = df[df['action'] == 'SELL']
@@ -101,10 +106,10 @@ def improve_logic():
                     r.set("strategy_mode", mode)
                     send_discord_report(win_rate, mode, len(sells))
                 last_hourly_review = now
-            except Exception as e: 
+            except Exception as e:
                 print(f"⚠️ Coach Error: {e}")
                 conn.rollback()
-        
+
         time.sleep(60)
 
 if __name__ == "__main__":

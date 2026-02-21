@@ -5,8 +5,12 @@ class QuantOSBridge:
     """
     Cemini Financial Suite Protocol: QuantOS Bridge.
     Enables Kalshi by Cemini to communicate with the QuantOS Engine on Port 8001.
+    Set QUANTOS_HOST env var to the Docker service name (e.g. "signal_generator") in containers.
     """
-    def __init__(self, host="127.0.0.1", port=8001):
+    def __init__(self, host=None, port=None):
+        import os
+        host = host or os.getenv("QUANTOS_HOST", "127.0.0.1")
+        port = port or int(os.getenv("QUANTOS_PORT", "8001"))
         self.base_url = f"http://{host}:{port}"
         self.client = httpx.AsyncClient(base_url=self.base_url, timeout=5.0)
 

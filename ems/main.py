@@ -23,7 +23,12 @@ kalshi_v2 = KalshiRESTv2(
 
 def log_to_history(symbol, action, price, reason, rsi=0.0):
     try:
-        conn = psycopg2.connect(host='postgres', database='qdb', user='admin', password='quest')
+        conn = psycopg2.connect(
+            host=os.getenv('DB_HOST', 'postgres'),
+            database=os.getenv('POSTGRES_DB', 'qdb'),
+            user=os.getenv('POSTGRES_USER', 'admin'),
+            password=os.getenv('POSTGRES_PASSWORD', 'quest')
+        )
         conn.autocommit = True
         cursor = conn.cursor()
         cursor.execute(
@@ -41,13 +46,13 @@ async def signal_listener():
     pubsub = r.pubsub()
     await pubsub.subscribe("trade_signals")
     print(f"📡 EMS: Listening for signals on Redis at {redis_host}...")
-    
+
     async for message in pubsub.listen():
         if message["type"] == "message":
             try:
                 data = json.loads(message["data"])
                 signal_data = data.get("pydantic_signal", data)
-                
+
                 if signal_data.get("target_brokerage") == "Kalshi":
                     ticker = signal_data.get("ticker_or_event")
                     action = signal_data.get("action")
@@ -60,7 +65,7 @@ async def signal_listener():
                     print(f"🔄 EMS: Routing signal for {signal.ticker_or_event} ({signal.target_system})...")
                     result = await ems.execute(signal)
                     print(f"✅ EMS: Execution Result: {result}")
-                    
+
             except Exception as e:
                 print(f"❌ EMS: Error processing signal: {e}")
 
@@ -83,19 +88,19 @@ async def main():
             api_key=os.getenv("COINBASE_API_KEY", ""), api_secret=os.getenv("COINBASE_API_SECRET", "")
         ))
     except Exception as e: print(f"⚠️ EMS: Failed to load Coinbase adapter: {e}")
-    
+
     try:
         ems.register_adapter("Robinhood", RobinhoodAdapter(
             username=os.getenv("RH_USERNAME", ""), password=os.getenv("RH_PASSWORD", "")
         ))
     except Exception as e: print(f"⚠️ EMS: Failed to load Robinhood adapter: {e}")
-    
+
     try:
         ems.register_adapter("Hard Rock Bet", HardRockBetAdapter(
             bearer_token=os.getenv("HARDROCK_TOKEN", "")
         ))
     except Exception as e: print(f"⚠️ EMS: Failed to load Hard Rock adapter: {e}")
-    
+
     # Start Listeners
     await asyncio.gather(signal_listener(), emergency_listener())
 

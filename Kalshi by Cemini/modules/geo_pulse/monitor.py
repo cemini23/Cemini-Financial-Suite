@@ -27,8 +27,14 @@ class GeoPulseMonitor:
         Scans for high-impact geopolitical and election-related signals.
         """
         if not self.bearer_token:
-            # For prototype, we'll return simulated data even if token is missing
-            pass
+            print("[WARNING] Geo-Pulse: X_BEARER_TOKEN not configured. Returning NO_SIGNAL.")
+            return {
+                "module": "GEO-PULSE",
+                "signals": [],
+                "aggregate_impact_score": 0,
+                "status": "NO_SIGNAL",
+                "msg": "X_BEARER_TOKEN not configured"
+            }
 
         # Cost tracking
         sys_settings = settings_manager.get_settings()
@@ -36,18 +42,44 @@ class GeoPulseMonitor:
         settings_manager.save_settings(sys_settings)
 
         signals = []
-        
-        # Enhanced Simulation for high-tension events
-        simulated_data = [
-            {"user": "DeItaone", "text": "BREAKING: US Central Command moving multiple aircraft carrier groups toward Iran. Pentagon on high alert. WW3 trends on X."},
-            {"user": "AP_Politics", "text": "New swing state polls show unprecedented volatility as geopolitical tensions dominate the campaign trail."}
-        ]
+
+        # Fetch live tweets from X API for target accounts
+        user_map = {"14094191": "DeItaone", "426742246": "AP_Politics"}
+        live_data = []
+        async with httpx.AsyncClient() as client:
+            for user_id in self.targets:
+                try:
+                    resp = await client.get(
+                        f"{self.base_url}/users/{user_id}/tweets",
+                        headers=self.headers,
+                        params={"max_results": 5, "tweet.fields": "text,created_at"},
+                        timeout=5.0
+                    )
+                    if resp.status_code == 200:
+                        tweets = resp.json().get('data', [])
+                        user_name = user_map.get(user_id, user_id)
+                        for tweet in tweets:
+                            live_data.append({"user": user_name, "text": tweet['text']})
+                    else:
+                        print(f"[WARNING] Geo-Pulse: X API returned HTTP {resp.status_code} for user {user_id}.")
+                except Exception as e:
+                    print(f"[WARNING] Geo-Pulse: X API failed for user {user_id} ({e}).")
+
+        if not live_data:
+            print("[WARNING] Geo-Pulse: No tweets fetched from X API. Returning NO_SIGNAL.")
+            return {
+                "module": "GEO-PULSE",
+                "signals": [],
+                "aggregate_impact_score": 0,
+                "status": "NO_SIGNAL",
+                "msg": "X API returned no data"
+            }
 
         total_score = 0
-        for item in simulated_data:
+        for item in live_data:
             text = item['text'].lower()
             category = "Geopolitical"
-            
+
             # High Tension Multiplier
             impact_multiplier = 1.0
             if any(w in text for w in ["ww3", "iran", "carrier", "pentagon"]):
@@ -58,14 +90,14 @@ class GeoPulseMonitor:
                 if any(w in text for w in words):
                     category = cat.capitalize() if category == "Geopolitical" else category
                     break
-            
+
             blob = TextBlob(item['text'])
             sentiment = blob.sentiment.polarity
-            
+
             # Inverse sentiment for war (negative news = high impact)
             base_impact = abs(sentiment) if abs(sentiment) > 0 else 0.4
             final_impact = min(100, base_impact * impact_multiplier * 100)
-            
+
             signal = {
                 "source": f"@{item['user']}",
                 "category": category,
@@ -77,7 +109,7 @@ class GeoPulseMonitor:
             total_score += final_impact
 
         avg_impact = (total_score / len(signals)) if signals else 0
-        
+
         return {
             "module": "GEO-PULSE",
             "signals": signals,
