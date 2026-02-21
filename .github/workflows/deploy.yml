@@ -1,0 +1,71 @@
+name: Secure PII Audit & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8
+        run: |
+          flake8 . \
+            --exclude="venv,.venv,venv_new,__pycache__,.git,QuantOS/data/kaggle_import,Kalshi by Cemini/venv,Kalshi by Cemini/venv_new,Cemini-Suite" \
+            --config=.flake8
+
+  audit-and-deploy:
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for requesting the JWT from Google
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures TruffleHog can scan the entire history for secrets
+
+      # 1. PII & SECRET AUDIT (The Gatekeeper)
+      # This scans for hardcoded API keys, passwords, and PII
+      - name: Scan for PII and Secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+      # 2. AUTHENTICATE TO GOOGLE CLOUD
+      # Uses the Workload Identity Federation string you generated
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: 'projects/1002646645680/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'github-action-sa@gemini-financial-suite.iam.gserviceaccount.com'
+
+      # 3. SECURE DEPLOYMENT VIA SSH
+      # This reaches into your VM to update the code only if the scan passes
+      - name: Update Bot on VM
+        run: |
+          echo "Deploying Cemini Suite..."
+          gcloud compute ssh instance-20260220-132604 --zone=us-central1-c --command="
+            cd ~/trading-bots && 
+            git pull origin main && 
+            source venv/bin/activate && 
+            pip install -r requirements.txt
+          "

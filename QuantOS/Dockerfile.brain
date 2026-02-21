@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir psycopg2-binary redis pandas requests
+
+# Copy the signal generator script
+COPY signal_generator.py .
+
+# Run the script
+CMD ["python", "signal_generator.py"]

@@ -1,0 +1,44 @@
+[flake8]
+max-line-length = 120
+
+# Style-only noise suppressed so CI focuses on real defects.
+# E999/F821 are always enforced (syntax errors, undefined names).
+extend-ignore =
+    W291,
+    W293,
+    W191,
+    E302,
+    E303,
+    E305,
+    E261,
+    E262,
+    E265,
+    E128,
+    E127,
+    E231,
+    E225,
+    E203,
+    E701,
+    E702,
+    W292,
+    E402,
+    E501,
+    F401,
+    F841,
+    F541,
+    E722,
+    F824
+
+per-file-ignores =
+    __init__.py: F401
+
+exclude =
+    venv,
+    .venv,
+    venv_new,
+    __pycache__,
+    .git,
+    QuantOS/data/kaggle_import,
+    Kalshi by Cemini/venv,
+    Kalshi by Cemini/venv_new,
+    Cemini-Suite,

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}QuantOS {{ version }} | Terminal Monitor{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Pulse Bar: Consolidated P&L -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-navy text-white shadow-sm" style="background-color: #001f3f;">
+                <div class="card-body">
+                    <h6 class="text-uppercase small opacity-75">Global Net Liquidity</h6>
+                    <h2 class="mb-0" id="global-balance">$0.00</h2>
+                    <span class="badge bg-success" id="global-pnl">+0.00%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex justify-content-around align-items-center">
+                    <div class="text-center">
+                        <span class="text-muted small d-block">Alpaca</span>
+                        <strong id="alpaca-status" class="text-success">$0.00</strong>
+                    </div>
+                    <div class="vr"></div>
+                    <div class="text-center">
+                        <span class="text-muted small d-block">SoFi</span>
+                        <strong id="sofi-status" class="text-primary">$0.00</strong>
+                    </div>
+                    <div class="vr"></div>
+                    <div class="text-center">
+                        <span class="text-muted small d-block">IBKR</span>
+                        <strong id="ibkr-status" class="text-info">$0.00</strong>
+                    </div>
+                    <div class="vr"></div>
+                    <div class="text-center">
+                        <span class="text-muted small d-block">Webull</span>
+                        <strong id="webull-status" class="text-warning">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Dashboard Stats -->
+        <div class="col-12">
+            <div class="grid-compact" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+                <div class="card p-3">
+                    <div class="stat-label">Portfolio Equity</div>
+                    <div id="stat-equity" class="stat-value">$0.00</div>
+                </div>
+                <div class="card p-3">
+                    <div class="stat-label">Realized PnL</div>
+                    <div id="stat-pnl" class="stat-value">$0.00</div>
+                </div>
+                <div class="card p-3">
+                    <div class="stat-label">AI Win Rate</div>
+                    <div id="stat-winrate" class="stat-value">0%</div>
+                </div>
+                <div class="card p-3">
+                    <div class="stat-label">Active Exposure</div>
+                    <div id="stat-exposure" class="stat-value">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio -->
+        <div class="col-md-9">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Watchlist: {{ build }} Expansion Pack</span>
+                    <span class="badge bg-primary">VERSION {{ version }} ACTIVE</span>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 border-end">
+                            <div class="stat-label">AI & Tech</div>
+                            <div class="fw-bold text-primary">NVDA, TSLA, AMD</div>
+                        </div>
+                        <div class="col-md-3 border-end">
+                            <div class="stat-label">Crypto Proxies</div>
+                            <div class="fw-bold text-primary">MSTR, COIN, BITO</div>
+                        </div>
+                        <div class="col-md-3 border-end">
+                            <div class="stat-label">Sector & Rates</div>
+                            <div class="fw-bold text-primary">XLF, TLT</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-label">Core ETFs</div>
+                            <div class="fw-bold text-primary">SPY, QQQ, IWM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Active Positions</span>
+                    <span class="text-secondary small">Live Market Tracking</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>SYMBOL</th>
+                                <th>SHARES</th>
+                                <th>AVG PRICE</th>
+                                <th>PnL %</th>
+                                <th>MARKET VALUE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolio-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header">Live Trade Feed</div>
+                <div class="card-body p-2 bg-black" style="overflow-y: auto; min-height: 400px;">
+                    <div id="log-body" class="terminal"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadStatus() {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        updateStatus(data.bot_paused);
+    }
+
+    document.getElementById('pause-btn').onclick = async () => {
+        const res = await fetch('/api/toggle-pause', {method: 'POST'});
+        const data = await res.json();
+        updateStatus(data.paused);
+    };
+
+    document.getElementById('panic-btn').onclick = async () => {
+        if (confirm('EXTREME DANGER: This will liquidate all positions immediately. Continue?')) {
+            const res = await fetch('/api/panic', {method: 'POST'});
+            const data = await res.json();
+            alert(data.status);
+        }
+    };
+
+    function updateStatus(paused) {
+        const tag = document.getElementById('bot-status-tag');
+        const btn = document.getElementById('pause-btn');
+        if (paused) {
+            tag.innerText = 'PAUSED';
+            tag.className = 'badge bg-warning text-dark me-3';
+            btn.innerText = 'RESUME BOT';
+            btn.className = 'btn btn-success btn-sm me-2 fw-bold';
+        } else {
+            tag.innerText = 'RUNNING';
+            tag.className = 'badge bg-success me-3';
+            btn.innerText = 'PAUSE BOT';
+            btn.className = 'btn btn-warning btn-sm me-2 fw-bold';
+        }
+    }
+
+    async function refresh() {
+        try {
+            const res = await fetch('/api/dashboard');
+            const data = await res.json();
+            document.getElementById('stat-equity').innerText = `$${(data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('stat-pnl').innerText = `$${(data.today_pnl || 0).toFixed(2)}`;
+            document.getElementById('stat-pnl').className = 'stat-value ' + (data.today_pnl >= 0 ? 'positive' : 'negative');
+            document.getElementById('stat-winrate').innerText = `${(data.win_rate || 0).toFixed(1)}%`;
+            document.getElementById('stat-exposure').innerText = (data.portfolio || []).length;
+
+            // Update Pulse Bar
+            document.getElementById('global-balance').innerText = `$${(data.global_balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('global-pnl').innerText = `${(data.global_pnl_pct || 0) >= 0 ? '+' : ''}${(data.global_pnl_pct || 0).toFixed(2)}%`;
+            document.getElementById('global-pnl').className = 'badge ' + ((data.global_pnl_pct || 0) >= 0 ? 'bg-success' : 'bg-danger');
+            
+            document.getElementById('alpaca-status').innerText = `$${(data.broker_balances?.alpaca || 0).toFixed(2)}`;
+            document.getElementById('sofi-status').innerText = `$${(data.broker_balances?.sofi || 0).toFixed(2)}`;
+            document.getElementById('ibkr-status').innerText = `$${(data.broker_balances?.ibkr || 0).toFixed(2)}`;
+            document.getElementById('webull-status').innerText = `$${(data.broker_balances?.webull || 0).toFixed(2)}`;
+
+            document.getElementById('portfolio-body').innerHTML = (data.portfolio || []).map(p => `
+                <tr>
+                    <td class="fw-bold text-info">${p.ticker || 'N/A'}</td>
+                    <td>${(p.shares_held || 0).toFixed(4)}</td>
+                    <td>$${(p.average_buy_price || 0).toFixed(2)}</td>
+                    <td class="${(p.pnl_pct || 0) >= 0 ? 'positive' : 'negative'}">${(p.pnl_pct || 0).toFixed(2)}%</td>
+                    <td>$${(p.market_value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="text-center py-4 text-secondary">No active positions. Scanning...</td></tr>';
+
+            document.getElementById('log-body').innerHTML = (data.logs || []).map(l => `
+                <div class="mb-2"><span class="text-secondary">[${l.time}]</span> ${l.msg}</div>
+            `).join('') || '<div class="text-secondary">Waiting for signals...</div>';
+        } catch (e) { console.error("Refresh error", e); }
+    }
+
+    setInterval(refresh, 3000);
+    loadStatus();
+    refresh();
+</script>
+{% endblock %}
+
+</body>
+</html>

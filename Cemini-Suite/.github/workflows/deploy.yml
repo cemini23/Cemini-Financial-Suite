@@ -1,0 +1,58 @@
+name: audit-and-deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetches all history for TruffleHog
+
+      - name: TruffleHog Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.before }}
+          head: ${{ github.sha }}
+          # TruffleHog will fail the workflow if secrets are found.
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: audit # Ensure audit passes before deployment
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          # IMPORTANT: Replace with your actual Workload Identity Provider details.
+          # Example: 'projects/1234567890/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+          workload_identity_provider: 'projects/YOUR_PROJECT_NUMBER/locations/global/workloadIdentityPools/YOUR_POOL_ID/providers/YOUR_PROVIDER_ID'
+          service_account: 'your-service-account@your-project-id.iam.gserviceaccount.com' # Replace with your service account email
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            # IMPORTANT: Replace with the actual path to your application on the VM
+            cd /path/to/your/application
+            git pull origin main # Pull the latest code
+            # IMPORTANT: Replace with the actual path to your Python virtual environment
+            source /path/to/your/venv/bin/activate
+            pip install -r requirements.txt # Install/update Python dependencies
+            # Add any commands to restart your application or services
+            # e.g., sudo systemctl restart your-application-service

@@ -1,0 +1,42 @@
+# Dockerfile.ems
+FROM python:3.11-slim
+
+# Set environment variables for high performance
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Install system dependencies required for compiling quant libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    wget \
+    git \
+    rustc \
+    cargo \
+    libssl-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install specific adapter SDKs and asyncio execution libraries
+RUN pip install \
+    aiohttp \
+    requests \
+    cryptography \
+    psycopg2-binary \
+    coinbase-advanced-py \
+    robin_stocks \
+    simplefix \
+    redis \
+    pydantic \
+    pydantic-settings \
+    kalshi-python
+
+# Copy the execution scripts into the container
+# We assume the context is the project root
+COPY ./core /app/core
+COPY ./ems /app/ems
+
+# The EMS listens to the Redis Event Bus and executes trades
+CMD ["python", "-m", "ems.main"]

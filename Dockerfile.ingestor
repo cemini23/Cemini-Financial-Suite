@@ -1,0 +1,24 @@
+# Dockerfile.ingestor
+FROM python:3.11-slim
+
+# High performance environment settings
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+# Core ingestion requirements
+RUN pip install --no-cache-dir \
+    websockets \
+    questdb \
+    python-dotenv \
+    polars \
+    pandas \
+    psycopg2-binary
+
+# Copy assets
+COPY ./ingestion /app/ingestion
+COPY ./core /app/core
+
+# Entry point for the Polygon feed handler
+CMD ["python", "-m", "ingestion.polygon_ingestor"]

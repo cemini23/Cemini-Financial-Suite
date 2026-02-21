@@ -1,0 +1,93 @@
+:root {
+    --primary-color: #1a2a40; /* QuantOS Navy */
+    --secondary-color: #a8a9ad; /* Metallic Silver */
+    --accent-color: #4a90e2; /* Electric Blue */
+    --bg-color: #f4f6f8;
+    --text-color: #1a1a1a;
+    --success-color: #27ae60;
+    --danger-color: #c0392b;
+}
+
+body.dark-mode {
+    --bg-color: #0d1117;
+    --text-color: #c9d1d9;
+    --primary-color: #161b22;
+}
+
+body { 
+    background-color: var(--bg-color); 
+    color: var(--text-color); 
+    transition: background-color 0.3s, color 0.3s;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; 
+}
+
+.navbar { 
+    background-color: var(--primary-color) !important; 
+    border-bottom: 2px solid var(--secondary-color);
+    padding: 0.5rem 1.5rem;
+}
+
+.nav-link { 
+    color: rgba(255,255,255,0.7) !important; 
+    font-weight: 500; 
+}
+
+.nav-link.active { 
+    color: #fff !important; 
+    border-bottom: 2px solid var(--accent-color); 
+}
+
+.card { 
+    background-color: #fff; 
+    border: 1px solid #dee2e6; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+}
+
+body.dark-mode .card {
+    background-color: #161b22;
+    border-color: #30363d;
+}
+
+.card-header { 
+    background-color: #f8f9fa; 
+    border-bottom: 1px solid #dee2e6; 
+    color: var(--primary-color); 
+    font-weight: 700; 
+    font-size: 0.9rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+
+body.dark-mode .card-header {
+    background-color: #21262d;
+    border-bottom-color: #30363d;
+    color: var(--accent-color);
+}
+
+.stat-label { 
+    font-size: 0.75rem; 
+    color: #6c757d; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    font-weight: 600; 
+}
+
+.stat-value { 
+    font-size: 1.6rem; 
+    font-weight: 800; 
+    color: var(--primary-color); 
+}
+
+body.dark-mode .stat-value {
+    color: #58a6ff;
+}
+
+.terminal { 
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; 
+    font-size: 0.8rem; 
+    color: #d1d1d1; 
+    background-color: #1e1e1e; 
+    border-radius: 4px; 
+    padding: 10px; 
+}

@@ -1,0 +1,20 @@
+CEMINI FINANCIAL SUITE™
+Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
+ALL RIGHTS RESERVED.
+
+This software and its associated documentation (the "Software") are the exclusive intellectual property of Claudio Barone Jr. (the "Owner").
+
+1. RESTRICTIONS
+Permission is NOT granted to any person obtaining a copy of this Software to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software without explicit, written permission from the Owner.
+
+2. PROHIBITED USES
+- Use of this Software for commercial trading, financial advisory, or institutional execution without a valid commercial license is strictly prohibited.
+- Reverse engineering, decompiling, or attempting to extract the source code of the proprietary "Brain" (Signal Generator) or "EMS" (Execution Management System) modules is strictly prohibited.
+
+3. THIRD-PARTY COMPONENTS
+Certain sub-directories (e.g., 'Kalshi by Cemini') may contain components licensed under open-source terms (such as the MIT License). Those specific files are governed by their respective licenses found within those directories. This Master License governs the unified architecture, the integration logic, and the proprietary QuantOS™ codebase.
+
+4. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For licensing inquiries, contact: c.barone@yahoo.com

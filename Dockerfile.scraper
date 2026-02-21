@@ -1,0 +1,6 @@
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+RUN pip install --no-cache-dir redis yfinance praw requests pandas psycopg2-binary
+COPY . .
+# Entry point will be set in docker-compose per service

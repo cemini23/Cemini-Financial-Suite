@@ -1,0 +1,25 @@
+# Environments
+venv/
+.env
+
+# Secrets
+private_key.pem
+*.pem
+*.key
+
+# Databases
+*.db
+*.sqlite3
+
+# Logs
+*.log
+kalshi_server.log
+kalshi_session.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS
+.DS_Store

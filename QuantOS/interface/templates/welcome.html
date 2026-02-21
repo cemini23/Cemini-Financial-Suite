@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to QuantOS | Setup Wizard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --quant-gold: #FFD700;
+            --quant-dark: #0A0E14;
+            --quant-surface: #161B22;
+        }
+        body {
+            background-color: var(--quant-dark);
+            color: #E6EDF3;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .wizard-card {
+            background: var(--quant-surface);
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .broker-btn {
+            background: #21262D;
+            border: 1px solid #30363D;
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .broker-btn:hover { border-color: var(--quant-gold); background: #30363D; }
+        .broker-btn.selected { border-color: var(--quant-gold); background: rgba(255, 215, 0, 0.1); }
+        .broker-btn i { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+        
+        .form-control {
+            background: #0D1117;
+            border: 1px solid #30363D;
+            color: white;
+        }
+        .form-control:focus {
+            background: #0D1117;
+            border-color: var(--quant-gold);
+            color: white;
+            box-shadow: none;
+        }
+        .btn-quant {
+            background: var(--quant-gold);
+            color: black;
+            font-weight: bold;
+            border: none;
+        }
+        .btn-quant:hover { background: #e6c200; }
+        .help-link { font-size: 0.85rem; color: var(--quant-gold); text-decoration: none; }
+        .help-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="wizard-card">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold"><i class="bi bi-lion me-2 text-warning"></i>QuantOS</h2>
+        <div class="progress mt-3" style="height: 4px; background: #30363D;">
+            <div id="setup-progress" class="progress-bar bg-warning" style="width: 20%;"></div>
+        </div>
+    </div>
+
+    <!-- STEP 1: GREETING -->
+    <div class="step active" id="step-1">
+        <h3>Welcome to QuantOS</h3>
+        <p class="text-secondary">The institutional trading terminal for individual traders. Let's get your trade desk ready in 60 seconds.</p>
+        <div class="mt-4">
+            <button class="btn btn-quant w-100 p-3" onclick="nextStep(2)">Initialize Setup</button>
+        </div>
+    </div>
+
+    <!-- STEP 2: BROKER SELECTION -->
+    <div class="step" id="step-2">
+        <h4>Choose Your Broker</h4>
+        <p class="text-secondary small mb-4">Select the engine that will power your trades.</p>
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="broker-btn" id="btn-alpaca" onclick="selectBroker('alpaca')">
+                    <i class="bi bi-lightning-fill"></i> Alpaca
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="broker-btn" id="btn-robinhood" onclick="selectBroker('robinhood')">
+                    <i class="bi bi-feather"></i> Robinhood
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="broker-btn" id="btn-schwab" onclick="selectBroker('schwab')">
+                    <i class="bi bi-shield-check"></i> Schwab
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="broker-btn" id="btn-ibkr" onclick="selectBroker('ibkr')">
+                    <i class="bi bi-graph-up-arrow"></i> IBKR
+                </div>
+            </div>
+        </div>
+        <div class="mt-4 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" onclick="prevStep(1)">Back</button>
+            <button class="btn btn-quant px-4" id="next-2" disabled onclick="nextStep(3)">Continue</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: API ENTRY -->
+    <div class="step" id="step-3">
+        <h4 id="api-title">API Credentials</h4>
+        <p class="text-secondary small" id="api-desc">Enter your keys to connect QuantOS to the market.</p>
+        
+        <div id="fields-alpaca" class="api-fields d-none">
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between">API Key ID <a href="https://app.alpaca.markets/" target="_blank" class="help-link">Where to find?</a></label>
+                <input type="text" class="form-control" id="apca_id" placeholder="PK...">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Secret Key</label>
+                <input type="password" class="form-control" id="apca_secret">
+            </div>
+        </div>
+
+        <div id="fields-robinhood" class="api-fields d-none">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" id="rh_user">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="rh_pass">
+            </div>
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between">MFA/TOTP Code <a href="https://robinhood.com/account/settings" target="_blank" class="help-link">Enable 2FA</a></label>
+                <input type="text" class="form-control" id="rh_totp" placeholder="Required for Login">
+            </div>
+        </div>
+
+        <div id="fields-schwab" class="api-fields d-none">
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between">App Key <a href="https://developer.schwab.com/" target="_blank" class="help-link">Portal</a></label>
+                <input type="text" class="form-control" id="schwab_key">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">App Secret</label>
+                <input type="password" class="form-control" id="schwab_secret">
+            </div>
+        </div>
+
+        <div id="fields-ibkr" class="api-fields d-none text-center py-4">
+            <i class="bi bi-info-circle text-warning fs-1"></i>
+            <p class="mt-3">IBKR requires <b>TWS</b> or <b>IB Gateway</b> running on this machine with the API socket enabled (Port 7497/7496).</p>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" onclick="prevStep(2)">Back</button>
+            <button class="btn btn-quant px-4" onclick="nextStep(4)">Continue</button>
+        </div>
+    </div>
+
+    <!-- STEP 4: SAFETY -->
+    <div class="step" id="step-4">
+        <h4>Risk Management</h4>
+        <p class="text-secondary small mb-4">How do you want to start?</p>
+        <div class="form-check form-switch mb-3 p-3 border rounded border-warning" style="background: rgba(255,215,0,0.05);">
+            <input class="form-check-input ms-0 me-3" type="checkbox" id="paper_mode" checked>
+            <label class="form-check-label fw-bold" for="paper_mode">Enable Paper Trading (Simulated)</label>
+            <p class="text-secondary small mt-1 mb-0">Recommended for first run. No real money will be at risk.</p>
+        </div>
+        <div class="mt-4 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" onclick="prevStep(3)">Back</button>
+            <button class="btn btn-quant px-4" onclick="finishSetup()">Finalize Deployment</button>
+        </div>
+    </div>
+
+    <!-- STEP 5: SUCCESS -->
+    <div class="step text-center" id="step-5">
+        <div class="py-4">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+            <h3 class="mt-3">System Ready</h3>
+            <p class="text-secondary">QuantOS has been synchronized with your broker. Launching Engine Room...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeBroker = '';
+
+    function nextStep(step) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById(`step-${step}`).classList.add('active');
+        document.getElementById('setup-progress').style.width = (step * 20) + '%';
+    }
+
+    function prevStep(step) {
+        nextStep(step);
+    }
+
+    function selectBroker(broker) {
+        activeBroker = broker;
+        document.querySelectorAll('.broker-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById(`btn-${broker}`).classList.add('selected');
+        document.getElementById('next-2').disabled = false;
+        
+        // Prep next step fields
+        document.querySelectorAll('.api-fields').forEach(f => f.classList.add('d-none'));
+        document.getElementById(`fields-${broker}`).classList.remove('d-none');
+        document.getElementById('api-title').innerText = broker.toUpperCase() + ' Connection';
+    }
+
+    async function finishSetup() {
+        nextStep(5);
+        
+        const config = {
+            ACTIVE_BROKER: activeBroker,
+            PAPER_MODE: document.getElementById('paper_mode').checked,
+            APCA_API_KEY_ID: document.getElementById('apca_id').value,
+            APCA_API_SECRET_KEY: document.getElementById('apca_secret').value,
+            ROBINHOOD_USERNAME: document.getElementById('rh_user').value,
+            ROBINHOOD_PASSWORD: document.getElementById('rh_pass').value,
+            ROBINHOOD_TOTP: document.getElementById('rh_totp').value,
+            SCHWAB_APP_KEY: document.getElementById('schwab_key').value,
+            SCHWAB_APP_SECRET: document.getElementById('schwab_secret').value
+        };
+
+        try {
+            const res = await fetch('/api/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            
+            if (res.ok) {
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                alert("Setup Failed. Check console for details.");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+</script>
+
+</body>
+</html>

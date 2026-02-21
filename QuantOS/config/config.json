@@ -1,0 +1,26 @@
+{
+  "bot_settings": {
+    "environment": "paper",
+    "log_level": "INFO",
+    "options_enabled": false
+  },
+  "risk_management": {
+    "max_position_size_usd": 500.0,
+    "stop_loss_pct": 0.05,
+    "take_profit_pct": 0.1,
+    "max_daily_loss_usd": 100.0
+  },
+  "strategy": {
+    "active_tickers": [
+      "SPY",
+      "QQQ",
+      "NVDA",
+      "AMD",
+      "MSFT",
+      "BTC",
+      "ETH"
+    ],
+    "buy_threshold": 0.65,
+    "sell_threshold": 0.35
+  }
+}

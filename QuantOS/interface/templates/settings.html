@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantOS v11.0.0 | Engine Room</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg-dark: #06090f;
+            --card-bg: #0d1117;
+            --border-color: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+        }
+        body { background-color: var(--bg-dark); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        .navbar { background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1.5rem; }
+        .nav-link { color: var(--text-secondary); font-weight: 500; }
+        .nav-link.active { color: var(--text-primary); border-bottom: 2px solid var(--accent-blue); }
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; }
+        .card-header { background-color: #161b22; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-weight: 600; }
+        .form-label { color: var(--text-primary); font-weight: 500; font-size: 0.85rem; }
+        .form-control, .form-select { background-color: #0d1117; border-color: var(--border-color); color: white; }
+        .form-control:focus, .form-select:focus { background-color: #0d1117; color: white; border-color: var(--accent-blue); box-shadow: none; }
+        .btn-primary { background-color: var(--accent-blue); border: none; }
+        .btn-outline-danger { border-color: #f85149; color: #f85149; }
+        .btn-outline-danger:hover { background-color: #f85149; color: white; }
+        .nav-tabs { border-bottom-color: var(--border-color); }
+        .nav-tabs .nav-link { border: none; color: var(--text-secondary); }
+        .nav-tabs .nav-link.active { background-color: transparent; border-bottom: 2px solid var(--accent-blue); color: var(--text-primary); }
+        .broker-form { display: none; }
+        .broker-form.active { display: block; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-online { background-color: var(--accent-green); }
+        .status-offline { background-color: var(--accent-red); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-activity me-2"></i>QUANT<span class="text-info">OS</span>
+        </a>
+        <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/settings"><i class="bi bi-gear me-1"></i> Engine Room</a></li>
+            <li class="nav-item"><a class="nav-link" href="/backtester"><i class="bi bi-flask me-1"></i> Strategy Lab</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>System Configuration</h5>
+                    <span id="active-broker-badge" class="badge bg-primary">Active: ROBINHOOD</span>
+                </div>
+                <div class="card-body">
+                    <!-- Nav Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General Settings</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="broker-tab" data-bs-toggle="tab" data-bs-target="#broker" type="button" role="tab">Broker Control Center</button>
+                        </li>
+                    </ul>
+
+                    <form id="settings-form">
+                        <div class="tab-content" id="settingsTabsContent">
+                            <!-- General Settings -->
+                            <div class="tab-pane fade show active" id="general" role="tabpanel">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Trading Environment</label>
+                                        <select class="form-select" id="environment">
+                                            <option value="PAPER">Simulated (Paper)</option>
+                                            <option value="LIVE">Live (Real Capital)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Min Confidence Threshold (0-100)</label>
+                                        <input type="number" class="form-control" id="min_confidence_threshold" min="0" max="100">
+                                    </div>
+                                    
+                                    <hr class="my-3 border-secondary">
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Stop Loss %</label>
+                                        <input type="number" class="form-control" id="stop_loss_pct" step="0.01">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Take Profit %</label>
+                                        <input type="number" class="form-control" id="take_profit_pct" step="0.01">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Max Slippage %</label>
+                                        <input type="number" class="form-control" id="max_slippage_pct" step="0.1">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Execution Timeout (sec)</label>
+                                        <input type="number" class="form-control" id="execution_timeout">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Max Open Positions</label>
+                                        <input type="number" class="form-control" id="max_positions">
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="options_enabled">
+                                            <label class="form-check-label" for="options_enabled">Enable Options Trading</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr class="my-3 border-secondary">
+                                    <h6 class="mb-3 text-info"><i class="bi bi-cpu me-2"></i>Execution Engine</h6>
+                                    
+                                    <div class="col-md-12">
+                                        <div class="card bg-dark border-secondary p-3">
+                                            <div class="form-check form-switch mb-2">
+                                                <input class="form-check-input" type="checkbox" id="routerToggle">
+                                                <label class="form-check-label fw-bold" for="routerToggle">
+                                                    Enable Intelligent Global Router
+                                                </label>
+                                            </div>
+                                            <p class="text-secondary small mb-3">Auto-selects best broker based on time, asset type, and liquidity.</p>
+                                            
+                                            <div id="primaryBrokerDiv">
+                                                <label class="form-label">Primary Fallback Broker</label>
+                                                <select class="form-select" id="primaryBroker">
+                                                    <option value="alpaca">Alpaca (High Frequency)</option>
+                                                    <option value="sofi">SoFi (Long Term / Crypto)</option>
+                                                    <option value="webull">Webull (Extended Hours)</option>
+                                                    <option value="ibkr">Interactive Brokers (Pro)</option>
+                                                    <option value="robinhood">Robinhood</option>
+                                                </select>
+                                                <p class="text-muted small mt-2 mb-0">This broker will be used for all trades when the Global Router is disabled.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-3 border-secondary">
+                                    <h6 class="mb-3 text-info"><i class="bi bi-bank me-2"></i>Tax & Accounting</h6>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label">Est. Tax Bracket %</label>
+                                        <input type="number" class="form-control" id="tax_bracket_pct" step="0.1">
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="wash_sale_guard_enabled">
+                                            <label class="form-check-label" for="wash_sale_guard_enabled">Enable Wash Sale Guard</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Broker Configuration -->
+                            <div class="tab-pane fade" id="broker" role="tabpanel">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Active Broker</label>
+                                    <select class="form-select border-primary" id="active_broker" onchange="showBrokerForm(this.value)">
+                                        <option value="robinhood">Robinhood</option>
+                                        <option value="alpaca">Alpaca Markets</option>
+                                        <option value="ibkr">Interactive Brokers (IBKR)</option>
+                                        <option value="schwab">Charles Schwab</option>
+                                        <option value="sofi">SoFi</option>
+                                        <option value="webull">Webull</option>
+                                        <option value="router">Global Router (Multi-Broker)</option>
+                                    </select>
+                                    <div class="form-text text-secondary mt-2">The bot will hot-swap to this broker on the next scan.</div>
+                                </div>
+
+                                <div id="form-robinhood" class="broker-form active card p-3 border-secondary">
+                                    <h6>Robinhood Credentials</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Email/Username</label>
+                                            <input type="text" class="form-control" id="rh_username" placeholder="email@example.com">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="rh_password" placeholder="••••••••">
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">TOTP Secret (MFA)</label>
+                                            <input type="text" class="form-control" id="rh_totp_secret" placeholder="Optional App Authentication Key">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="form-alpaca" class="broker-form card p-3 border-secondary">
+                                    <h6>Alpaca API Keys</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">API Key</label>
+                                            <input type="text" class="form-control" id="alpaca_api_key">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Secret Key</label>
+                                            <input type="password" class="form-control" id="alpaca_secret_key">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="form-ibkr" class="broker-form card p-3 border-secondary">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">IBKR Connectivity</h6>
+                                        <span class="small"><span class="status-dot status-offline" id="ibkr-status"></span> Connection: Unknown</span>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Host</label>
+                                            <input type="text" class="form-control" id="ibkr_host" value="127.0.0.1">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Port</label>
+                                            <input type="number" class="form-control" id="ibkr_port" value="7497">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Client ID</label>
+                                            <input type="number" class="form-control" id="ibkr_client_id" value="1">
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info mt-3 small mb-0">
+                                        <strong><i class="bi bi-info-circle me-1"></i> Setup Guide:</strong>
+                                        <ol class="mb-0 mt-1">
+                                            <li>Open TWS or IB Gateway on this machine.</li>
+                                            <li>Go to <strong>File > Global Config > API > Settings</strong>.</li>
+                                            <li>Check <strong>'Enable ActiveX and Socket Clients'</strong>.</li>
+                                            <li>Ensure Port matches (Paper: 7497, Live: 7496).</li>
+                                        </ol>
+                                    </div>
+                                </div>
+
+                                <div id="form-schwab" class="broker-form card p-3 border-secondary">
+                                    <h6>Schwab App Configuration</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">App Key</label>
+                                            <input type="text" class="form-control" id="schwab_app_key">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">App Secret</label>
+                                            <input type="password" class="form-control" id="schwab_app_secret">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-warning small"><i class="bi bi-exclamation-circle me-1"></i> Requires initial token authorization via CLI.</div>
+                                </div>
+
+                                <div id="form-sofi" class="broker-form card p-3 border-secondary">
+                                    <h6>SoFi Credentials</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Email/Username</label>
+                                            <input type="text" class="form-control" id="sofi_username" placeholder="email@example.com">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="sofi_password" placeholder="••••••••">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="form-webull" class="broker-form card p-3 border-secondary">
+                                    <h6>Webull Credentials</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Email/Phone</label>
+                                            <input type="text" class="form-control" id="webull_email">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="webull_password">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Trade PIN (6-digit)</label>
+                                            <input type="password" class="form-control" id="webull_pin">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">SAVE ALL CHANGES</button>
+                            <button type="button" id="reset-btn" class="btn btn-outline-secondary fw-bold">RESET TO AI DEFAULTS</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4 border-danger">
+                <div class="card-header bg-danger bg-opacity-10 text-danger border-danger">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary small">Wiping trade history will reset all performance metrics and closed trade logs.</p>
+                    <button id="wipe-history-btn" class="btn btn-outline-danger btn-sm fw-bold">WIPE TRADE HISTORY</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function showBrokerForm(broker) {
+        document.querySelectorAll('.broker-form').forEach(f => f.classList.remove('active'));
+        const form = document.getElementById('form-' + broker);
+        if (form) form.classList.add('active');
+        
+        document.getElementById('active-broker-badge').innerText = 'Active: ' + broker.toUpperCase();
+    }
+
+    async function loadSettings() {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        
+        // General
+        document.getElementById('environment').value = data.environment;
+        document.getElementById('min_confidence_threshold').value = data.min_confidence_threshold || 75;
+        document.getElementById('stop_loss_pct').value = data.stop_loss_pct;
+        document.getElementById('take_profit_pct').value = data.take_profit_pct;
+        document.getElementById('max_slippage_pct').value = data.max_slippage_pct || 0.5;
+        document.getElementById('execution_timeout').value = data.execution_timeout || 30;
+        document.getElementById('max_positions').value = data.max_positions;
+        document.getElementById('options_enabled').checked = data.options_enabled;
+        document.getElementById('tax_bracket_pct').value = data.tax_bracket_pct || 30.0;
+        document.getElementById('wash_sale_guard_enabled').checked = data.wash_sale_guard_enabled !== false;
+        
+        // Router & Global
+        document.getElementById('routerToggle').checked = data.global_router_enabled || false;
+        document.getElementById('primaryBroker').value = data.primary_broker || 'alpaca';
+        updateRouterUI(document.getElementById('routerToggle').checked);
+
+        // Broker
+        document.getElementById('active_broker').value = data.active_broker || 'robinhood';
+        document.getElementById('alpaca_api_key').value = data.alpaca_api_key || '';
+        document.getElementById('alpaca_secret_key').value = data.alpaca_secret_key || '';
+        document.getElementById('rh_username').value = data.rh_username || '';
+        document.getElementById('rh_password').value = data.rh_password || '';
+        document.getElementById('rh_totp_secret').value = data.rh_totp_secret || '';
+        document.getElementById('schwab_app_key').value = data.schwab_app_key || '';
+        document.getElementById('schwab_app_secret').value = data.schwab_app_secret || '';
+        document.getElementById('sofi_username').value = data.sofi_username || '';
+        document.getElementById('sofi_password').value = data.sofi_password || '';
+        document.getElementById('webull_email').value = data.webull_email || '';
+        document.getElementById('webull_password').value = data.webull_password || '';
+        document.getElementById('webull_pin').value = data.webull_pin || '';
+        document.getElementById('ibkr_host').value = data.ibkr_host || '127.0.0.1';
+        document.getElementById('ibkr_port').value = data.ibkr_port || 7497;
+        document.getElementById('ibkr_client_id').value = data.ibkr_client_id || 1;
+
+        showBrokerForm(data.active_broker || 'robinhood');
+    }
+
+    function updateRouterUI(enabled) {
+        const primaryDiv = document.getElementById('primaryBrokerDiv');
+        primaryDiv.style.opacity = enabled ? '0.5' : '1.0';
+        primaryDiv.style.pointerEvents = enabled ? 'none' : 'auto';
+    }
+
+    document.getElementById('routerToggle').addEventListener('change', function() {
+        updateRouterUI(this.checked);
+    });
+
+    document.getElementById('settings-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const settings = {
+            environment: document.getElementById('environment').value,
+            min_confidence_threshold: parseInt(document.getElementById('min_confidence_threshold').value),
+            stop_loss_pct: parseFloat(document.getElementById('stop_loss_pct').value),
+            take_profit_pct: parseFloat(document.getElementById('take_profit_pct').value),
+            max_slippage_pct: parseFloat(document.getElementById('max_slippage_pct').value),
+            execution_timeout: parseInt(document.getElementById('execution_timeout').value),
+            max_positions: parseInt(document.getElementById('max_positions').value),
+            options_enabled: document.getElementById('options_enabled').checked,
+            tax_bracket_pct: parseFloat(document.getElementById('tax_bracket_pct').value),
+            wash_sale_guard_enabled: document.getElementById('wash_sale_guard_enabled').checked,
+            
+            global_router_enabled: document.getElementById('routerToggle').checked,
+            primary_broker: document.getElementById('primaryBroker').value,
+
+            active_broker: document.getElementById('active_broker').value,
+            alpaca_api_key: document.getElementById('alpaca_api_key').value,
+            alpaca_secret_key: document.getElementById('alpaca_secret_key').value,
+            rh_username: document.getElementById('rh_username').value,
+            rh_password: document.getElementById('rh_password').value,
+            rh_totp_secret: document.getElementById('rh_totp_secret').value,
+            schwab_app_key: document.getElementById('schwab_app_key').value,
+            schwab_app_secret: document.getElementById('schwab_app_secret').value,
+            sofi_username: document.getElementById('sofi_username').value,
+            sofi_password: document.getElementById('sofi_password').value,
+            webull_email: document.getElementById('webull_email').value,
+            webull_password: document.getElementById('webull_password').value,
+            webull_pin: document.getElementById('webull_pin').value,
+            ibkr_host: document.getElementById('ibkr_host').value,
+            ibkr_port: parseInt(document.getElementById('ibkr_port').value),
+            ibkr_client_id: parseInt(document.getElementById('ibkr_client_id').value)
+        };
+        await fetch('/api/settings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(settings)
+        });
+        alert('All settings saved successfully. Broker change will take effect on next scan.');
+    };
+
+    document.getElementById('reset-btn').onclick = async () => {
+        if (confirm('Reset all settings to Factory AI Defaults?')) {
+            const defaults = {
+                environment: 'PAPER',
+                active_broker: 'robinhood',
+                min_confidence_threshold: 75,
+                stop_loss_pct: 0.05,
+                take_profit_pct: 0.10,
+                max_positions: 10,
+                options_enabled: false
+            };
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(defaults)
+            });
+            location.reload();
+        }
+    };
+
+    document.getElementById('wipe-history-btn').onclick = async () => {
+        if (confirm('Are you absolutely sure? This will wipe the survivor_ledger.csv and all trade history.')) {
+            const res = await fetch('/api/wipe-history', {method: 'POST'});
+            const data = await res.json();
+            alert(data.status);
+        }
+    };
+
+    loadSettings();
+</script>
+
+</body>
+</html>

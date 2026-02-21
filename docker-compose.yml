@@ -1,0 +1,244 @@
+version: '3.8'
+
+services:
+  # --- THE HEART (Data Storage) ---
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: postgres
+    restart: always
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=quest
+      - POSTGRES_DB=qdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./archives:/mnt/archive
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    expose:
+      - "80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@cemini.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgres
+
+  # --- THE SPINAL CORD (Messaging) ---
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    expose:
+      - "6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  # --- NODE 1: PERCEPTION (Ingestion) ---
+  polygon_feed:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingestor
+    container_name: polygon_ingestor
+    restart: always
+    env_file: .env
+    environment:
+      - DB_HOST=postgres
+    depends_on:
+      - postgres
+
+  # --- NODE 2-4: THE BRAIN (Intelligence) ---
+  brain:
+    build:
+      context: .
+      dockerfile: Dockerfile.brain
+    container_name: brain
+    restart: always
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=postgres
+    depends_on:
+      - redis
+      - postgres
+
+  # --- SIGNAL GENERATOR (Brain logic) ---
+  signal_generator:
+    build:
+      context: ./QuantOS
+      dockerfile: Dockerfile.brain
+    container_name: signal_generator
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    depends_on:
+      - postgres
+      - redis
+
+  # --- THE SCRIBE (Logging) ---
+  logger:
+    build:
+      context: .
+      dockerfile: Dockerfile.logger
+    container_name: scribe_logger
+    restart: always
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    command: ["python", "logger_service.py"]
+
+  # --- THE COACH (Analysis) ---
+  analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile.analyzer
+    container_name: coach_analyzer
+    restart: always
+    volumes:
+      - .:/app
+      - ./archives:/mnt/archive
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    depends_on:
+      - postgres
+      - redis
+    command: ["python", "analyzer.py"]
+
+  # --- SCRAPERS (Intelligence) ---
+  social_scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: social_scraper
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+    depends_on:
+      - redis
+    command: ["python", "scrapers/social_scraper.py"]
+
+  macro_scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: macro_scraper
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=postgres
+    depends_on:
+      - redis
+      - postgres
+    command: ["python", "scrapers/macro_harvester.py"]
+
+  # --- NODE 5: THE SWORD (Execution) ---
+  ems:
+    build:
+      context: .
+      dockerfile: Dockerfile.ems
+    container_name: ems_executor
+    restart: always
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=postgres
+    volumes:
+      - arcticdb_data:/data/arcticdb
+      - /Users/claudiobarone/.tokens:/root/.tokens
+      - "./Kalshi by Cemini/private_key.pem:/app/private_key.pem"
+      - ./archives:/mnt/archive
+      - ./scripts:/app/scripts
+    depends_on:
+      - redis
+      - postgres
+
+  # --- CEMINI OS (Streamlit Dashboard) ---
+  cemini_os:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.ui
+    container_name: cemini_os
+    restart: always
+    expose:
+      - "8501"
+    environment:
+      - DB_HOST=postgres
+    depends_on:
+      - postgres
+
+  # --- THE VISUAL NERVOUS SYSTEM (Telemetry) ---
+  deephaven:
+    image: ghcr.io/deephaven/server:latest
+    container_name: deephaven
+    restart: always
+    expose:
+      - "10000"
+    environment:
+      - START_HELIX=true
+    volumes:
+      - deephaven_data:/data
+      - ./ui:/notebooks/ui
+    depends_on:
+      - postgres
+      - redis
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_viz
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - ./.grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - postgres
+
+  # --- PERIMETER DEFENSE ---
+  nginx:
+    image: nginx:alpine
+    container_name: cemini_proxy
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - cemini_os
+      - grafana
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare_tunnel
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+    depends_on:
+      - nginx
+
+volumes:
+  postgres_data:
+  redis_data:
+  deephaven_data:
+  arcticdb_data:

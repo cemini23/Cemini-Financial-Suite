@@ -1,0 +1,6 @@
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+RUN pip install --no-cache-dir psycopg2-binary redis pandas
+# We will mount the code or copy logic later
+CMD ["python", "-c", "import time; print('🖋️ The Scribe (Logger) is active. Waiting for records...'); [time.sleep(60) for _ in iter(int, 1)]"]

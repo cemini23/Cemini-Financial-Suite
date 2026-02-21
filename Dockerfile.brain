@@ -1,0 +1,28 @@
+# Dockerfile.brain
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+# Install dependencies for LangGraph and Redis communication
+RUN pip install --no-cache-dir \
+    langgraph \
+    pydantic \
+    pydantic-ai \
+    redis \
+    pandas \
+    polars \
+    requests \
+    python-dotenv \
+    questdb \
+    psycopg2-binary
+
+# Copy the core architecture and agent logic
+COPY ./core /app/core
+COPY ./agents /app/agents
+
+# Entry point: In production, this would be a runner script
+# that periodically triggers the LangGraph workflow.
+CMD ["python", "-m", "agents.orchestrator"]
