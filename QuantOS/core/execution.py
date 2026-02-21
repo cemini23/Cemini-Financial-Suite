@@ -9,6 +9,7 @@ from core import ledger
 from core import notifier
 import os
 import asyncio
+import types
 
 logger = get_logger("execution")
 
@@ -22,7 +23,7 @@ class ExecutionEngine:
         Calculates a 'Marketable Limit Order' price to balance fill rate vs slippage.
         """
         max_slippage_pct = settings.get("max_slippage_pct", 0.5) / 100.0
-        
+
         try:
             current_price = self.broker.get_latest_price(symbol)
             if current_price <= 0:
@@ -34,10 +35,10 @@ class ExecutionEngine:
                 limit_price = round(current_price * (1 - max_slippage_pct), 3)
 
             logger.info(f"⚡ Smart Limit ({side.upper()}): Current ${current_price:.2f} -> Limit ${limit_price:.2f}")
-            
+
             # Place the limit order
             res = self.broker.submit_order(symbol, amount, side, order_type="limit", limit_price=limit_price)
-            
+
             if res is None:
                 return {"error": "Broker returned no response"}, 0
 
@@ -58,7 +59,7 @@ class ExecutionEngine:
         """
         # TEST OVERRIDE: 10% confidence for testing, otherwise use settings (default 75)
         min_threshold = settings.get("min_confidence_threshold", 75)
-        
+
         if score < min_threshold:
             logger.info(f"⏭️ Skipping {symbol}: Score {score} is below threshold {min_threshold}.")
             return False
@@ -71,23 +72,44 @@ class ExecutionEngine:
 
         logger.info(f"🚀 GATEKEEPER APPROVED: {symbol} with score {score}!")
 
+        # --- RISK CHECK: Portfolio Exposure Gate ---
+        try:
+            from core.risk_manager import RiskManager
+            _risk_mgr = RiskManager(self.broker)
+            _equity = self.broker.get_buying_power()
+            _positions = self.broker.get_positions() or []
+            _portfolio = types.SimpleNamespace(
+                equity=_equity,
+                options_market_value=0,
+                positions=[
+                    types.SimpleNamespace(market_value=float(p.get('market_value', 0)))
+                    for p in _positions
+                ],
+            )
+            _exposure = _risk_mgr.check_exposure(_portfolio)
+            if _exposure != "HEALTHY":
+                logger.warning(f"⚠️ Risk gate blocked {symbol} buy: {_exposure}")
+                return False
+        except Exception as _re:
+            logger.warning(f"⚠️ Exposure check skipped for {symbol}: {_re}")
+
         # 1. Calculate Position Size
         try:
             buying_power = self.broker.get_buying_power()
-            
+
             if buying_power <= 0:
                 logger.error("❌ Cannot calculate position size: Buying power is 0.")
                 return False
 
             buy_amount = money_manager.calculate_position_size(buying_power, score, min_threshold=min_threshold)
-            
+
             if buy_amount <= 0:
                 logger.info(f"💰 Money Manager suggested $0 for {symbol}. Skipping.")
                 return False
 
             # 2. Execution
             is_paper = settings.get("environment", "LIVE").upper() == "PAPER"
-            
+
             if is_paper:
                 current_price = self.broker.get_latest_price(symbol)
                 logger.info(f"📝 PAPER BUY: {symbol} (${buy_amount:.2f} Simulated)")
@@ -97,7 +119,7 @@ class ExecutionEngine:
             else:
                 res, current_price = await self.execute_smart_order(symbol, "buy", buy_amount, settings)
                 if "error" not in res:
-                    qty = buy_amount / current_price 
+                    qty = buy_amount / current_price
                     broker_name = getattr(self.broker, 'name', 'unknown')
                     ledger.record_trade("BUY", symbol, current_price, qty, f"Score: {score}", tax_impact=0.0, broker=broker_name)
                     notifier.send_alert(f"🚨 **BUY:** {symbol} @ ${current_price:.2f} (Smart Limit)", self.webhook)
@@ -115,7 +137,7 @@ class ExecutionEngine:
         Submits a bracket order (OCO) with take profit and stop loss.
         """
         is_paper = settings.get("environment", "LIVE").upper() == "PAPER"
-        
+
         try:
             if is_paper:
                 current_price = self.broker.get_latest_price(symbol)
@@ -128,11 +150,11 @@ class ExecutionEngine:
                 if not hasattr(self.broker, 'submit_bracket_order'):
                     logger.error(f"❌ Broker {self.broker.name} does not support bracket orders.")
                     return False
-                
+
                 res = self.broker.submit_bracket_order(symbol, amount, side, tp_price, sl_price)
                 if "error" not in res:
                     current_price = self.broker.get_latest_price(symbol)
-                    qty = amount / current_price 
+                    qty = amount / current_price
                     broker_name = getattr(self.broker, 'name', 'unknown')
                     ledger.record_trade("BUY", symbol, current_price, qty, "Bracket Order", tax_impact=0.0, broker=broker_name)
                     notifier.send_alert(f"🎯 **BRACKET BUY:** {symbol} @ ${current_price:.2f} | TP: ${tp_price} | SL: ${sl_price}", self.webhook)

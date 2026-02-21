@@ -10,7 +10,7 @@ services:
       - "5432"
     environment:
       - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=quest
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quest}
       - POSTGRES_DB=qdb
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -24,7 +24,7 @@ services:
       - "80"
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@cemini.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-admin}
     depends_on:
       - postgres
 
@@ -161,7 +161,7 @@ services:
       - DB_HOST=postgres
     volumes:
       - arcticdb_data:/data/arcticdb
-      - /Users/claudiobarone/.tokens:/root/.tokens
+      - ${TOKENS_PATH:-~/.tokens}:/root/.tokens
       - "./Kalshi by Cemini/private_key.pem:/app/private_key.pem"
       - ./archives:/mnt/archive
       - ./scripts:/app/scripts
@@ -206,7 +206,7 @@ services:
     expose:
       - "3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASS:-admin}
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:

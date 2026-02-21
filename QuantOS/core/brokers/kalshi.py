@@ -20,25 +20,31 @@ logger = get_logger("kalshi_adapter")
 class KalshiAdapter(BrokerInterface):
     def __init__(self):
         self.name = "kalshi"
-        # Since QuantOS and Kalshi projects are side-by-side on Desktop
-        self.base_path = "/Users/claudiobarone/Desktop/Kalshi by Cemini"
-        
-        # Load from Kalshi's .env specifically
-        from dotenv import dotenv_values
-        kalshi_env = dotenv_values(os.path.join(self.base_path, ".env"))
-        
-        self.key_id = kalshi_env.get("KALSHI_API_KEY")
-        self.private_key_path = os.path.join(self.base_path, "private_key.pem")
+        # Resolve path from env var so this works in Docker and on any machine
+        self.base_path = os.getenv(
+            "KALSHI_SUITE_PATH",
+            os.path.join(os.path.dirname(__file__), "../../../../Kalshi by Cemini")
+        )
+
+        # Load from Kalshi's .env specifically, fall back to environment
+        try:
+            from dotenv import dotenv_values
+            kalshi_env = dotenv_values(os.path.join(self.base_path, ".env"))
+        except Exception:
+            kalshi_env = {}
+
+        self.key_id = kalshi_env.get("KALSHI_API_KEY") or os.getenv("KALSHI_API_KEY")
+        self.private_key_path = os.getenv("KALSHI_KEY_PATH", "/app/private_key.pem")
         self.api_client = None
 
     def authenticate(self):
         if not kalshi_python:
             logger.error("❌ kalshi-python SDK not installed.")
             return False
-        
+
         if not self.key_id:
             return False
-            
+
         if not os.path.exists(self.private_key_path):
             logger.error(f"❌ Kalshi credentials or private_key.pem missing at {self.private_key_path}.")
             return False

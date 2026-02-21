@@ -56,9 +56,33 @@ class KalshiRESTAdapter(BaseExecutionAdapter):
         return 0.0
 
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:
-        print(f"🚀 Kalshi REST: Simulating order for {signal.ticker_or_event}...")
-        return {
-            "status": "rest_order_simulated",
+        if not self.private_key:
+            return {"status": "error", "message": "Private key not loaded"}
+
+        import httpx
+
+        path = "/portfolio/orders"
+        # count: 1 contract per 1% allocation (proposed_allocation_pct is 0.0–0.10)
+        count = max(1, round(signal.proposed_allocation_pct * 100))
+        payload = {
             "ticker": signal.ticker_or_event,
-            "environment": self.environment
+            "action": signal.action,
+            "type": "market",
+            "count": count,
+            "side": "yes",
+            "yes_price": 99,  # market-order sentinel per Kalshi API
         }
+        # _get_auth_headers signs: timestamp + method + path (body="" is a no-op)
+        headers = self._get_auth_headers("POST", path)
+        url = f"{self.base_url}{path}"
+
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(url, headers=headers, json=payload, timeout=10.0)
+            if resp.status_code in [200, 201]:
+                print(f"✅ Kalshi REST: Order placed — {signal.ticker_or_event} ({count} contracts)")
+                return {"status": "success", "ticker": signal.ticker_or_event, "order": resp.json()}
+            else:
+                return {"status": "error", "code": resp.status_code, "detail": resp.text}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}

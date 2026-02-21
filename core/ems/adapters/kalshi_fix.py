@@ -11,23 +11,29 @@ class KalshiFIXAdapter(BaseExecutionAdapter):
         asyncio.create_task(self.fix_client.connect_and_logon())
 
     async def get_buying_power(self) -> float:
-        # In institutional setups, balance is often tracked locally via Execution Reports (35=8)
-        # or queried via a separate REST management API.
-        return 1000.00 
+        # Delegate to the REST adapter for a live account balance from the Kalshi API.
+        import os
+        from core.ems.adapters.kalshi_rest import KalshiRESTAdapter
+        rest = KalshiRESTAdapter(
+            key_id=os.getenv("KALSHI_API_KEY", ""),
+            private_key_path=os.getenv("KALSHI_KEY_PATH", "/app/private_key.pem"),
+            environment=os.getenv("KALSHI_ENVIRONMENT", "demo"),
+        )
+        return await rest.get_buying_power()
 
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:
         if not self.fix_client.is_connected:
             return {"status": "error", "message": "FIX Session not connected"}
-            
+
         # Standardizing quantities for prediction markets
         qty = 100 # Example fixed size
         price = 0.50 # Example limit price
-        
+
         await self.fix_client.send_order(
             ticker=signal.ticker_or_event,
             action=signal.action,
             qty=qty,
             price=price
         )
-        
+
         return {"status": "fix_order_dispatched", "ticker": signal.ticker_or_event}

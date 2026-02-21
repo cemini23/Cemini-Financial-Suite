@@ -6,6 +6,7 @@ import asyncio
 import os
 import threading
 import pandas as pd
+import redis.asyncio as aioredis
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -39,7 +40,8 @@ class TradingEngine:
         self.history_cache = {}
         self.last_history_sync = 0
         self.report_sent_today = False
-        self.fresh_start_pending = True # Re-armed to clean up last few positions
+        # fresh_start is triggered via Redis key 'quantos:fresh_start_requested'
+        # Run: python QuantOS/scripts/trigger_fresh_start.py to request a liquidation
 
         # Adaptive Risk Matrix: (min_volume_multiplier, min_drop_percentage)
         self.thresholds = {
@@ -89,7 +91,7 @@ class TradingEngine:
                         time.sleep(5.0) # Increased to 5s for the final stubborn few
                     except Exception as e:
                         logger.error(f"❌ Failed to liquidate {symbol}: {e}")
-            
+
             logger.info("✅ Liquidation cycle completed.")
         except Exception as e:
             logger.error(f"❌ Liquidation failed: {e}")
@@ -108,7 +110,7 @@ class TradingEngine:
                 logger.info("✅ Broker session established.")
         except Exception as e:
             logger.error(f"❌ Broker init error: {e}")
-            
+
         ledger.init_ledger()
         self.execution_engine = ExecutionEngine(self.broker)
         self.strategy_matrix = MasterStrategyMatrix(self, cloud_signals, x_oracle)
@@ -119,22 +121,22 @@ class TradingEngine:
         import pytz
         tz = pytz.timezone('US/Eastern')
         now = datetime.now(tz)
-        
+
         # Weekday check (0=Monday, 6=Sunday)
         if now.weekday() > 4:
             return False
-            
+
         # Time check (9:30 AM - 4:00 PM)
         market_open = now.replace(hour=9, minute=30, second=0, microsecond=0)
         market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
-        
+
         return market_open <= now <= market_close
 
     async def _sync_historical_data(self, watchlist):
         """Fetches daily historicals for the entire watchlist in optimized chunks."""
         import time
         import robin_stocks.robinhood as rh
-        
+
         if time.time() - self.last_history_sync < 1800 and self.history_cache:
             return
 
@@ -146,24 +148,24 @@ class TradingEngine:
             for i in range(0, len(watchlist), chunk_size):
                 chunk = watchlist[i:i + chunk_size]
                 batch_history = rh.stocks.get_stock_historicals(chunk, interval='day', span='year')
-                
+
                 if batch_history:
                     for entry in batch_history:
                         if entry and 'symbol' in entry:
                             ticker = entry['symbol']
                             if ticker not in new_cache: new_cache[ticker] = []
                             new_cache[ticker].append(entry)
-                
+
                 # Small sleep between chunks to be polite to the API
                 await asyncio.sleep(0.5)
-            
+
             if new_cache:
                 self.history_cache = new_cache
                 self.last_history_sync = time.time()
                 logger.info(f"✅ SYNC Complete. Cached {len(new_cache)} assets.")
             else:
                 logger.warning("⚠️ SYNC: No data returned from Robinhood.")
-                
+
         except Exception as e:
             logger.warning(f"⚠️ History Sync Failed: {e}")
 
@@ -182,10 +184,22 @@ class TradingEngine:
             is_open = self.is_market_open()
 
             # --- FRESH START PROTOCOL ---
-            if is_open and self.fresh_start_pending:
-                self.liquidate_all_positions()
-                self.fresh_start_pending = False
-                logger.info("✨ Clean Slate Achieved. Resuming normal operations.")
+            # Triggered only when 'quantos:fresh_start_requested' Redis key is 'true'.
+            # Use QuantOS/scripts/trigger_fresh_start.py to request a liquidation.
+            if is_open:
+                try:
+                    redis_host = os.getenv('REDIS_HOST', 'redis')
+                    _r = aioredis.from_url(f"redis://{redis_host}:6379", decode_responses=True)
+                    try:
+                        fresh_requested = await _r.get('quantos:fresh_start_requested')
+                        if fresh_requested and fresh_requested.lower() == 'true':
+                            self.liquidate_all_positions()
+                            await _r.set('quantos:fresh_start_requested', 'false')
+                            logger.info("✨ Clean Slate Achieved. Resuming normal operations.")
+                    finally:
+                        await _r.aclose()
+                except Exception as _e:
+                    logger.warning(f"⚠️ Fresh start Redis check failed: {_e}")
 
             # 1. Batch Sync Daily Data (Only if open, every 30m)
             if is_open:
@@ -201,7 +215,7 @@ class TradingEngine:
                 try:
                     if price <= 0: continue
                     valid_tickers += 1
-                    
+
                     # Update brain/harvester (Always record if we have a price from scanner)
                     brain.realtime_brain.update_price(ticker, price)
                     harvester.record_tick(ticker, price, 0)
@@ -211,11 +225,11 @@ class TradingEngine:
                     # Get cached history
                     history = self.history_cache.get(ticker)
                     if not history: continue
-                    
+
                     df = pd.DataFrame(history)
                     df['Close'] = pd.to_numeric(df['close_price'], errors='coerce')
                     rsi_rt = brain.realtime_brain.calculate_rsi(ticker)
-                    
+
                     # Core Analysis
                     score, indicators = calculate_confidence_score(ticker, df, rsi_rt, is_simulation=False)
 
@@ -223,15 +237,15 @@ class TradingEngine:
                     if not ledger.has_position(ticker):
                         await execution_engine.execute_buy(ticker, score, indicators, settings_manager.settings)
                         await asyncio.sleep(1.0) # Rate limit safety
-                
+
                 except Exception as e:
                     logger.error(f"❌ Error processing {ticker}: {e}")
-            
+
             # --- 4. CLOUD SIGNAL PROCESSING (CONFLUENCE) ---
             if is_open:
                 # The MasterStrategyMatrix looks for confluence between BigQuery anomalies and FinBERT sentiment
                 await self.strategy_matrix.evaluate_market()
-            
+
             # Sunset Report Check
             await self._check_sunset_report(is_open)
 
@@ -243,11 +257,11 @@ class TradingEngine:
         tz = pytz.timezone('US/Eastern')
         now = datetime.now(tz)
         today_str = now.strftime("%Y-%m-%d")
-        
+
         # Reset flag on new day
         if hasattr(self, '_last_report_day') and self._last_report_day != today_str:
             self.report_sent_today = False
-        
+
         self._last_report_day = today_str
 
         # Check if it is 16:15 or later and report hasn't been sent
@@ -256,7 +270,7 @@ class TradingEngine:
             try:
                 from strategies import analytics
                 from core.reporting import SunsetReporter
-                
+
                 stats = analytics.get_performance_stats()
                 # Check for any trade activity today (Buys or Sells)
                 if stats.get("today_activity", 0) == 0:
@@ -275,10 +289,10 @@ class TradingEngine:
     async def start_async(self):
         self.is_running = True
         self.initialize()
-        
+
         # Start trade loop
         tasks = [self.trade_loop()]
-        
+
         # Check for Alpaca or IBKR connectivity
         alpaca_key = os.getenv("ALPACA_API_KEY")
         alpaca_active = alpaca_key and "your_" not in alpaca_key.lower()
@@ -310,10 +324,10 @@ class TradingEngine:
             try:
                 if not self.broker:
                     self.initialize()
-                
+
                 execution_engine = ExecutionEngine(self.broker)
-                
-                # If qty is provided, we use it directly. 
+
+                # If qty is provided, we use it directly.
                 # Otherwise, we ask money_manager for a recommended size.
                 if qty:
                     price = self.broker.get_latest_price(symbol)
@@ -321,14 +335,14 @@ class TradingEngine:
                 else:
                     buying_power = self.broker.get_buying_power()
                     amount = money_manager.calculate_position_size(buying_power, 100) # Use max score for signals
-                
+
                 if amount <= 0:
                     logger.warning(f"⚠️ Signal execution failed: Calculated amount is $0 for {symbol}")
                     return
 
                 logger.info(f"📡 SIGNAL RECEIVED: {side.upper()} {symbol} (Signal Strength: 100)")
                 await execution_engine.execute_smart_order(symbol, side, amount, settings_manager.settings)
-                
+
             except Exception as e:
                 logger.error(f"❌ Cross-broker trade failed: {e}")
 
@@ -339,40 +353,40 @@ class TradingEngine:
     async def execute_dip_buy(self, symbol, current_price, category, execution_engine):
         """Executes a bracket order for automated risk management."""
         logger.info(f"🚀 ENGINE: Firing Mean-Reversion BRACKET BUY for {symbol} at ${current_price}...")
-        
+
         # 1. Define category-specific exit rules (Take Profit %, Stop Loss %)
         # Formatting these for the adaptive risk strategy
         exit_rules = {
-            "indices": (1.0, -0.5),       
-            "mega_cap": (2.0, -1.0),      
-            "high_beta": (4.0, -2.0),     
-            "crypto_native": (3.0, -1.5)  
+            "indices": (1.0, -0.5),
+            "mega_cap": (2.0, -1.0),
+            "high_beta": (4.0, -2.0),
+            "crypto_native": (3.0, -1.5)
         }
-        
+
         tp_pct, sl_pct = exit_rules.get(category, (2.0, -1.0))
-        
+
         # 2. Calculate absolute price targets
         take_profit_price = round(current_price * (1 + (tp_pct / 100.0)), 2)
         stop_loss_price = round(current_price * (1 + (sl_pct / 100.0)), 2)
-        
+
         logger.info(f"🎯 MATRIX ARMED [{category.upper()}]: Target ${take_profit_price} | Stop ${stop_loss_price}")
-        
+
         # 3. Calculate Position Size
         buying_power = self.broker.get_buying_power()
         # High confidence for these tactical setups
-        buy_amount = money_manager.calculate_position_size(buying_power, 90) 
-        
+        buy_amount = money_manager.calculate_position_size(buying_power, 90)
+
         if buy_amount <= 0:
             logger.info(f"💰 Money Manager suggested $0 for {symbol}. Skipping.")
             return
 
         # 4. Submit Bracket Order
         await execution_engine.submit_bracket_order(
-            symbol, 
-            buy_amount, 
-            "buy", 
-            take_profit_price, 
-            stop_loss_price, 
+            symbol,
+            buy_amount,
+            "buy",
+            take_profit_price,
+            stop_loss_price,
             settings_manager.settings
         )
 
@@ -383,7 +397,7 @@ class TradingEngine:
             if price:
                 brain.realtime_brain.update_price(symbol, price)
                 harvester.record_tick(symbol, price, volume)
-                
+
                 # TRIGGER ANALYSIS ON REAL-TIME DATA
                 try:
                     # Get cached history
@@ -392,7 +406,7 @@ class TradingEngine:
                         df = pd.DataFrame(history)
                         df['Close'] = pd.to_numeric(df['close_price'], errors='coerce')
                         rsi_rt = brain.realtime_brain.calculate_rsi(symbol)
-                        
+
                         # Core Analysis
                         from strategies.analysis import calculate_confidence_score
                         score, indicators = calculate_confidence_score(symbol, df, rsi_rt, is_simulation=False)
@@ -404,7 +418,7 @@ class TradingEngine:
                             await execution_engine.execute_buy(symbol, score, indicators, settings_manager.settings)
                 except Exception as e:
                     logger.error(f"Error in on_market_update analysis for {symbol}: {e}")
-        
+
         elif data_type == "quote":
             # For now, we log quotes or use them for spread monitoring
             bid = data.get("bid")

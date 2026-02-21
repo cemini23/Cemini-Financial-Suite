@@ -35,50 +35,55 @@ def sentiment_analyst_node(state: TradingState):
 
 # --- CIO DEBATE NODE (Hedge Fund Rulebook & Kelly Criterion) ---
 
+def _parse_score(analysis_text: str) -> float:
+    """Maps analyst text to a numeric score: BULLISH=1.0, BEARISH=0.0, NEUTRAL=0.5."""
+    t = analysis_text.upper()
+    if "BULLISH" in t:
+        return 1.0
+    if "BEARISH" in t:
+        return 0.0
+    return 0.5
+
+
 def cio_debate_node(state: TradingState):
     """
     Acts as the Chief Investment Officer.
-    Implements the 'Autopilot Protocol' and 'Hedge Fund Rulebook'.
+    Aggregates scores from technical, fundamental, and sentiment analysts.
+    BUY if avg > 0.7, SELL if avg < 0.3, HOLD otherwise.
+    LLM call is a placeholder for future integration.
     """
     tech = state['technical_analysis']
     fund = state['fundamental_analysis']
     sent = state['sentiment_analysis']
 
-    # SYSTEM PROMPT FOR CIO LLM
-    prompt = f"""
-    Evaluate the following analyst reports for {state['symbol']}.
-    - Tech: {tech}
-    - Fund: {fund}
-    - Sent: {sent}
+    tech_score = _parse_score(tech)
+    fund_score = _parse_score(fund)
+    sent_score = _parse_score(sent)
+    avg_score = (tech_score + fund_score + sent_score) / 3.0
 
-    HEDGE FUND RULEBOOK:
-    1. 3-Way Consensus (BULLISH/BULLISH/BULLISH) -> 0.95 Confidence, EXECUTE.
-    2. Sentiment Priority: If Sentiment is BULLISH and Volume > 2x Avg -> Weight Sentiment at 70%.
-    3. Conflict: If 2+ reports are NEUTRAL -> PASS.
-    4. Max Position: Absolute cap of $250 USD.
-    5. Kelly Criterion: Size = (Confidence * 2) - 1. Multiply this factor by the $250 cap.
+    if avg_score > 0.7:
+        action, verdict = "BUY", "EXECUTE"
+        confidence = avg_score
+    elif avg_score < 0.3:
+        action, verdict = "SELL", "EXECUTE"
+        confidence = 1.0 - avg_score
+    else:
+        action, verdict = "HOLD", "PASS"
+        confidence = 0.5
 
-    Output JSON:
-    {{
-      "verdict": "EXECUTE/PASS/WATCH",
-      "confidence_score": 0.0-1.0,
-      "action": "BUY/SELL/HOLD",
-      "reasoning": "Explain the weighted logic applied"
-    }}
-    """
-
-    # Simulated LLM decision logic
-    # --- SAFETY: Allowing execution but capped at $4.99 ---
-    confidence = 0.85
-    kelly_factor = (confidence * 2) - 1 # 0.70
-    calculated_size = min(4.99, 4.99 * kelly_factor) # Strictly capped at $4.99
+    kelly_factor = max(0.0, (confidence * 2) - 1)
+    calculated_size = min(4.99, 4.99 * kelly_factor)
 
     decision = {
-        "verdict": "EXECUTE",
-        "confidence_score": confidence,
-        "action": "BUY",
+        "verdict": verdict,
+        "confidence_score": round(confidence, 2),
+        "action": action,
         "position_size": round(calculated_size, 2),
-        "reasoning": f"TESTING: Bullish bias detected. Executing micro-position for {state['symbol']}."
+        "reasoning": (
+            f"Score-weighted consensus for {state['symbol']}: "
+            f"tech={tech_score:.1f}, fund={fund_score:.1f}, sent={sent_score:.1f} "
+            f"→ avg={avg_score:.2f} → {action}"
+        )
     }
 
     return {
@@ -131,11 +136,38 @@ async def publish_signal_to_bus(state: TradingState):
         except Exception as qe:
             print(f"⚠️ UI: Could not log to Postgres: {qe}")
 
-        # Connect to Redis
+        # Connect to Redis and publish signal
         redis_host = os.getenv('REDIS_HOST', 'redis')
         r = redis.from_url(f"redis://{redis_host}:6379", decode_responses=True)
-
-        # --- POSITION LOCK CHECK ---
+        try:
+            payload = json.dumps({
+                "pydantic_signal": {
+                    "ticker_or_event": state['symbol'],
+                    "action": decision['action'].lower(),
+                    "target_system": state.get('target_system', 'QuantOS'),
+                    "target_brokerage": (
+                        "Kalshi" if state.get('target_system') == "Kalshi By Cemini"
+                        else "Robinhood"
+                    ),
+                    "asset_class": "equity",
+                    "confidence_score": decision['confidence_score'],
+                    "proposed_allocation_pct": min(
+                        0.10, state.get('position_size', 0.0) / 250.0
+                    ),
+                    "agent_reasoning": decision.get(
+                        'reasoning', 'Automated signal from orchestrator.'
+                    ),
+                },
+                "decision": decision,
+            })
+            await r.publish('trade_signals', payload)
+            print(f"📡 Signal published → trade_signals: {state['symbol']} {decision['action']}")
+            return {"execution_status": "SIGNAL_PUBLISHED"}
+        except Exception as pub_e:
+            print(f"❌ Failed to publish signal to Redis: {pub_e}")
+            return {"execution_status": "PUBLISH_FAILED"}
+        finally:
+            await r.aclose()
 
     return {"execution_status": "NO_ACTION_TAKEN"}
 

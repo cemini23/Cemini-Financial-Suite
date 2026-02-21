@@ -41,13 +41,22 @@ jobs:
 
       # 1. PII & SECRET AUDIT (The Gatekeeper)
       # This scans for hardcoded API keys, passwords, and PII
-      - name: Scan for PII and Secrets
+
+      # For pull requests: scan the diff between PR base and head
+      - name: TruffleHog Secret Scan (pull_request)
         uses: trufflesecurity/trufflehog@main
         with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          extra_args: --only-verified --results=verified,unknown
+        if: github.event_name == 'pull_request'
+
+      # For direct pushes to main: scan only the commits in this push
+      - name: TruffleHog Secret Scan (push)
+        uses: trufflesecurity/trufflehog@main
+        with:
+          base: ${{ github.event.before }}
+          head: ${{ github.event.after }}
           extra_args: --only-verified
+        if: github.event_name == 'push'
 
       # 2. AUTHENTICATE TO GOOGLE CLOUD
       # Uses the Workload Identity Federation string you generated
@@ -64,8 +73,8 @@ jobs:
         run: |
           echo "Deploying Cemini Suite..."
           gcloud compute ssh instance-20260220-132604 --zone=us-central1-c --command="
-            cd ~/trading-bots && 
-            git pull origin main && 
-            source venv/bin/activate && 
+            cd ~/trading-bots &&
+            git pull origin main &&
+            source venv/bin/activate &&
             pip install -r requirements.txt
           "
