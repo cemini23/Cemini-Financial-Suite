@@ -7,6 +7,7 @@ from modules.social_alpha.analyzer import SocialAnalyzer
 from modules.geo_pulse.monitor import GeoPulseMonitor
 from modules.market_rover.rover import MarketRover
 from app.core.state import GLOBAL_STATE, update_conviction
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ async def get_system_status():
     try:
         key_id = settings.KALSHI_API_KEY
         private_key_path = settings.KALSHI_PRIVATE_KEY_PATH
-        
+
         if key_id and os.path.exists(private_key_path):
             active_key = f"{key_id[:8]}...{key_id[-4:]}"
             with open(private_key_path, 'rb') as f:
@@ -106,7 +107,7 @@ async def get_market_rover():
     result = await rover_engine.scan_markets()
     findings = result.get('findings', [])
     best_confidence = max([f.get('confidence', 0) for f in findings]) if findings else 0
-    
+
     update_conviction(
         module="Market Rover",
         score=int(best_confidence * 100),
@@ -138,15 +139,15 @@ async def get_weather_alpha(city_code: str):
     High-performance async route for Weather Arbitrage.
     """
     result = await weather_engine.analyze_market(city_code.upper())
-    
+
     # Send Intelligence to the Global State
     score = 85 if result['opportunities'] else 20
     reason = result['opportunities'][0]['bracket'] if result['opportunities'] else "No Edge"
-    
+
     update_conviction(
-        module="Weather Alpha", 
-        score=score, 
-        signal="ARBITRAGE" if score > 50 else "WAIT", 
+        module="Weather Alpha",
+        score=score,
+        signal="ARBITRAGE" if score > 50 else "WAIT",
         reason=reason
     )
     return result
@@ -167,7 +168,7 @@ async def get_musk_prediction():
     result = await musk_engine.predict_today()
     status = result.get('prediction', {}).get('current_status', 'UNKNOWN')
     score = 90 if "HYPER-ACTIVE" in status else 40
-    
+
     update_conviction(
         module="Musk Monitor",
         score=score,
@@ -200,7 +201,7 @@ async def get_btc_analytics(limit: int = 50):
     from sqlalchemy import select
     from app.core.database import AsyncSessionLocal
     from app.models.vault import BTCHarvest
-    
+
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(BTCHarvest).order_by(BTCHarvest.timestamp.desc()).limit(limit)
@@ -223,12 +224,12 @@ async def update_settings(updates: dict):
     """
     from app.core.settings_manager import settings_manager
     current = settings_manager.get_settings()
-    
+
     # Update only provided fields
     for key, value in updates.items():
         if hasattr(current, key):
             setattr(current, key, value)
-        
+
     settings_manager.save_settings(current)
     return {"status": "success"}
 
@@ -248,14 +249,14 @@ async def get_portfolio():
     try:
         key_id = settings.KALSHI_API_KEY
         private_key_path = settings.KALSHI_PRIVATE_KEY_PATH
-        
+
         with open(private_key_path, 'rb') as f:
             private_key = serialization.load_pem_private_key(f.read(), password=None)
 
         method = "GET"
         path = "/trade-api/v2/portfolio/positions"
         url = f"https://api.elections.kalshi.com{path}"
-        
+
         timestamp = str(int(time.time() * 1000))
         msg = timestamp + method + path
         signature = private_key.sign(
@@ -278,7 +279,7 @@ async def get_portfolio():
                 data = resp.json()
                 # Correct key is 'market_positions' in v2
                 positions = data.get('market_positions', [])
-                
+
                 result = []
                 for p in positions:
                     if p.get('position', 0) != 0:
