@@ -31,9 +31,6 @@ jobs:
   audit-and-deploy:
     needs: lint
     runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write' # Required for requesting the JWT from Google
 
     steps:
       - name: Checkout Code
@@ -64,68 +61,45 @@ jobs:
           extra_args: --only-verified
         if: github.event_name == 'push'
 
-      # 2. AUTHENTICATE TO GOOGLE CLOUD
-      # Uses Workload Identity Federation — no long-lived service account keys.
-      # WIF pool: github-pool | provider: github-provider
-      # Attribute condition must include: assertion.repository == 'cemini23/Cemini-Financial-Suite'
-      # If this step fails with "credential rejected by attribute condition", run:
-      #   gcloud iam workload-identity-pools providers update-oidc github-provider \
-      #     --project=gemini-financial-suite --location=global \
-      #     --workload-identity-pool=github-pool \
-      #     --attribute-condition="assertion.repository_owner == 'cemini23' && assertion.repository == 'cemini23/Cemini-Financial-Suite'"
-      - name: Authenticate to Google Cloud
-        id: auth
-        continue-on-error: false
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: 'projects/1002646645680/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'github-action-sa@gemini-financial-suite.iam.gserviceaccount.com'
-
-      - name: Verify GCP Auth
-        if: failure() && steps.auth.outcome == 'failure'
+      # 2. SECURE DEPLOYMENT VIA SSH
+      # Requires a GitHub secret: DEPLOY_SSH_KEY (private key for root@5.161.53.103)
+      # To set up: Settings → Secrets → Actions → New repository secret
+      #   Name: DEPLOY_SSH_KEY
+      #   Value: contents of your private key (~/.ssh/id_ed25519 or similar)
+      - name: Set up SSH key
         run: |
-          echo "::error::GCP auth failed. Most likely cause: WIF attribute condition does not match this repo."
-          echo "::error::Expected repo in condition: cemini23/Cemini-Financial-Suite"
-          echo "::error::Run this in your terminal to fix:"
-          echo "::error::  gcloud iam workload-identity-pools providers update-oidc github-provider \\"
-          echo "::error::    --project=gemini-financial-suite --location=global \\"
-          echo "::error::    --workload-identity-pool=github-pool \\"
-          echo "::error::    --attribute-condition=\"assertion.repository_owner == 'cemini23' && assertion.repository == 'cemini23/Cemini-Financial-Suite'\""
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 5.161.53.103 >> ~/.ssh/known_hosts
 
-      # 3. SECURE DEPLOYMENT VIA SSH
-      # This reaches into your VM to update the code only if the scan passes
-      - name: Update Bot on VM
+      - name: Update Bot on Server
         id: deploy
         continue-on-error: false
         run: |
-          echo "Deploying Cemini Suite..."
-          gcloud compute ssh instance-20260220-132604 --zone=us-central1-c --command="
+          echo "Deploying Cemini Suite to 5.161.53.103..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes root@5.161.53.103 "
             set -e &&
-            cd ~/trading-bots &&
+            cd /opt/cemini &&
             git pull origin main &&
-            source venv/bin/activate &&
-            pip install -r requirements.txt &&
-            [ -f .env ] || { echo 'ERROR: .env missing on VM — aborting docker deploy'; exit 1; } &&
+            [ -f .env ] || { echo 'ERROR: .env missing on server — aborting docker deploy'; exit 1; } &&
             docker compose down &&
             docker compose up --build -d &&
             sleep 10 &&
             docker compose ps
           "
 
-      # 4. CI SUMMARY — always runs so you can see results at a glance
+      # 3. CI SUMMARY — always runs so you can see results at a glance
       - name: CI Summary
         if: always()
         run: |
           echo "=== CI RESULTS ==="
-          echo "GCP Auth:  ${{ steps.auth.outcome }}"
-          echo "Deploy:    ${{ steps.deploy.outcome }}"
+          echo "Security Scan: ${{ steps.security.outcome }}"
+          echo "Deploy:        ${{ steps.deploy.outcome }}"
           echo ""
-          if [ "${{ steps.auth.outcome }}" = "failure" ]; then
-            echo "⚠️  Auth failed — check WIF attribute condition (see 'Authenticate to Google Cloud' step)"
-          fi
           if [ "${{ steps.deploy.outcome }}" = "failure" ]; then
-            echo "⚠️  Deploy failed — SSH or docker compose error on VM"
+            echo "⚠️  Deploy failed — SSH or docker compose error on server"
           fi
-          if [ "${{ steps.auth.outcome }}" = "success" ] && [ "${{ steps.deploy.outcome }}" = "success" ]; then
-            echo "✅ All systems deployed successfully"
+          if [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            echo "✅ Deployed successfully to root@5.161.53.103:/opt/cemini"
           fi
