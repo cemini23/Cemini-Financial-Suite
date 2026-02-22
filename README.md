@@ -19,70 +19,33 @@ Install these tools before anything else:
 | **Python** | 3.11+ | [python.org/downloads](https://www.python.org/downloads/) |
 | **Docker Desktop** | Latest | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
 
-> **Windows users:** Enable WSL2 in Docker Desktop settings. All commands below run in **PowerShell** unless noted.
+> **Windows users:** Enable WSL2 in Docker Desktop settings. When installing Python, check **"Add Python to PATH"**.
 
 ---
 
-### Step 1 — Clone the Repository
+### Quick Setup (Recommended)
 
-**Mac / Linux:**
+Clone the repo, then run the setup script for your platform — it handles venv creation, dependency install, and `.env` copying automatically.
+
+**Mac / Linux**
 ```bash
 git clone https://github.com/cemini23/Cemini-Financial-Suite.git
 cd Cemini-Financial-Suite
+./setup.sh
 ```
 
-**Windows (PowerShell):**
-```powershell
+**Windows (Command Prompt or double-click)**
+```bat
 git clone https://github.com/cemini23/Cemini-Financial-Suite.git
 cd Cemini-Financial-Suite
+setup.bat
 ```
+
+Both scripts will print `Setup complete! Edit .env with your API keys then run: docker compose up -d` when finished.
 
 ---
 
-### Step 2 — Create a Virtual Environment
-
-**Mac / Linux:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-**Windows (PowerShell):**
-```powershell
-python -m venv venv
-venv\Scripts\Activate.ps1
-```
-
-> If PowerShell blocks the script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` first.
-
----
-
-### Step 3 — Install Dependencies
-
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-> **Note:** `torch` and `nautilus-trader` are large packages (~2–4 GB). If you only need the Docker stack (recommended), you can skip them:
-> ```bash
-> pip install -r requirements.txt --ignore-requires-python \
->   $(grep -v 'torch\|nautilus' requirements.txt | grep -v '^#' | tr '\n' ' ')
-> ```
-
----
-
-### Step 4 — Configure Environment Variables
-
-**Mac / Linux:**
-```bash
-cp .env.example .env
-```
-
-**Windows (PowerShell):**
-```powershell
-copy .env.example .env
-```
+### Step 1 — Configure Environment Variables
 
 Open `.env` in any text editor and fill in your credentials:
 
@@ -98,7 +61,7 @@ DISCORD_WEBHOOK_URL=your_discord_webhook   # optional but recommended
 
 ---
 
-### Step 5 — Launch the Full Stack
+### Step 2 — Launch the Full Stack
 
 ```bash
 docker compose up -d --build
@@ -122,7 +85,7 @@ This starts all services defined in `docker-compose.yml`:
 
 ---
 
-### Step 6 — Verify the Stack is Running
+### Step 3 — Verify the Stack is Running
 
 ```bash
 docker compose ps
@@ -144,6 +107,38 @@ Expected output:
 ```
 ✅ SUCCESS: Test signal sent.
 ```
+
+---
+
+### Manual Setup (Alternative to setup scripts)
+
+<details>
+<summary>Expand for step-by-step manual instructions</summary>
+
+**Create a virtual environment:**
+
+| Mac / Linux | Windows |
+| :--- | :--- |
+| `python3 -m venv .venv` | `python -m venv venv` |
+| `source .venv/bin/activate` | `venv\Scripts\activate` |
+
+> Windows PowerShell only: if activation is blocked, first run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+
+**Install dependencies:**
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+> **Note:** `torch` and `nautilus-trader` are large packages (~2–4 GB). If you only need the Docker stack (recommended for servers), you can skip them by commenting them out in `requirements.txt`.
+
+**Copy the env file:**
+
+| Mac / Linux | Windows |
+| :--- | :--- |
+| `cp .env.example .env` | `copy .env.example .env` |
+
+</details>
 
 ---
 
