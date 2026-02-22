@@ -2,6 +2,12 @@ from modules.satoshi_vision.charts import ChartReader
 from modules.satoshi_vision.technicals import TechnicalAnalyst
 import pandas as pd
 import asyncio
+import sys as _sys
+import os as _os
+_repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+if _repo_root not in _sys.path:
+    _sys.path.append(_repo_root)
+from core.intel_bus import IntelPublisher
 
 class SatoshiAnalyzer:
     def __init__(self):
@@ -23,7 +29,7 @@ class SatoshiAnalyzer:
             elif horizon == "SWING":
                 tf, limit = '4h', 200
             elif horizon == "MACRO":
-                tf, limit = '1d', 365 
+                tf, limit = '1d', 365
             else:
                 tf, limit = '1h', 100
 
@@ -35,11 +41,11 @@ class SatoshiAnalyzer:
             # 3. Apply Advanced Math
             df = self.ta.apply_advanced_indicators(df)
             curr = df.iloc[-1]
-            
+
             # 4. Dynamic Risk Management (The QuantOS Upgrade)
             atr = curr['ATR']
             current_price = curr['close']
-            
+
             # Safe Stop = 2x ATR | Target = 3x ATR (1.5 R/R Ratio)
             stop_loss = current_price - (2.0 * atr)
             take_profit = current_price + (3.0 * atr)
@@ -49,9 +55,9 @@ class SatoshiAnalyzer:
             reasons = []
 
             if horizon == "SCALP":
-                if curr['RSI'] < 30: 
+                if curr['RSI'] < 30:
                     score += 30; reasons.append("Oversold (RSI < 30)")
-                if curr['close'] < curr['BBL_20_2.0']: 
+                if curr['close'] < curr['BBL_20_2.0']:
                     score += 20; reasons.append("Bollinger Band Breakout (Lower)")
                 if curr['close'] > curr['VWAP_D']:
                     score += 15; reasons.append("Above Institutional VWAP")
@@ -83,6 +89,14 @@ class SatoshiAnalyzer:
             action = "WAIT / CHOP"
             if score >= 65: action = "ENTER LONG (CALL)"
             elif score <= 20: action = "ENTER SHORT (PUT)"
+
+            # Intel Bus: publish BTC sentiment for cross-system confluence
+            _btc_sentiment = max(-1.0, min(1.0, (score - 50) / 50.0))
+            await IntelPublisher.publish_async(
+                "intel:btc_sentiment", _btc_sentiment,
+                source_system="SatoshiAnalyzer",
+                confidence=min(1.0, abs(_btc_sentiment))
+            )
 
             return {
                 "market": symbol,

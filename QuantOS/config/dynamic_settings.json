@@ -9,7 +9,7 @@
     "backtest_min_score": 60,
     "force_test_trade": true,
     "max_positions": 30,
-    "environment": "LIVE",
+    "environment": "PAPER",
     "active_broker": "robinhood",
     "global_router_enabled": false,
     "primary_broker": "alpaca",

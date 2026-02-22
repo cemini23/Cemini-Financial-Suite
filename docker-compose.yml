@@ -35,7 +35,7 @@ services:
     restart: always
     expose:
       - "6379"
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-cemini_redis_2026}"]
     volumes:
       - redis_data:/data
 
@@ -159,6 +159,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - DB_HOST=postgres
+      - QUANTOS_HOST=signal_generator
     volumes:
       - arcticdb_data:/data/arcticdb
       - ${TOKENS_PATH:-~/.tokens}:/root/.tokens

@@ -1,6 +1,12 @@
 from modules.weather_alpha.sources import WeatherSource
 import httpx
 import time
+import sys as _sys
+import os as _os
+_repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+if _repo_root not in _sys.path:
+    _sys.path.append(_repo_root)
+from core.intel_bus import IntelPublisher
 
 class WeatherAnalyzer:
     def __init__(self):
@@ -86,6 +92,20 @@ class WeatherAnalyzer:
 
         # Sort by expected value
         all_opps = sorted(all_opps, key=lambda x: x.get('expected_value', 0), reverse=True)
+
+        # Intel Bus: publish weather edge map for cross-system confluence
+        city_edges = {}
+        for opp in all_opps:
+            city = opp.get("city", "")
+            if city:
+                city_edges[city] = max(city_edges.get(city, 0), opp.get("edge", 0))
+        if city_edges:
+            await IntelPublisher.publish_async(
+                "intel:weather_edge",
+                city_edges,
+                source_system="WeatherAnalyzer",
+                confidence=0.85
+            )
 
         return {
             "best_opportunity": all_opps[0] if all_opps else None,

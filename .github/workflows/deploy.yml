@@ -73,8 +73,14 @@ jobs:
         run: |
           echo "Deploying Cemini Suite..."
           gcloud compute ssh instance-20260220-132604 --zone=us-central1-c --command="
+            set -e &&
             cd ~/trading-bots &&
             git pull origin main &&
             source venv/bin/activate &&
-            pip install -r requirements.txt
+            pip install -r requirements.txt &&
+            [ -f .env ] || { echo 'ERROR: .env missing on VM — aborting docker deploy'; exit 1; } &&
+            docker compose down &&
+            docker compose up --build -d &&
+            sleep 10 &&
+            docker compose ps
           "

@@ -22,11 +22,11 @@ class DataHarvester:
         # Configuration from Environment
         self.project_id = os.getenv("BQ_PROJECT_ID")
         self.dataset_id = os.getenv("BQ_DATASET_ID")
-        self.table_id = os.getenv("BQ_TABLE_ID", "market_data")
-        
+        self.table_id = os.getenv("BQ_TABLE_ID", "market_ticks")
+
         # Service Account Path (if set, Google Client finds it automatically from GOOGLE_APPLICATION_CREDENTIALS)
         self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        
+
         if not self.project_id or not self.dataset_id:
             logger.error("❌ BigQuery configuration missing (BQ_PROJECT_ID/BQ_DATASET_ID)!")
             self.client = None
@@ -42,7 +42,7 @@ class DataHarvester:
         self.write_queue = queue.Queue()
         self.running = True
         self.last_tick = 0
-        
+
         # Start background writer thread
         self.writer_thread = threading.Thread(target=self._writer_loop, daemon=True)
         self.writer_thread.start()
@@ -53,7 +53,7 @@ class DataHarvester:
         self.last_tick = time.time()
         # BigQuery expects ISO format or datetime objects for TIMESTAMP
         timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        
+
         row = {
             "timestamp": timestamp,
             "symbol": symbol,
@@ -78,10 +78,10 @@ class DataHarvester:
                     batch.append(self.write_queue.get_nowait())
                 except queue.Empty:
                     break
-            
+
             if batch:
                 self._flush_to_bigquery(batch)
-            
+
             # Streaming latency: flush every 2 seconds
             time.sleep(2)
 
@@ -94,7 +94,7 @@ class DataHarvester:
         try:
             # client.insert_rows_json(table, json_rows)
             errors = self.client.insert_rows_json(self.table_ref, rows)
-            
+
             if errors == []:
                 # logger.debug(f"✅ HARVESTER: Successfully streamed {len(rows)} rows.")
                 pass

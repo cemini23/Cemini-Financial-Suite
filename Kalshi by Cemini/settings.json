@@ -1,6 +1,6 @@
 {
-    "trading_enabled": true,
-    "paper_mode": false,
+    "trading_enabled": false,
+    "paper_mode": true,
     "risk_level": "CONSERVATIVE",
     "priority_module": "BTC",
     "max_position_size": 10.0,

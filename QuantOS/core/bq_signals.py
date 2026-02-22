@@ -3,10 +3,15 @@ QuantOS™ v12.1.0 - BigQuery Signal Engine (Refined)
 Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 """
 import os
+import sys as _sys
 import time
 import threading
 from google.cloud import bigquery
 from core.logger_config import get_logger
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if _repo_root not in _sys.path:
+    _sys.path.append(_repo_root)
+from core.intel_bus import IntelPublisher
 
 logger = get_logger("bq_signals")
 
@@ -20,7 +25,7 @@ class CloudSignalEngine:
         self.project_id = os.getenv("BQ_PROJECT_ID")
         self.dataset = os.getenv("BQ_DATASET_ID")
         self.table = os.getenv("BQ_TABLE_ID", "market_ticks")
-        
+
         if not self.project_id or not self.dataset:
             logger.error("❌ BigQuery configuration missing for CloudSignalEngine!")
             self.client = None
@@ -35,7 +40,7 @@ class CloudSignalEngine:
 
         self.latest_signals = {"top_movers": [], "volume_spikes": []}
         self.running = True
-        
+
         if self.client:
             # Start background polling thread
             self.poller_thread = threading.Thread(target=self._poll_cloud_data, daemon=True)
@@ -50,8 +55,8 @@ class CloudSignalEngine:
                 self._update_volume_spikes()
             except Exception as e:
                 logger.error(f"⚠️  BigQuery Polling Error: {e}")
-            
-            time.sleep(60) 
+
+            time.sleep(60)
 
     def _update_volume_spikes(self):
         """Detects 300%+ volume spikes and calculates the 5-minute price change."""
@@ -60,53 +65,74 @@ class CloudSignalEngine:
 
         query = f"""
         WITH RecentData AS (
-          SELECT 
+          SELECT
             symbol,
             -- Get the first and last price of the last 5 minutes
             ARRAY_AGG(price ORDER BY timestamp ASC LIMIT 1)[OFFSET(0)] AS open_5m,
             ARRAY_AGG(price ORDER BY timestamp DESC LIMIT 1)[OFFSET(0)] AS close_5m,
-            SUM(volume) AS vol_5m 
+            SUM(volume) AS vol_5m
           FROM `{self.full_table_path}`
           WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 5 MINUTE)
           GROUP BY symbol
         ),
         AverageVolume AS (
-          SELECT 
-            symbol, 
+          SELECT
+            symbol,
             SUM(volume) / 12 AS avg_vol_5m -- 1 hour avg divided into 5-min chunks
           FROM `{self.full_table_path}`
           WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR)
           GROUP BY symbol
         )
-        SELECT 
-          r.symbol, 
+        SELECT
+          r.symbol,
           ROUND((r.vol_5m / NULLIF(a.avg_vol_5m, 0)), 2) AS volume_multiplier,
           ROUND(((r.close_5m - r.open_5m) / NULLIF(r.open_5m, 0)) * 100, 2) AS price_change_5m
-        FROM 
+        FROM
           RecentData r
-        JOIN 
+        JOIN
           AverageVolume a ON r.symbol = a.symbol
-        WHERE 
+        WHERE
           r.vol_5m > (a.avg_vol_5m * 3) -- Only return if volume is 3x normal
-        ORDER BY 
+        ORDER BY
           volume_multiplier DESC;
         """
-        
+
         try:
             query_job = self.client.query(query)
             results = query_job.result()
-            
+
             # Store the spikes in memory for the main engine to read
             self.latest_signals['volume_spikes'] = [
                 {
-                    "symbol": row.symbol, 
+                    "symbol": row.symbol,
                     "multiplier": row.volume_multiplier,
                     "price_change_5m": row.price_change_5m
-                } 
+                }
                 for row in results
             ]
             if self.latest_signals['volume_spikes']:
                 logger.info(f"🚨 SPIKE ALERT: {self.latest_signals['volume_spikes']}")
+
+            # Intel Bus: publish BTC volume spike for cross-system confluence
+            btc_spikes = [
+                s for s in self.latest_signals['volume_spikes']
+                if 'BTC' in s.get('symbol', '').upper()
+            ]
+            if btc_spikes:
+                spike = btc_spikes[0]
+                IntelPublisher.publish(
+                    "intel:btc_volume_spike",
+                    {"detected": True, "multiplier": spike["multiplier"], "symbol": spike["symbol"]},
+                    source_system="CloudSignalEngine",
+                    confidence=min(1.0, spike["multiplier"] / 5.0)
+                )
+            else:
+                IntelPublisher.publish(
+                    "intel:btc_volume_spike",
+                    {"detected": False, "multiplier": 0},
+                    source_system="CloudSignalEngine",
+                    confidence=1.0
+                )
         except Exception as e:
             logger.error(f"❌ BigQuery Spike Update Error: {e}")
 
@@ -133,15 +159,15 @@ class CloudSignalEngine:
         ORDER BY ABS(percent_change) DESC
         LIMIT 5;
         """
-        
+
         try:
             query_job = self.client.query(query)
             results = query_job.result()
-            
+
             self.latest_signals['top_movers'] = [
                 {"symbol": row.symbol, "change": row.percent_change} for row in results
             ]
-            
+
             if self.latest_signals['top_movers']:
                 logger.info(f"📡 SIGNAL REFRESH: {self.latest_signals['top_movers']}")
         except Exception as e:

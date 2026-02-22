@@ -4,11 +4,16 @@ Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 """
 import asyncio
 import os
+import sys as _sys
 import threading
 import pandas as pd
 import redis.asyncio as aioredis
 from datetime import datetime
 from dotenv import load_dotenv
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if _repo_root not in _sys.path:
+    _sys.path.append(_repo_root)
+from core.intel_bus import IntelReader
 
 # Core Imports
 from core import brain
@@ -116,6 +121,20 @@ class TradingEngine:
         self.strategy_matrix = MasterStrategyMatrix(self, cloud_signals, x_oracle)
         logger.info(f"🚀 Trading Engine v{self.version} Initialized")
 
+        # Publish current positions to Redis so other services (e.g. Kalshi bridge) can read them
+        try:
+            import json as _json
+            import redis as _sync_redis
+            _rh = os.getenv('REDIS_HOST', 'redis')
+            _rp = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
+            _r = _sync_redis.Redis(host=_rh, port=6379, password=_rp, decode_responses=True)
+            positions = ledger.get_open_positions()
+            _r.set('quantos:active_positions', _json.dumps(positions))
+            _r.close()
+            logger.info(f"📡 Published {len(positions)} active positions to Redis.")
+        except Exception as _e:
+            logger.warning(f"⚠️ Could not publish positions to Redis on startup: {_e}")
+
     def is_market_open(self):
         """Checks if the US market is currently open."""
         import pytz
@@ -180,6 +199,10 @@ class TradingEngine:
                 await asyncio.sleep(5)
                 continue
 
+            # Intel Bus: read cross-system confluence signals once per loop iteration
+            _bus_fed = await IntelReader.read_async("intel:fed_bias")
+            _bus_social = await IntelReader.read_async("intel:social_score")
+
             watchlist = settings_manager.get("active_tickers") or tickers.WATCHLIST
             is_open = self.is_market_open()
 
@@ -189,7 +212,8 @@ class TradingEngine:
             if is_open:
                 try:
                     redis_host = os.getenv('REDIS_HOST', 'redis')
-                    _r = aioredis.from_url(f"redis://{redis_host}:6379", decode_responses=True)
+                    _redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
+                    _r = aioredis.from_url(f"redis://:{_redis_pass}@{redis_host}:6379", decode_responses=True)
                     try:
                         fresh_requested = await _r.get('quantos:fresh_start_requested')
                         if fresh_requested and fresh_requested.lower() == 'true':
@@ -233,6 +257,12 @@ class TradingEngine:
                     # Core Analysis
                     score, indicators = calculate_confidence_score(ticker, df, rsi_rt, is_simulation=False)
 
+                    # Intel Bus: apply cross-system confluence bonus to confidence score
+                    if _bus_fed and _bus_fed.get("value", {}).get("bias") == "dovish":
+                        score = min(100, score * 1.05)  # Dovish Fed = +5% confidence boost
+                    if _bus_social and float(_bus_social.get("value", {}).get("score", 0)) > 0.3:
+                        score = min(100, score * 1.03)  # Positive social sentiment = +3% boost
+
                     # Execution
                     if not ledger.has_position(ticker):
                         await execution_engine.execute_buy(ticker, score, indicators, settings_manager.settings)
@@ -248,6 +278,9 @@ class TradingEngine:
 
             # Sunset Report Check
             await self._check_sunset_report(is_open)
+
+            # Sync active positions to Redis so Kalshi bridge and other services can read them
+            await self._publish_positions_to_redis()
 
             await asyncio.sleep(10) # 10s delay with real-time stream active
 
@@ -285,6 +318,21 @@ class TradingEngine:
                 self.report_sent_today = True
             except Exception as e:
                 logger.error(f"❌ Failed to send Sunset Report: {e}")
+
+    async def _publish_positions_to_redis(self):
+        """Writes current ledger positions to Redis key 'quantos:active_positions'."""
+        try:
+            import json as _json
+            redis_host = os.getenv('REDIS_HOST', 'redis')
+            redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
+            _r = aioredis.from_url(f"redis://:{redis_pass}@{redis_host}:6379", decode_responses=True)
+            try:
+                positions = ledger.get_open_positions()
+                await _r.set('quantos:active_positions', _json.dumps(positions))
+            finally:
+                await _r.aclose()
+        except Exception as _e:
+            logger.debug(f"Position sync to Redis failed: {_e}")
 
     async def start_async(self):
         self.is_running = True

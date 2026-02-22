@@ -4,6 +4,12 @@ from app.core.config import settings
 from app.core.settings_manager import settings_manager
 import asyncio
 import time
+import sys as _sys
+import os as _os
+_repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+if _repo_root not in _sys.path:
+    _sys.path.append(_repo_root)
+from core.intel_bus import IntelPublisher
 
 class SocialAnalyzer:
     """
@@ -121,6 +127,14 @@ class SocialAnalyzer:
             total_polarity += sentiment
 
         avg_sentiment = total_polarity / len(results) if results else 0
+
+        # Intel Bus: publish social score for cross-system confluence
+        await IntelPublisher.publish_async(
+            "intel:social_score",
+            {"score": round(avg_sentiment, 2), "top_ticker": "BTC"},
+            source_system="SocialAnalyzer",
+            confidence=min(1.0, len(results) / 10.0)
+        )
 
         return {
             "traders_monitored": targets,

@@ -138,7 +138,8 @@ async def publish_signal_to_bus(state: TradingState):
 
         # Connect to Redis and publish signal
         redis_host = os.getenv('REDIS_HOST', 'redis')
-        r = redis.from_url(f"redis://{redis_host}:6379", decode_responses=True)
+        redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
+        r = redis.from_url(f"redis://:{redis_pass}@{redis_host}:6379", decode_responses=True)
         try:
             payload = json.dumps({
                 "pydantic_signal": {
