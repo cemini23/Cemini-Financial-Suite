@@ -2,7 +2,7 @@ import yfinance as yf
 import redis
 import os
 import time
-import random
+import requests
 import psycopg2
 from datetime import datetime
 
@@ -44,10 +44,19 @@ def main():
                 yield_10y = float(hist['Close'].iloc[-1])
                 r.set("macro:10y_yield", yield_10y)
 
-            # 2. Mock Fear & Greed Index
-            current_fgi = float(r.get("macro:fear_greed") or 50.0)
-            new_fgi = max(0, min(100, current_fgi + random.uniform(-5, 5)))
-            r.set("macro:fear_greed", new_fgi)
+            # 2. Fear & Greed Index — CNN production endpoint (public, no key required)
+            try:
+                fgi_resp = requests.get(
+                    "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+                    timeout=8,
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                fgi_resp.raise_for_status()
+                new_fgi = float(fgi_resp.json()["fear_and_greed"]["score"])
+                r.set("macro:fear_greed", new_fgi)
+            except Exception as fgi_err:
+                new_fgi = float(r.get("macro:fear_greed") or 50.0)
+                print(f"API_FAIL: CNN Fear & Greed fetch failed ({fgi_err}), keeping existing value {new_fgi:.1f}")
 
             # 3. Log to Postgres
             cursor.execute(

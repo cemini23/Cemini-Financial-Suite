@@ -51,20 +51,11 @@ def main():
                 for submission in reddit.subreddit("wallstreetbets").hot(limit=25):
                     tickers = re.findall(r'\b[A-Z]{3,5}\b', submission.title)
                     for t in tickers:
-                        # Simple dummy sentiment for now, can integrate TextBlob later
                         score = 0.5 if "call" in submission.title.lower() else -0.5 if "put" in submission.title.lower() else 0.1
                         cursor.execute("INSERT INTO sentiment_logs (timestamp, symbol, sentiment_score, source) VALUES (%s, %s, %s, %s)",
                                        (timestamp, t, score, "reddit"))
             else:
-                # Mock high-density spikes for testing if no API keys
-                mock_tickers = ["BTC", "NVDA", "TSLA", "GME", "AMD"]
-                for t in mock_tickers:
-                    # Occasional spike simulation
-                    count = 20 if t == "BTC" and time.time() % 60 < 10 else 2
-                    for _ in range(count):
-                        cursor.execute("INSERT INTO sentiment_logs (timestamp, symbol, sentiment_score, source) VALUES (%s, %s, %s, %s)",
-                                       (timestamp, t, 0.2, "mock_social"))
-                print("📝 Generated Mock Sentiment Ticks.")
+                print("API_FAIL: Reddit credentials not set, skipping sentiment signal")
 
             time.sleep(60) # Scan more frequently for Heatseeker density
 
