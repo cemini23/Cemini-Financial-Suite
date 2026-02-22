@@ -16,8 +16,8 @@ REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 # --- State Management ---
-active_positions = {} 
-CASH_BALANCE = 5000.0 
+active_positions = {}
+CASH_BALANCE = 5000.0
 DAILY_LOSS_LIMIT = 50.0
 cumulative_daily_loss = 0.0
 last_reset_day = datetime.now().day
@@ -32,7 +32,12 @@ def connect_db():
 
 def connect_redis():
     try:
-        r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True); r.ping()
+        r = redis.Redis(
+            host=REDIS_HOST, port=6379,
+            password=os.getenv('REDIS_PASSWORD', 'cemini_redis_2026'),
+            decode_responses=True,
+        )
+        r.ping()
         return r
     except Exception as e:
         print(f"❌ Brain Redis Connection Failed: {e}"); return None
@@ -73,7 +78,7 @@ def calculate_rsi(prices, period=14):
 
 def evaluate_market(df, symbol, redis_client, db_conn):
     global active_positions, CASH_BALANCE, cumulative_daily_loss, last_reset_day
-    
+
     if datetime.now().day != last_reset_day:
         cumulative_daily_loss = 0.0
         last_reset_day = datetime.now().day
@@ -100,7 +105,7 @@ def evaluate_market(df, symbol, redis_client, db_conn):
                 cumulative_daily_loss += abs(profit_loss)
                 if cumulative_daily_loss >= DAILY_LOSS_LIMIT:
                     redis_client.publish("emergency_stop", f"Daily Loss Limit Hit: ${cumulative_daily_loss:.2f}")
-            
+
             CASH_BALANCE += current_price
             exit_payload = {"pydantic_signal": {"target_system": "QuantOS", "target_brokerage": "Robinhood", "asset_class": "equity", "ticker_or_event": symbol, "action": "sell", "confidence_score": 1.0, "proposed_allocation_pct": 0.0, "agent_reasoning": f"Exit: {reason}"}, "timestamp": str(latest['timestamp']), "reason": reason, "price": current_price}
             redis_client.publish("trade_signals", json.dumps(exit_payload))

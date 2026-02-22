@@ -29,3 +29,42 @@ To ensure 100% dashboard uptime and decision-making continuity, QuantOS™ utili
 
 ## 4. Backtesting Engine (The Time Machine)
 QuantOS™ includes a discrete-event simulator that allows for historical replay of OHLCV data. It calculates ROI, Drawdown, and Trade Frequency to validate strategies before live deployment.
+
+---
+
+## 5. The Intel Bus (Cross-System Intelligence Layer)
+
+QuantOS™ participates in a shared Redis-backed signal bus (`core/intel_bus.py`) that enables real-time intelligence sharing with the Kalshi by Cemini module — without HTTP network calls between Docker containers.
+
+All bus entries carry a structured payload: `{value, source_system, timestamp, confidence}`. Entries expire after **300 seconds (5 minutes)** to prevent stale signals from influencing decisions. All bus operations are **fail-silent** — a Redis failure is logged and swallowed, never crashing the parent process.
+
+### Published Signals (QuantOS → Bus)
+
+| Key | Publisher | Description |
+| :--- | :--- | :--- |
+| `intel:btc_volume_spike` | `CloudSignalEngine` | BTC volume anomaly detected in BigQuery real-time data |
+| `intel:vix_level` | `Analyzer (Coach)` | VIX proxy derived from the Fear & Greed Index (range: 10–50) |
+| `intel:spy_trend` | `Analyzer (Coach)` | Macro market bias: `bullish` / `bearish` / `neutral` |
+| `intel:portfolio_heat` | `Analyzer (Coach)` | Combined position load across QuantOS + Kalshi (0.0 = empty, 1.0 = full) |
+
+### Consumed Signals (Bus → QuantOS)
+
+| Key | Consumer | Effect |
+| :--- | :--- | :--- |
+| `intel:fed_bias` | `TradingEngine` | +5% confidence score multiplier when bias is `dovish` |
+| `intel:social_score` | `TradingEngine` | +3% confidence score multiplier when score > 0.3 |
+| `intel:btc_volume_spike` | `MasterStrategyMatrix` | Adds a synthetic BTC spike entry if BigQuery has no BTC data |
+
+### Signal Bus API
+
+```python
+from core.intel_bus import IntelPublisher, IntelReader
+
+# Synchronous (use from threads / scripts)
+IntelPublisher.publish("intel:my_key", value, source_system="MyModule", confidence=0.9)
+payload = IntelReader.read("intel:my_key")  # returns dict or None
+
+# Asynchronous (use from coroutines)
+await IntelPublisher.publish_async("intel:my_key", value, source_system="MyModule")
+payload = await IntelReader.read_async("intel:my_key")
+```

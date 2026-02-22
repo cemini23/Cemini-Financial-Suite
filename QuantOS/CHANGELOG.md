@@ -1,3 +1,28 @@
+# CHANGELOG - QuantOS v15.0.0 (2026-02-22)
+
+## [15.0.0] - 2026-02-22
+
+### Added
+- **Intel Bus (Shared Intelligence Layer)**: New `core/intel_bus.py` — a Redis-backed cross-system signal bus enabling real-time intelligence sharing between QuantOS and Kalshi by Cemini without HTTP calls. Publishes and reads 8 shared keys (`intel:btc_sentiment`, `intel:fed_bias`, `intel:btc_volume_spike`, `intel:social_score`, `intel:weather_edge`, `intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`) with 300-second TTL and fail-silent error handling.
+- **Portfolio Heat Guard**: `CeminiAutopilot` reads `intel:portfolio_heat` from the bus. If combined active positions exceed 80% of capacity, new Kalshi trades are automatically paused for 30 seconds.
+- **Confluence Score Bonuses**: `TradingEngine` applies a +5% confidence bonus when Fed bias is dovish and +3% when social sentiment score exceeds 0.3, both sourced from the Intel Bus.
+- **Paper Mode (Kill Switch)**: All execution paths locked to simulation. Controlled via `QuantOS/config/dynamic_settings.json` (`environment: PAPER`) and `Kalshi by Cemini/settings.json` (`paper_mode: true`, `trading_enabled: false`).
+- **CI/CD Docker Restart**: GitHub Actions deploy workflow now runs `docker compose down && docker compose up --build -d` after code sync, ensuring changes take effect automatically without manual VM intervention.
+- **CLOUDFLARE_TUNNEL_TOKEN**: Added to `.env.example` with documentation pointer for Cloudflare Zero Trust tunnel configuration.
+
+### Changed
+- **QuantOSBridge HTTP → Intel Bus**: `PowellAnalyzer` and `MarketRover` no longer make HTTP calls to `localhost:8001` (which always fails in Docker). Both now read sentiment directly via `IntelReader` — same Redis instance, no network hop.
+- **Redis Authentication**: All services now pass `REDIS_PASSWORD` env var when connecting to Redis. Affected files: `ems/main.py`, `logger_service.py`, `panic_button.py`, `agents/orchestrator.py`, `QuantOS/core/engine.py`.
+- **BigQuery Table Name**: `QuantOS/core/harvester.py` default table corrected from `market_data` to `market_ticks`, matching `bq_signals.py`.
+
+### Fixed
+- Fixed `QuantOSBridge` failing silently in Docker due to `127.0.0.1` localhost assumption in a containerized network.
+- Fixed BigQuery table name mismatch between harvester and signal engine causing missing data.
+- Fixed missing Redis password in multiple service connection strings (Redis auth was enforced in docker-compose but not in client code).
+- Resolved pre-commit hook violations (trailing whitespace, missing end-of-file newline) across 8 files.
+
+---
+
 # CHANGELOG - QuantOS v11.0.0
 - **Async Core Engine**: Implemented `AsyncScanner` for high-speed, non-blocking market data fetching.
 - **Suite Protocol Bridge**: Added `/api/status` and `/api/hedge` endpoints to enable tandem operation with Kalshi by Cemini.

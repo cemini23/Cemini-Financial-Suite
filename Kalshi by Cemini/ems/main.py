@@ -11,22 +11,27 @@ def handle_signal(message):
     try:
         data = json.loads(message['data'])
         print(f"📥 RECEIVED SIGNAL: {data['action']} {data['symbol']} | Reason: {data['reasoning']}")
-        
+
         if data['verdict'] == "EXECUTE":
             # This is where the Kalshi FIX message (35=D) would be triggered
             print(f"⚡ EXECUTING: Sending {data['action']} order for {data['symbol']} to Kalshi...")
-            # Placeholder for FIX logic: 
+            # Placeholder for FIX logic:
             # fix_client.send_order(data['symbol'], data['action'], data['position_size'])
             print("✅ ORDER PLACED SUCCESSFULLY")
-            
+
     except Exception as e:
         print(f"❌ Error processing signal: {e}")
 
 def main():
     print("🤖 EMS Engine Starting...")
-    r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, db=0)
+    r = redis.Redis(
+        host=os.getenv('REDIS_HOST', 'redis'),
+        port=6379,
+        password=os.getenv('REDIS_PASSWORD', 'cemini_redis_2026'),
+        db=0,
+    )
     p = r.pubsub()
-    
+
     # Subscribe to the channel we used in the test script
     p.subscribe('trade_signals')
     print("📡 Subscribed to 'trade_signals'. Waiting for Brain signals...")

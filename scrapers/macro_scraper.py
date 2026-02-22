@@ -5,11 +5,13 @@ import time
 import random
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
+
 
 def main():
     print("📈 Macro Scraper Initialized...")
-    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
-    
+    r = redis.Redis(host=REDIS_HOST, port=6379, password=REDIS_PASSWORD, decode_responses=True)
+
     while True:
         try:
             # 1. Pull 10Y Treasury Yield (^TNX)
@@ -29,7 +31,7 @@ def main():
 
         except Exception as e:
             print(f"⚠️ Macro Error: {e}")
-            
+
         time.sleep(300) # Every 5 mins
 
 if __name__ == "__main__":

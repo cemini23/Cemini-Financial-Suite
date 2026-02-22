@@ -9,21 +9,23 @@ from datetime import datetime
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 DB_HOST = os.getenv("DB_HOST", "postgres")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
 
 # Credentials
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
 REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "CeminiBot v1.0")
 
+
 def main():
     print("🤖 Social Scraper (Heatseeker Edition) Initialized...")
-    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
-    
+    r = redis.Redis(host=REDIS_HOST, port=6379, password=REDIS_PASSWORD, decode_responses=True)
+
     # Connect to Postgres
     conn = psycopg2.connect(host=DB_HOST, port=5432, user="admin", password="quest", database="qdb")
     conn.autocommit = True
     cursor = conn.cursor()
-    
+
     # 1. Ensure sentiment_logs table exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sentiment_logs (

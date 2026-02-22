@@ -26,6 +26,21 @@ Most issues are solved by a clean restart. Run:
 *   **Cause**: Permissions issue in the `data/` folder.
 *   **Fix**: Ensure the folder `QuantOS/data/historical` exists and is "writable."
 
+### 5. Intel Bus returning `None` for all `intel:*` keys
+*   **Cause**: The publishing service hasn't completed its first cycle, or Redis authentication is failing silently.
+*   **Fix**: Check Redis connectivity and inspect bus keys:
+    ```bash
+    docker exec -it redis redis-cli -a cemini_redis_2026 keys "intel:*"
+    ```
+    If no keys are returned, check that `analyzer.py` (Coach) is running and has completed its first hourly review. For `intel:btc_volume_spike`, check `signal_generator` logs.
+
+### 6. Redis `WRONGPASS` / `NOAUTH` errors
+*   **Cause**: `REDIS_PASSWORD` env var missing or mismatched.
+*   **Fix**: Confirm `.env` contains `REDIS_PASSWORD=cemini_redis_2026`. Then restart:
+    ```bash
+    docker compose restart redis
+    ```
+
 ---
 
 ## 🩺 Health Check

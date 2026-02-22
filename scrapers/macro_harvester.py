@@ -8,11 +8,13 @@ from datetime import datetime
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 DB_HOST = os.getenv("DB_HOST", "postgres")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
+
 
 def main():
     print("📈 Macro Harvester Initialized...")
-    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
-    
+    r = redis.Redis(host=REDIS_HOST, port=6379, password=REDIS_PASSWORD, decode_responses=True)
+
     # Connect to Postgres
     while True:
         try:
@@ -52,12 +54,12 @@ def main():
                 "INSERT INTO macro_logs (timestamp, fg_index, yield_10y) VALUES (%s, %s, %s)",
                 (datetime.now(), new_fgi, yield_10y)
             )
-            
+
             print(f"📊 Macro Sync: FGI={new_fgi:.1f} | 10Y={yield_10y:.2f}%")
 
         except Exception as e:
             print(f"⚠️ Macro Error: {e}")
-            
+
         time.sleep(300) # Every 5 mins
 
 if __name__ == "__main__":

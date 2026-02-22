@@ -21,6 +21,8 @@ jobs:
         run: pip install flake8
 
       - name: Run flake8
+        id: flake8
+        continue-on-error: false
         run: |
           flake8 . \
             --exclude="venv,.venv,venv_new,__pycache__,.git,QuantOS/data/kaggle_import,Kalshi by Cemini/venv,Kalshi by Cemini/venv_new,Cemini-Suite" \
@@ -44,6 +46,8 @@ jobs:
 
       # For pull requests: scan the diff between PR base and head
       - name: TruffleHog Secret Scan (pull_request)
+        id: security-pr
+        continue-on-error: false
         uses: trufflesecurity/trufflehog@main
         with:
           extra_args: --only-verified --results=verified,unknown
@@ -51,6 +55,8 @@ jobs:
 
       # For direct pushes to main: scan only the commits in this push
       - name: TruffleHog Secret Scan (push)
+        id: security
+        continue-on-error: false
         uses: trufflesecurity/trufflehog@main
         with:
           base: ${{ github.event.before }}
@@ -59,17 +65,38 @@ jobs:
         if: github.event_name == 'push'
 
       # 2. AUTHENTICATE TO GOOGLE CLOUD
-      # Uses the Workload Identity Federation string you generated
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
+      # Uses Workload Identity Federation — no long-lived service account keys.
+      # WIF pool: github-pool | provider: github-provider
+      # Attribute condition must include: assertion.repository == 'cemini23/Cemini-Financial-Suite'
+      # If this step fails with "credential rejected by attribute condition", run:
+      #   gcloud iam workload-identity-pools providers update-oidc github-provider \
+      #     --project=gemini-financial-suite --location=global \
+      #     --workload-identity-pool=github-pool \
+      #     --attribute-condition="assertion.repository_owner == 'cemini23' && assertion.repository == 'cemini23/Cemini-Financial-Suite'"
+      - name: Authenticate to Google Cloud
+        id: auth
+        continue-on-error: false
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: 'projects/1002646645680/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: 'github-action-sa@gemini-financial-suite.iam.gserviceaccount.com'
 
+      - name: Verify GCP Auth
+        if: failure() && steps.auth.outcome == 'failure'
+        run: |
+          echo "::error::GCP auth failed. Most likely cause: WIF attribute condition does not match this repo."
+          echo "::error::Expected repo in condition: cemini23/Cemini-Financial-Suite"
+          echo "::error::Run this in your terminal to fix:"
+          echo "::error::  gcloud iam workload-identity-pools providers update-oidc github-provider \\"
+          echo "::error::    --project=gemini-financial-suite --location=global \\"
+          echo "::error::    --workload-identity-pool=github-pool \\"
+          echo "::error::    --attribute-condition=\"assertion.repository_owner == 'cemini23' && assertion.repository == 'cemini23/Cemini-Financial-Suite'\""
+
       # 3. SECURE DEPLOYMENT VIA SSH
       # This reaches into your VM to update the code only if the scan passes
       - name: Update Bot on VM
+        id: deploy
+        continue-on-error: false
         run: |
           echo "Deploying Cemini Suite..."
           gcloud compute ssh instance-20260220-132604 --zone=us-central1-c --command="
@@ -84,3 +111,21 @@ jobs:
             sleep 10 &&
             docker compose ps
           "
+
+      # 4. CI SUMMARY — always runs so you can see results at a glance
+      - name: CI Summary
+        if: always()
+        run: |
+          echo "=== CI RESULTS ==="
+          echo "GCP Auth:  ${{ steps.auth.outcome }}"
+          echo "Deploy:    ${{ steps.deploy.outcome }}"
+          echo ""
+          if [ "${{ steps.auth.outcome }}" = "failure" ]; then
+            echo "⚠️  Auth failed — check WIF attribute condition (see 'Authenticate to Google Cloud' step)"
+          fi
+          if [ "${{ steps.deploy.outcome }}" = "failure" ]; then
+            echo "⚠️  Deploy failed — SSH or docker compose error on VM"
+          fi
+          if [ "${{ steps.auth.outcome }}" = "success" ] && [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            echo "✅ All systems deployed successfully"
+          fi

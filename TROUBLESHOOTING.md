@@ -10,15 +10,35 @@ This document captures critical fixes and architectural patterns for the Cemini 
 
 ### 2. Kalshi API DNS & Connectivity
 **Issue:** Legacy endpoints may become inactive, resulting in `[Errno -2] Name or service not known`.
-**Solution:** 
+**Solution:**
 - Ensure you are using the active endpoint: `demo-api.kalshi.co`.
 - If Docker loses internet access entirely (common on some desktop bridge networks), restart Docker Desktop to flush the internal DNS resolver.
 
-### 3. Virtual Memory Mapping (QuestDB)
-**Issue:** High-performance databases like QuestDB may crash with `errno=12` if the Docker VM's memory map limit is too low.
+### 3. Virtual Memory Mapping (TimescaleDB)
+**Issue:** TimescaleDB or other high-performance databases may crash with `errno=12` if the Docker VM's memory map limit is too low.
 **Solution:** Increase the `vm.max_map_count` in the Docker VM:
 ```bash
 docker run --privileged --rm alpine sysctl -w vm.max_map_count=1048576
+```
+
+### 4. Redis Authentication Errors (`WRONGPASS` / `NOAUTH`)
+**Issue:** Services fail to connect to Redis with `WRONGPASS` or `NOAUTH` errors after Redis password enforcement was added.
+**Solution:** Ensure `REDIS_PASSWORD` in your `.env` matches the password configured in `docker-compose.yml`. The default is `cemini_redis_2026`.
+```bash
+# In .env
+REDIS_PASSWORD=cemini_redis_2026
+```
+If you changed the password, update both files and restart Redis:
+```bash
+docker compose restart redis
+```
+
+### 5. Intel Bus Returns `None` for All Keys
+**Issue:** `IntelReader.read()` or `IntelReader.read_async()` returns `None` for `intel:*` keys even when services are running.
+**Cause:** The publishing service hasn't completed its first cycle yet (e.g., `analyzer.py` publishes `intel:vix_level` only on the hourly review). Bus keys also expire after 300 seconds of inactivity.
+**Solution:** Wait for at least one full cycle of the publishing service to complete, or manually trigger a review. Check Redis directly:
+```bash
+docker exec -it redis redis-cli -a cemini_redis_2026 keys "intel:*"
 ```
 
 ---
@@ -35,11 +55,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. QuestDB Rust Compiler Error
-**Issue:** The official `questdb` Python library may fail to install or compile on ARM64 due to missing Rust dependencies or binary incompatibilities.
-**Solution:** Use the standard PostgreSQL wire protocol. Connect via `psycopg2-binary` on port `8812` instead of the proprietary QuestDB client.
-**Host:** `questdb` (within Docker) or `localhost` (outside)
-**Port:** `8812`
+### 2. TimescaleDB Connection on ARM64
+**Issue:** On Apple Silicon, the `psycopg2` library may fail to compile from source.
+**Solution:** Always install `psycopg2-binary` (pre-compiled wheel) rather than `psycopg2`. The suite's `requirements.txt` already specifies this.
+**Host:** `postgres` (within Docker) or `localhost` (outside Docker)
+**Port:** `5432`
 
 ---
-**Maintained by Gemini CLI for Cemini Financial Suite.**
+**Maintained by Cemini Financial Suite. Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**

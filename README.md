@@ -106,13 +106,19 @@ docker compose up -d --build
 
 This starts all services defined in `docker-compose.yml`:
 
-| Service | Port | URL |
+| Service | Internal Port | Exposed Via |
 | :--- | :--- | :--- |
-| **QuestDB** | 9000 / 8812 | http://localhost:9000 |
-| **Redis** | 6379 | — |
-| **Deephaven UI** | 10000 | http://localhost:10000 |
-| **FastAPI Backend** | 8000 | http://localhost:8000/docs |
-| **Frontend Dashboard** | 8501 | http://localhost:8501 |
+| **TimescaleDB (PostgreSQL)** | 5432 | Internal only |
+| **pgAdmin** | 80 | nginx reverse proxy |
+| **Redis** | 6379 | Internal only (password-protected) |
+| **Deephaven UI** | 10000 | nginx reverse proxy |
+| **Grafana** | 3000 | nginx reverse proxy |
+| **Cemini OS (Streamlit)** | 8501 | nginx reverse proxy |
+| **nginx** | 80 | `localhost:80` (or Cloudflare tunnel) |
+
+> All internal services are isolated in the Docker network. External access is routed through **nginx** on port 80, optionally tunneled via **Cloudflare Zero Trust** (no open firewall ports required).
+
+> **Redis requires a password.** The default is `cemini_redis_2026`, set via `REDIS_PASSWORD` in your `.env`. Never expose port 6379 publicly.
 
 ---
 
@@ -122,7 +128,13 @@ This starts all services defined in `docker-compose.yml`:
 docker compose ps
 ```
 
-All services should show `Up`. Then run the sanity check:
+All services should show `Up`. If you've pulled a code update, restart to apply changes:
+
+```bash
+docker compose down && docker compose up --build -d
+```
+
+Then run the sanity check:
 
 ```bash
 python scripts/sanity_test.py
@@ -142,7 +154,8 @@ Expected output:
 | `ModuleNotFoundError: No module named 'X'` | Your venv is not active. Run `source venv/bin/activate` (Mac/Linux) or `venv\Scripts\Activate.ps1` (Windows) |
 | `docker: command not found` | Docker Desktop is not installed or not running. Download from [docker.com](https://www.docker.com/products/docker-desktop/) |
 | `Port 8501 is already in use` | Stop the conflicting process: `lsof -i :8501` (Mac/Linux) or `netstat -ano \| findstr :8501` (Windows) |
-| `Connection refused` (database) | Wait 30 seconds after `docker compose up` — QuestDB takes time to initialize |
+| `Connection refused` (database) | Wait 30 seconds after `docker compose up` — TimescaleDB takes time to initialize |
+| `WRONGPASS` or `NOAUTH` (Redis) | Your `REDIS_PASSWORD` in `.env` doesn't match the one in `docker-compose.yml`. Default is `cemini_redis_2026` |
 | `python3: command not found` (Windows) | Use `python` instead of `python3` on Windows |
 | `Permission denied` (venv activate, Windows) | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` in PowerShell as Administrator |
 
@@ -152,34 +165,38 @@ Expected output:
 
 The suite is designed as a modular organism, where each service plays a critical role. Because it leverages Docker, Redis, and standard PostgreSQL wire protocols, it runs seamlessly on **Windows (WSL2), Linux Servers, Intel Macs, and Apple Silicon (M-series)**.
 
--   **Memory (QuestDB):** A high-performance time-series database for market ticks and audit logs. Accessible on port `9000` (Console) and `8812` (Postgres wire).
--   **Nervous System (Redis):** The asynchronous message bus facilitating communication between the brain and execution layers on port `6379`.
--   **Eyes (Ingestor):** Streams real-time market data (via Polygon.io or Alpaca) directly into QuestDB.
+-   **Memory (TimescaleDB):** A time-series-optimized PostgreSQL database (TimescaleDB) for market ticks and audit logs. Internal port `5432`.
+-   **Nervous System (Redis):** The authenticated, password-protected message bus facilitating communication between all subsystems. Internal port `6379`. Also hosts the **Intel Bus** (`intel:*` key namespace) for cross-system AI signal sharing.
+-   **Intel Bus (`core/intel_bus.py`):** A shared Redis-backed intelligence layer. QuantOS publishes market regime signals (`intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`, `intel:btc_volume_spike`). Kalshi by Cemini publishes sentiment signals (`intel:btc_sentiment`, `intel:fed_bias`, `intel:social_score`, `intel:weather_edge`). Both systems read from each other — no HTTP calls between containers.
+-   **Eyes (Ingestor):** Streams real-time market data (via Polygon.io or Alpaca) directly into TimescaleDB.
 -   **Brain (Analyst Swarm):** A LangGraph-orchestrated AI that analyzes market sentiment, technicals, and fundamentals to generate trades.
--   **Hands (EMS):** The Execution Management System, which handles brokerage adapters (Robinhood, Coinbase, Kalshi) to execute orders via the Redis bus.
--   **Face (Frontend UI):** A real-time dashboard (Deephaven or Streamlit) for visualizing operations and AI reasoning on port `8501` / `10000`.
+-   **Hands (EMS):** The Execution Management System, which handles brokerage adapters (Robinhood, Alpaca, Kalshi) to execute orders via the Redis bus.
+-   **Face (Frontend UI):** A real-time dashboard (Deephaven + Streamlit via Cemini OS) and Grafana for metrics visualization.
+-   **Perimeter (nginx + Cloudflare):** nginx reverse proxy on port 80 routes all traffic. Cloudflare Zero Trust tunnel provides secure public access without opening firewall ports.
 
 ---
 
 ## 🛠️ Components & Ports
 
-| Service | Port | Description |
+| Service | Internal Port | Description |
 | :--- | :--- | :--- |
-| **QuestDB** | 9000 / 8812 | Data Storage & Querying |
-| **Redis** | 6379 | Messaging & Pub/Sub |
-| **Deephaven UI** | 10000 | Advanced Dashboarding |
-| **FastAPI Backend** | 8000 | Core Internal APIs |
-| **Frontend Dashboard** | 8501 | Streamlit/React UI |
+| **TimescaleDB (PostgreSQL)** | 5432 | Time-series data storage & querying |
+| **Redis** | 6379 | Messaging, pub/sub, and Intel Bus (password-protected) |
+| **Deephaven UI** | 10000 | Advanced analytics dashboarding |
+| **Cemini OS (Streamlit)** | 8501 | Real-time trading dashboard |
+| **Grafana** | 3000 | Metrics & performance visualization |
+| **nginx** | 80 | Reverse proxy (external entry point) |
+| **Cloudflare Tunnel** | — | Zero Trust remote access (no open ports) |
 
 ---
 
 ## 🔮 Future Development
 
 Our next phase of development focuses on:
--   **Core Trading Logic Expansion:** Integrating advanced quantitative strategies into the LangGraph orchestrator.
--   **Sentiment Alpha:** Scaling the X (Twitter) and news analysis modules for predictive signals.
--   **Institutional Scaling:** Enhancing the FIX adapter for broader Prediction Market coverage.
--   **Backtesting Engine:** Leveraging QuestDB for historical replay and strategy validation.
+-   **Live Mode Activation:** Intel Bus and all safety guards are in place. Live trading will be re-enabled after paper mode validation is complete.
+-   **FinBERT News Pipeline:** Scaling the FinBERT news analysis module to feed higher-confidence catalyst data into the Master Strategy Matrix.
+-   **Institutional Scaling:** Enhancing the FIX adapter for broader Prediction Market coverage across Kalshi contract categories.
+-   **Backtesting Engine:** Leveraging TimescaleDB hypertables for historical replay and strategy validation against real tick data.
 
 ---
 

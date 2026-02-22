@@ -15,9 +15,15 @@ import redis
 import os
 
 
+def _redis_client():
+    host = os.getenv("REDIS_HOST", "localhost")
+    password = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
+    return redis.Redis(host=host, port=6379, password=password, decode_responses=True)
+
+
 def trigger_fresh_start():
     host = os.getenv("REDIS_HOST", "localhost")
-    r = redis.Redis(host=host, port=6379, decode_responses=True)
+    r = _redis_client()
     r.set("quantos:fresh_start_requested", "true")
     print(f"✅ Fresh start requested (Redis @ {host}). "
           "The engine will liquidate all positions on the next open-market cycle.")
@@ -26,7 +32,7 @@ def trigger_fresh_start():
 
 def cancel_fresh_start():
     host = os.getenv("REDIS_HOST", "localhost")
-    r = redis.Redis(host=host, port=6379, decode_responses=True)
+    r = _redis_client()
     r.set("quantos:fresh_start_requested", "false")
     print(f"🚫 Fresh start cancelled (Redis @ {host}).")
     r.close()
@@ -34,7 +40,7 @@ def cancel_fresh_start():
 
 def status():
     host = os.getenv("REDIS_HOST", "localhost")
-    r = redis.Redis(host=host, port=6379, decode_responses=True)
+    r = _redis_client()
     val = r.get("quantos:fresh_start_requested") or "false"
     print(f"📊 Fresh start requested: {val}")
     r.close()
