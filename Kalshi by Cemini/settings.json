@@ -1,5 +1,5 @@
 {
-    "trading_enabled": false,
+    "trading_enabled": true,
     "paper_mode": true,
     "risk_level": "CONSERVATIVE",
     "priority_module": "BTC",
