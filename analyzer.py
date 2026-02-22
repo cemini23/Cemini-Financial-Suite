@@ -99,6 +99,7 @@ def improve_logic():
                     if DISCORD_WEBHOOK_URL:
                         requests.post(DISCORD_WEBHOOK_URL, json={"username": "Cemini Coach", "content": f"🎯 **SNIPER_MODE ACTIVE**: Market panic detected (FGI: {float(fgi):.1f})."})
 
+                mode = "neutral"
                 df = pd.read_sql("SELECT * FROM trade_history", conn)
                 if len(df) > 5:
                     sells = df[df['action'] == 'SELL']
