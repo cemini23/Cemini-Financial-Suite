@@ -2,15 +2,20 @@ import httpx
 import asyncio
 import yfinance as yf
 from app.core.config import settings
-from modules.bridge.quantos_bridge import QuantOSBridge
+import sys as _sys
+import os as _os
+_repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+if _repo_root not in _sys.path:
+    _sys.path.append(_repo_root)
+from core.intel_bus import IntelPublisher, IntelReader
 
 class PowellAnalyzer:
     """
     Module 4: The Powell Protocol (Institutional Upgrade).
-    Integrates Live Treasury Yields and QuantOS Sentiment for macro-arbitrage.
+    Integrates Live Treasury Yields and Intel Bus sentiment for macro-arbitrage.
+    QuantOSBridge HTTP calls replaced with direct IntelReader reads (faster, Docker-native).
     """
     def __init__(self):
-        self.bridge = QuantOSBridge()
         self.baseline_probabilities = {
             "PAUSE": 0.70,
             "HIKE_25": 0.05,
@@ -35,15 +40,27 @@ class PowellAnalyzer:
             print(f"[!] Yield Fetch Error: {e}")
             return {"irx": 0, "tnx": 0, "inversion": 0}
 
+    async def _read_bus_sentiment(self) -> dict:
+        """
+        Reads QuantOS market sentiment from the Intel Bus instead of HTTP bridge.
+        Falls back to neutral signals if bus key is absent or Redis is unavailable.
+        """
+        vix_signal = await IntelReader.read_async("intel:vix_level")
+        trend_signal = await IntelReader.read_async("intel:spy_trend")
+        volatility = "HIGH" if (vix_signal and float(vix_signal["value"]) > 25) else "NORMAL"
+        bias_raw = trend_signal["value"] if trend_signal else "neutral"
+        bias = bias_raw.upper() if isinstance(bias_raw, str) else "NEUTRAL"
+        return {"volatility": volatility, "bias": bias}
+
     async def analyze_fed_market(self):
         """
-        Calculates Adjusted Probabilities based on Yield Curve and QuantOS Sentiment.
+        Calculates Adjusted Probabilities based on Yield Curve and Intel Bus Sentiment.
         """
-        # 1. Gather Macro Intelligence
+        # 1. Gather Macro Intelligence (bus read replaces QuantOSBridge HTTP call)
         yields_task = self.get_treasury_yields()
-        quantos_task = self.bridge.get_market_sentiment()
+        bus_task = self._read_bus_sentiment()
 
-        yields, q_sentiment = await asyncio.gather(yields_task, quantos_task)
+        yields, q_sentiment = await asyncio.gather(yields_task, bus_task)
 
         # 2. Apply Dynamic Modifiers
         probs = self.baseline_probabilities.copy()
@@ -64,6 +81,16 @@ class PowellAnalyzer:
         # Ensure total prob = 1.0 (Normalization)
         total = sum(probs.values())
         probs = {k: round(v/total, 2) for k, v in probs.items()}
+
+        # Intel Bus: publish fed bias so QuantOS and other Kalshi modules can read it
+        _dominant = max(probs, key=probs.get)
+        _fed_bias = "dovish" if _dominant == "CUT_25" else "hawkish" if _dominant == "HIKE_25" else "neutral"
+        await IntelPublisher.publish_async(
+            "intel:fed_bias",
+            {"bias": _fed_bias, "confidence": probs[_dominant]},
+            source_system="PowellAnalyzer",
+            confidence=probs[_dominant]
+        )
 
         # 3. Compare with Live Kalshi Market Prices
         _no_signal_base = {

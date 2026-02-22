@@ -3,7 +3,9 @@ import psycopg2
 import redis
 import time
 import os
+import json
 import requests
+from core.intel_bus import IntelPublisher
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
@@ -52,7 +54,7 @@ def improve_logic():
                 user=os.getenv('POSTGRES_USER', 'admin'),
                 password=os.getenv('POSTGRES_PASSWORD', 'quest')
             )
-            r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, decode_responses=True)
+            r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, password=os.getenv('REDIS_PASSWORD', 'cemini_redis_2026'), decode_responses=True)
             break
         except: time.sleep(5)
 
@@ -105,6 +107,29 @@ def improve_logic():
                     mode = "conservative" if win_rate < 0.45 else "aggressive"
                     r.set("strategy_mode", mode)
                     send_discord_report(win_rate, mode, len(sells))
+
+                # Intel Bus: publish market regime signals for cross-system confluence
+                try:
+                    # VIX proxy: map Fear & Greed Index (0=fear, 100=greed) to a VIX-like float
+                    fgi_val = r.get("macro:fear_greed")
+                    if fgi_val:
+                        vix_proxy = max(10.0, 50.0 - (float(fgi_val) / 2.0))
+                        IntelPublisher.publish("intel:vix_level", round(vix_proxy, 1), "analyzer")
+
+                    # SPY trend from current strategy mode
+                    _spy_map = {"aggressive": "bullish", "sniper": "bearish", "conservative": "neutral"}
+                    IntelPublisher.publish("intel:spy_trend", _spy_map.get(mode, "neutral"), "analyzer", confidence=0.7)
+
+                    # Portfolio heat: fraction of active positions across both systems
+                    _positions_raw = r.get("quantos:active_positions")
+                    _kalshi_raw = r.get("kalshi:executed_trades")
+                    _active = len(json.loads(_positions_raw)) if _positions_raw else 0
+                    _kalshi = len(json.loads(_kalshi_raw)) if _kalshi_raw else 0
+                    _heat = min(1.0, (_active + _kalshi) / 30.0)
+                    IntelPublisher.publish("intel:portfolio_heat", round(_heat, 3), "analyzer", confidence=0.9)
+                except Exception as _be:
+                    print(f"⚠️ Intel Bus publish failed: {_be}")
+
                 last_hourly_review = now
             except Exception as e:
                 print(f"⚠️ Coach Error: {e}")

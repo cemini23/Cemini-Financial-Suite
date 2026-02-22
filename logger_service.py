@@ -12,7 +12,7 @@ def main():
     print("🖋️ The Scribe (Logger) Initialized...")
 
     # 1. Connect to Redis
-    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+    r = redis.Redis(host=REDIS_HOST, port=6379, password=os.getenv('REDIS_PASSWORD', 'cemini_redis_2026'), decode_responses=True)
     pubsub = r.pubsub()
     pubsub.subscribe("trade_signals")
 

@@ -42,7 +42,7 @@ def log_to_history(symbol, action, price, reason, rsi=0.0):
 async def signal_listener():
     """Listens to the Redis 'trade_signals' channel and routes to EMS."""
     redis_host = os.getenv("REDIS_HOST", "localhost")
-    r = redis.from_url(f"redis://{redis_host}:6379")
+    r = redis.from_url(f"redis://:{os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')}@{redis_host}:6379")
     pubsub = r.pubsub()
     await pubsub.subscribe("trade_signals")
     print(f"📡 EMS: Listening for signals on Redis at {redis_host}...")
@@ -72,7 +72,7 @@ async def signal_listener():
 async def emergency_listener():
     """Listens for 'emergency_stop' signals."""
     redis_host = os.getenv("REDIS_HOST", "localhost")
-    r = redis.from_url(f"redis://{redis_host}:6379")
+    r = redis.from_url(f"redis://:{os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')}@{redis_host}:6379")
     pubsub = r.pubsub()
     await pubsub.subscribe("emergency_stop")
     print(f"🚨 EMS: Emergency Listener ACTIVE on {redis_host}...")
