@@ -107,9 +107,8 @@ def calculate_confidence_score(symbol, history, rsi_realtime=None, is_simulation
                 except Exception as e:
                     logger.warning(f"ML Prediction failed for {symbol}: {e}")
         else:
-            # SIMULATION FALLBACK: Add dummy weight for missing live factors
-            score += 15
-            reasons.append("Sim Fallback (+15)")
+            # Simulation mode: no live factor data available, no score boost
+            logger.warning("API_FAIL: is_simulation=True — no live factor data, skipping signal contribution")
 
         indicators = {
             'rsi': rsi_val,

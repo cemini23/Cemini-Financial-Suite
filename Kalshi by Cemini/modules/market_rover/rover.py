@@ -110,7 +110,7 @@ class MarketRover:
     async def scan_markets(self):
         try:
             # 1. Read QuantOS context from Intel Bus
-            _vix   = await IntelReader.read_async("intel:vix_level")
+            _vix = await IntelReader.read_async("intel:vix_level")
             _trend = await IntelReader.read_async("intel:spy_trend")
             _bias_raw = _trend["value"] if _trend else "neutral"
             q_sentiment = {
@@ -138,10 +138,10 @@ class MarketRover:
             unmatched = []
 
             for m in all_markets:
-                ticker       = m.get("ticker", "")
+                ticker = m.get("ticker", "")
                 series_ticker = m.get("series_ticker", "")
-                title        = m.get("title", "")
-                volume       = m.get("volume", 0) or 0
+                title = m.get("title", "")
+                volume = m.get("volume", 0) or 0
 
                 if volume < MIN_VOLUME:
                     continue
@@ -157,8 +157,8 @@ class MarketRover:
 
                 # Signal: weather deferred to weather_alpha, politics to geo_pulse
                 signal = "NO_SIGNAL"
-                bias   = q_sentiment.get("bias", "NEUTRAL")
-                tl     = title.lower()
+                bias = q_sentiment.get("bias", "NEUTRAL")
+                tl = title.lower()
 
                 if category == "economics":
                     if bias == "BULLISH" and any(w in tl for w in ["above", "pause", "cut", "lower"]):
@@ -192,7 +192,7 @@ class MarketRover:
             print(f"ROVER: Found {len(all_markets)} active markets across [{cats_str}]")
             if unmatched:
                 sample = [u["ticker"] for u in unmatched[:5]]
-                tail   = "..." if len(unmatched) > 5 else ""
+                tail = "..." if len(unmatched) > 5 else ""
                 print(f"ROVER: UNMATCHED {len(unmatched)} markets (no analyzer assigned): {sample}{tail}")
 
             return {

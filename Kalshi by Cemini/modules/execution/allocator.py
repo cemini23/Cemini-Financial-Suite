@@ -50,9 +50,10 @@ class CapitalAllocator:
         return round(position_size, 2)
 
     def get_portfolio_status(self):
-        # In a real scenario, this would query the Kalshi API for account balance
+        # weekly_pnl requires a live Kalshi API query — not yet implemented
+        print("API_FAIL: get_portfolio_status weekly_pnl not available from live source, skipping signal")
         return {
             "equity": self.bankroll,
-            "weekly_pnl": 124.50, # Simulated PnL
+            "weekly_pnl": None,
             "weekly_target": 250.00
         }
