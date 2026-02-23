@@ -1,0 +1,81 @@
+{
+  "_comment": "X/Twitter tiered account monitor — Cemini Social Intelligence",
+  "_budget_math": {
+    "reads_per_month_limit": 10000,
+    "reads_per_call": 10,
+    "tier1_interval_min": 90,
+    "tier2_interval_min": 180,
+    "tier3_interval_min": 360,
+    "tier1_calls_per_month": 480,
+    "tier2_calls_per_month": 240,
+    "tier3_calls_per_month": 120,
+    "total_reads_per_month": 8400,
+    "budget_utilization_pct": 84
+  },
+  "tier1_finance": {
+    "label": "God Tier / Finance",
+    "description": "High-frequency alpha sources — options flow, whale alerts, macro signals",
+    "route": "intel:social_score",
+    "accounts": [
+      "unusual_whales",
+      "WalterBloomberg",
+      "DeItaone",
+      "ShardiB2",
+      "kingtutcap",
+      "TheShortBear",
+      "Bluntz_Capital",
+      "spacexbt",
+      "FL0WG0D",
+      "CheddarFlow",
+      "BullflowIO",
+      "TradetheMatrix1",
+      "epictrades1",
+      "WisemanCap",
+      "prosperousguy",
+      "WSJmarkets"
+    ]
+  },
+  "tier2_weather_macro": {
+    "label": "Weather / Macro",
+    "description": "NWS / NOAA weather alerts and macro economic feeds",
+    "route": "intel:weather_tweet",
+    "accounts": [
+      "NWS",
+      "NOAA",
+      "NWSSPC",
+      "NWSWPC",
+      "NWSNHC",
+      "NOAA_HurrHunter",
+      "NWSMiami",
+      "accuweather",
+      "weatherchannel",
+      "economics",
+      "TN_Finance"
+    ]
+  },
+  "tier3_news": {
+    "label": "News / General",
+    "description": "Breaking news, geopolitical, community traders",
+    "route": "intel:geo_news",
+    "accounts": [
+      "AP_Politics",
+      "dannycheng2022",
+      "Venu_7_",
+      "Mojo_flyin",
+      "MartyChargin",
+      "Maximus_Holla",
+      "SunriseTrader",
+      "prrobbins",
+      "hiddensmallcaps",
+      "BlueMoonTrades",
+      "ChartBreakouts",
+      "ChartsJavi",
+      "FelipeGuirao",
+      "TheProfInvestor",
+      "aleabitoreddit",
+      "weathernetwork",
+      "OneLouderApps",
+      "_MiamiFL"
+    ]
+  }
+}
