@@ -14,6 +14,8 @@ from core.ems.adapters.hardrock import HardRockBetAdapter
 from core.schemas.trading_signals import TradingSignal
 from ems.kalshi_rest import KalshiRESTv2
 
+PAPER_MODE = os.getenv("PAPER_MODE", "False").lower() == "true"
+
 # Initialize Kalshi REST v2 client
 kalshi_v2 = KalshiRESTv2(
     key_id=os.getenv("KALSHI_API_KEY", ""),
@@ -63,8 +65,23 @@ async def signal_listener():
                 else:
                     signal = TradingSignal(**signal_data)
                     print(f"🔄 EMS: Routing signal for {signal.ticker_or_event} ({signal.target_system})...")
-                    result = await ems.execute(signal)
-                    print(f"✅ EMS: Execution Result: {result}")
+                    if PAPER_MODE:
+                        print(
+                            f"📝 PAPER TRADE: {signal.ticker_or_event} {signal.action.upper()}"
+                            f" | confidence={signal.confidence_score:.2f}"
+                            f" | {signal.agent_reasoning}"
+                        )
+                        reason = f"Paper: {signal.agent_reasoning}"[:49]
+                        log_to_history(
+                            signal.ticker_or_event,
+                            signal.action,
+                            0.0,
+                            reason,
+                            0.0,
+                        )
+                    else:
+                        result = await ems.execute(signal)
+                        print(f"✅ EMS: Execution Result: {result}")
 
             except Exception as e:
                 print(f"❌ EMS: Error processing signal: {e}")

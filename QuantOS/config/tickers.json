@@ -1,18 +1,20 @@
 {
   "active_tickers": [
-    "SPY", "QQQ", "IWM", 
+    "SPY", "QQQ", "IWM",
     "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL",
     "TSLA", "AMD", "SMCI", "PLTR", "AVGO",
     "COIN", "MSTR", "MARA",
-    "BTC-USD", "ETH-USD",
     "JPM", "BAC", "GS",
-    "DIS", "NFLX", "UBER"
+    "DIS", "NFLX", "UBER",
+    "BTC", "ETH", "SOL", "DOGE", "ADA", "AVAX", "LINK"
   ],
   "categories": {
     "indices": ["SPY", "QQQ", "IWM"],
     "mega_cap": ["AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL"],
     "high_beta": ["TSLA", "AMD", "SMCI", "PLTR", "AVGO"],
     "crypto_proxies": ["COIN", "MSTR", "MARA"],
-    "crypto_native": ["BTC-USD", "ETH-USD"]
+    "financials": ["JPM", "BAC", "GS"],
+    "consumer_tech": ["DIS", "NFLX", "UBER"],
+    "crypto_native": ["BTC", "ETH", "SOL", "DOGE", "ADA", "AVAX", "LINK"]
   }
 }

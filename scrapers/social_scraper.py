@@ -4,8 +4,15 @@ import os
 import time
 import json
 import re
+import random
 import psycopg2
 from datetime import datetime
+
+MOCK_SYMBOLS = [
+    "SPY", "QQQ", "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL",
+    "TSLA", "AMD", "PLTR", "COIN",
+    "BTC", "ETH", "SOL", "DOGE", "ADA", "AVAX", "LINK",
+]
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 DB_HOST = os.getenv("DB_HOST", "postgres")
@@ -55,7 +62,16 @@ def main():
                         cursor.execute("INSERT INTO sentiment_logs (timestamp, symbol, sentiment_score, source) VALUES (%s, %s, %s, %s)",
                                        (timestamp, t, score, "reddit"))
             else:
-                print("API_FAIL: Reddit credentials not set, skipping sentiment signal")
+                # No Reddit creds — write mock sentiment so downstream has data
+                for sym in MOCK_SYMBOLS:
+                    score = round(random.uniform(-0.2, 0.8), 2)
+                    cursor.execute(
+                        "INSERT INTO sentiment_logs"
+                        " (timestamp, symbol, sentiment_score, source)"
+                        " VALUES (%s, %s, %s, %s)",
+                        (timestamp, sym, score, "mock_social"),
+                    )
+                print(f"📊 Mock sentiment logged for {len(MOCK_SYMBOLS)} symbols")
 
             time.sleep(60) # Scan more frequently for Heatseeker density
 

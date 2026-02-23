@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import requests
 from datetime import datetime
+from sqlalchemy import create_engine, text
 
 # 1. Environment Connections
 DB_HOST = os.getenv("DB_HOST", "localhost")
@@ -22,6 +23,21 @@ DAILY_LOSS_LIMIT = 50.0
 cumulative_daily_loss = 0.0
 last_reset_day = datetime.now().day
 MANUAL_MODE = False # --- RE-ENABLE AUTOMATIC BRAIN ---
+
+_db_engine = None
+
+
+def get_db_engine():
+    global _db_engine
+    if _db_engine is None:
+        db_user = os.getenv("POSTGRES_USER", "admin")
+        db_pass = os.getenv("POSTGRES_PASSWORD", "quest")
+        db_name = os.getenv("POSTGRES_DB", "qdb")
+        _db_engine = create_engine(
+            f"postgresql://{db_user}:{db_pass}@{DB_HOST}:5432/{db_name}"
+        )
+    return _db_engine
+
 
 def connect_db():
     try:
@@ -64,12 +80,27 @@ def send_discord_alert(action, symbol, price, reason=None, rsi=None):
     except Exception as e: print(f"⚠️ Discord Alert Failed: {e}")
 
 def get_recent_ticks(conn, symbol, limit=30):
-    query = "SELECT timestamp, price FROM raw_market_ticks WHERE symbol = %s ORDER BY timestamp DESC LIMIT %s;"
+    query = text(
+        "SELECT timestamp, price FROM raw_market_ticks"
+        " WHERE symbol = :symbol ORDER BY timestamp DESC LIMIT :limit"
+    )
     try:
-        df = pd.read_sql_query(query, conn, params=(symbol, limit))
-        if df.empty: return df
+        engine = get_db_engine()
+        with engine.connect() as sa_conn:
+            df = pd.read_sql_query(
+                query, sa_conn, params={"symbol": symbol, "limit": limit}
+            )
+        if df.empty:
+            return df
         return df.sort_values('timestamp').reset_index(drop=True)
-    except Exception as e: print(f"⚠️ DB Read Error: {e}"); return pd.DataFrame()
+    except Exception as e:
+        print(f"⚠️ DB Read Error: {e}")
+        if conn and not conn.closed:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return pd.DataFrame()
 
 def calculate_rsi(prices, period=14):
     if len(prices) < period + 1: return None

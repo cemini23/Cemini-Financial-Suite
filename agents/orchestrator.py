@@ -9,6 +9,24 @@ from typing import TypedDict, Dict, Any, List, Literal
 from langgraph.graph import StateGraph, END
 from core.schemas.trading_signals import TradingSignal
 
+# Full watchlist: equities from tickers.json + crypto native
+WATCHLIST = [
+    # Indices
+    "SPY", "QQQ", "IWM",
+    # Mega cap
+    "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL",
+    # High beta
+    "TSLA", "AMD", "SMCI", "PLTR", "AVGO",
+    # Crypto proxies
+    "COIN", "MSTR", "MARA",
+    # Financials
+    "JPM", "BAC", "GS",
+    # Consumer / Tech
+    "DIS", "NFLX", "UBER",
+    # Crypto native
+    "BTC", "ETH", "SOL", "DOGE", "ADA", "AVAX", "LINK",
+]
+
 # 1. Define the Global State (The 'Spinal Cord' memory)
 class TradingState(TypedDict):
     symbol: str
@@ -212,30 +230,35 @@ def create_cemini_brain():
 async def main():
     """
     Main loop to run the Cemini Brain periodically.
+    Scans all symbols in WATCHLIST each cycle, with a 60-second rest between cycles.
     """
     brain = create_cemini_brain()
-    print("🧠 Cemini Brain: Orchestrator started. Running workflow every 60 seconds...")
+    print(
+        f"🧠 Cemini Brain: Orchestrator started. "
+        f"Scanning {len(WATCHLIST)} symbols per cycle (60s between cycles)..."
+    )
 
     while True:
-        try:
-            initial_state = {
-                "symbol": "DOGE",
-                "target_system": "QuantOS",
-                "raw_market_data": "",
-                "technical_analysis": "",
-                "fundamental_analysis": "",
-                "sentiment_analysis": "",
-                "final_decision": {},
-                "position_size": 0.0,
-                "execution_status": ""
-            }
+        for symbol in WATCHLIST:
+            try:
+                initial_state = {
+                    "symbol": symbol,
+                    "target_system": "QuantOS",
+                    "raw_market_data": "",
+                    "technical_analysis": "",
+                    "fundamental_analysis": "",
+                    "sentiment_analysis": "",
+                    "final_decision": {},
+                    "position_size": 0.0,
+                    "execution_status": ""
+                }
 
-            # Run the workflow
-            print(f"🧠 Cemini Brain: Processing {initial_state['symbol']}...")
-            await brain.ainvoke(initial_state)
+                print(f"🧠 Cemini Brain: Processing {symbol}...")
+                await brain.ainvoke(initial_state)
+                await asyncio.sleep(2)  # brief pause between symbols
 
-        except Exception as e:
-            print(f"❌ Cemini Brain: Error in workflow: {e}")
+            except Exception as e:
+                print(f"❌ Cemini Brain: Error processing {symbol}: {e}")
 
         await asyncio.sleep(60)
 
