@@ -25,8 +25,8 @@ class SystemSettings(BaseModel):
     
     # X / Twitter Budget Protocol (Phase 8)
     x_api_total_spend: float = 0.0
-    x_api_budget_limit: float = 100.0
-    social_scan_frequency: int = 15 # Minutes
+    x_api_budget_limit: float = float(os.getenv("X_API_MONTHLY_BUDGET", "25.00"))
+    social_scan_frequency: int = int(os.getenv("SOCIAL_SCRAPER_INTERVAL_MINUTES", "30"))
     last_social_scan: float = 0.0
 
 class SettingsManager:
@@ -43,5 +43,19 @@ class SettingsManager:
     def save_settings(self, settings: SystemSettings):
         with open(self.settings_path, "w") as f:
             json.dump(settings.dict(), f, indent=4)
+        # Sync spend counter to Redis so other containers can read it
+        try:
+            import redis as _redis
+            _r = _redis.Redis(
+                host=os.getenv("REDIS_HOST", "redis"),
+                port=6379,
+                password=os.getenv("REDIS_PASSWORD", "cemini_redis_2026"),
+                decode_responses=True,
+                socket_connect_timeout=2,
+            )
+            _r.set("x_api:monthly_spend", str(settings.x_api_total_spend))
+            _r.close()
+        except Exception:
+            pass
 
 settings_manager = SettingsManager()

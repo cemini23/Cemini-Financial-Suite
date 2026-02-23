@@ -124,12 +124,13 @@ services:
       dockerfile: Dockerfile.scraper
     container_name: social_scraper
     restart: always
+    env_file: .env
     environment:
       - REDIS_HOST=redis
-      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
-      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+      - DB_HOST=postgres
     depends_on:
       - redis
+      - postgres
     command: ["python", "scrapers/social_scraper.py"]
 
   macro_scraper:

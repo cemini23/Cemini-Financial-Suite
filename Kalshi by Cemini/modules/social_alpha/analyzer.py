@@ -41,8 +41,13 @@ class SocialAnalyzer:
             return False, "Scan Frequency Limit"
 
         # 2. Budget Check
-        if sys_settings.x_api_total_spend >= (sys_settings.x_api_budget_limit * 0.9):
-            print(f"[CRITICAL] X API Budget at 90% (${sys_settings.x_api_total_spend}). Stopping Social Scan.")
+        hard_skip_pct = float(_os.getenv("X_API_HARD_SKIP_PCT", "0.90"))
+        if sys_settings.x_api_total_spend >= (sys_settings.x_api_budget_limit * hard_skip_pct):
+            print(
+                f"[CRITICAL] X API Budget at {hard_skip_pct*100:.0f}%"
+                f" (${sys_settings.x_api_total_spend:.2f} / ${sys_settings.x_api_budget_limit:.2f})."
+                " Stopping Social Scan."
+            )
             return False, "Budget Limit Reached"
 
         return True, "Safe"
