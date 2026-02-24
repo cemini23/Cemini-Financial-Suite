@@ -5,7 +5,13 @@ import os
 import time
 import requests
 import psycopg2
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, time as dt_time
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
+_ET = ZoneInfo("America/New_York")
 
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "")
 DB_HOST = os.getenv("DB_HOST", "localhost")
@@ -94,18 +100,34 @@ def fetch_and_insert(cursor, ticker, display_symbol, from_dt, to_dt):
         print(f"WARNING: Error fetching {display_symbol}: {e} — skipping")
 
 
+def _is_market_hours():
+    """True if US equity markets are open (Mon-Fri 9:30-16:00 ET)."""
+    now_et = datetime.now(tz=_ET)
+    if now_et.weekday() >= 5:  # Saturday=5, Sunday=6
+        return False
+    return dt_time(9, 30) <= now_et.time() <= dt_time(16, 0)
+
+
 def run_poll_cycle(cursor, conn):
     now = datetime.now(tz=timezone.utc)
     yesterday = now - timedelta(days=1)
 
-    all_symbols = [
+    # Crypto: always poll (24/7 markets)
+    crypto_pairs = [
         (ticker, ticker.replace("X:", "").replace("USD", "-USD"))
         for ticker in CRYPTO_SYMBOLS
-    ] + [(s, s) for s in STOCK_SYMBOLS]
-
-    for ticker, display in all_symbols:
+    ]
+    for ticker, display in crypto_pairs:
         fetch_and_insert(cursor, ticker, display, yesterday, now)
         time.sleep(RATE_LIMIT_SLEEP)
+
+    # Stocks: only during market hours to avoid empty-result calls
+    if _is_market_hours():
+        for ticker in STOCK_SYMBOLS:
+            fetch_and_insert(cursor, ticker, ticker, yesterday, now)
+            time.sleep(RATE_LIMIT_SLEEP)
+    else:
+        print("POLYGON_REST: Market closed — skipping stock symbols this cycle")
 
 
 def main():

@@ -64,6 +64,8 @@ async def signal_listener():
                         log_to_history(ticker, action, 0.50, f"Order: {result.get('order_id')}")
                 else:
                     signal = TradingSignal(**signal_data)
+                    price = float(data.get("price") or 0.0)
+                    rsi = float(data.get("rsi") or 0.0)
                     print(f"🔄 EMS: Routing signal for {signal.ticker_or_event} ({signal.target_system})...")
                     if PAPER_MODE:
                         print(
@@ -71,13 +73,13 @@ async def signal_listener():
                             f" | confidence={signal.confidence_score:.2f}"
                             f" | {signal.agent_reasoning}"
                         )
-                        reason = f"Paper: {signal.agent_reasoning}"[:49]
+                        reason = f"Paper: {signal.agent_reasoning}"
                         log_to_history(
                             signal.ticker_or_event,
                             signal.action,
-                            0.0,
+                            price,
                             reason,
-                            0.0,
+                            rsi,
                         )
                     else:
                         result = await ems.execute(signal)
