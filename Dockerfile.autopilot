@@ -1,0 +1,34 @@
+# Dockerfile.autopilot
+# Activates the Kalshi by Cemini autopilot (weather_alpha, satoshi_vision,
+# powell_protocol, social_alpha, musk_monitor) and the market rover scanner.
+#
+# Build context: /opt/cemini  (the full repo root)
+# Resulting layout inside the image:
+#   /app/                    → repo root  (core/intel_bus.py, ems/, ingestion/, …)
+#   /app/Kalshi by Cemini/   → Kalshi subproject  (app/, modules/, …)
+#   /app/kalshi/             → symlink to above   (WORKDIR — avoids spaces in CMD)
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install Kalshi by Cemini Python dependencies
+COPY ["Kalshi by Cemini/requirements.txt", "./requirements.txt"]
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the full project into /app
+COPY . /app
+
+# Symlink so WORKDIR / CMD can reference the dir without embedded spaces
+RUN ln -s "/app/Kalshi by Cemini" /app/kalshi
+
+# PYTHONPATH:
+#   /app        → root (core/intel_bus.py, core/config.py, …)
+#   /app/kalshi → Kalshi app (app/core/config.py, modules/…, …)
+ENV PYTHONPATH=/app:/app/kalshi
+
+WORKDIR /app/kalshi
+
+# Default: run the full autopilot (harvester + CeminiAutopilot background tasks)
+CMD ["python", "-m", "app.main"]

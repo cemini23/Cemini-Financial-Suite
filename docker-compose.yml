@@ -147,6 +147,47 @@ services:
       - postgres
     command: ["python", "scrapers/macro_harvester.py"]
 
+  # --- KALSHI AUTOPILOT (Prediction Market Brain) ---
+  # Runs CeminiAutopilot: weather_alpha, satoshi_vision, powell_protocol,
+  # social_alpha, musk_monitor — all in paper mode by default.
+  kalshi_autopilot:
+    build:
+      context: .
+      dockerfile: Dockerfile.autopilot
+    container_name: kalshi_autopilot
+    restart: always
+    env_file:
+      - "Kalshi by Cemini/.env"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+      - KALSHI_PRIVATE_KEY_PATH=private_key.pem
+    volumes:
+      - "./Kalshi by Cemini/private_key.pem:/app/Kalshi by Cemini/private_key.pem:ro"
+    depends_on:
+      - redis
+      - postgres
+
+  # --- ROVER SCANNER (Dynamic Kalshi Market Discovery) ---
+  # Paginates all open Kalshi markets every 15 min, categorises them
+  # (weather / crypto / economics / politics), and publishes intel to Redis.
+  rover_scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile.autopilot
+    container_name: rover_scanner
+    restart: always
+    env_file:
+      - "Kalshi by Cemini/.env"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+    depends_on:
+      - redis
+    command: ["python", "rover_runner.py"]
+
   # --- NODE 5: THE SWORD (Execution) ---
   ems:
     build:
