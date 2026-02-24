@@ -66,12 +66,22 @@ services:
       - postgres
 
   # --- SIGNAL GENERATOR (Brain logic) ---
+  # DISABLED (2026-02-24): Redundant with the `brain` service.
+  # signal_generator covers only SPY, QQQ, BTC using SMA(3)/SMA(10) crossover.
+  # `brain` covers those same 3 symbols plus 27 more, uses RSI-14 + macro FGI +
+  # sentiment scoring via the Intel Bus, and produces richer signal payloads
+  # (price, rsi). Both publish to the same `trade_signals` Redis channel, which
+  # would cause duplicate/conflicting EMS executions. Additionally, signal_generator
+  # had a hard bug: BTC ticks are stored as "BTC-USD" but it queries "BTC", so it
+  # never accumulates the 15 rows needed to emit any signal.
+  # Use `docker compose --profile signal_generator up` to re-enable for testing.
   signal_generator:
     build:
       context: ./QuantOS
       dockerfile: Dockerfile.brain
     container_name: signal_generator
     restart: always
+    profiles: ["signal_generator"]
     environment:
       - PYTHONUNBUFFERED=1
       - DB_HOST=postgres
