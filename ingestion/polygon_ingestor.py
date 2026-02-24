@@ -1,90 +1,149 @@
 # CEMINI FINANCIAL SUITE™
 # Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 # All Rights Reserved.
-import asyncio
-import json
 import os
-import websockets
+import time
+import requests
 import psycopg2
-from datetime import datetime, timezone
-from core.config import Credentials
+from datetime import datetime, timezone, timedelta
 
-# Polygon.io WebSocket endpoints
-POLYGON_WS_URL = os.getenv("POLYGON_WS_URL", "wss://socket.polygon.io/crypto")
-POLYGON_API_KEY = Credentials.POLYGON_API_KEY
-
-# Database Configuration
+POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = 5432
 
-async def ingest_polygon_ticks():
-    """
-    High-performance feed handler.
-    Streams raw ticks from Polygon.io into Postgres.
-    """
-    print(f"📡 Ingestion: Connecting to Polygon WebSocket at {POLYGON_WS_URL}...")
+# Crypto tickers use X: prefix on Polygon REST API
+CRYPTO_SYMBOLS = [
+    "X:BTCUSD", "X:ETHUSD", "X:SOLUSD",
+    "X:DOGEUSD", "X:ADAUSD", "X:AVAXUSD", "X:LINKUSD",
+]
 
-    # Connect to Postgres
+# Stock tickers — only available during market hours (9:30–16:00 ET)
+STOCK_SYMBOLS = [
+    "SPY", "QQQ", "IWM",
+    "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL",
+    "TSLA", "AMD", "SMCI", "PLTR", "AVGO",
+    "COIN", "MSTR", "MARA",
+    "JPM", "BAC", "GS",
+    "DIS", "NFLX", "UBER",
+]
+
+# Polygon free tier: 5 calls/minute → sleep 13s between calls to stay safe
+RATE_LIMIT_SLEEP = 13
+POLL_INTERVAL = 60  # seconds between full cycles
+
+
+def get_db_connection():
+    return psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=os.getenv("QUESTDB_USER", "admin"),
+        password=os.getenv("QUESTDB_PASSWORD", "quest"),
+        database="qdb"
+    )
+
+
+def ensure_table(cursor):
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS raw_market_ticks (
+            id SERIAL PRIMARY KEY,
+            symbol VARCHAR(20) NOT NULL,
+            price DOUBLE PRECISION NOT NULL,
+            volume DOUBLE PRECISION,
+            timestamp TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+    """)
+
+
+def fetch_and_insert(cursor, ticker, display_symbol, from_dt, to_dt):
+    """Fetch 1-minute bars from Polygon REST API and insert into DB."""
+    from_str = from_dt.strftime("%Y-%m-%d")
+    to_str = to_dt.strftime("%Y-%m-%d")
+    url = (
+        f"https://api.polygon.io/v2/aggs/ticker/{ticker}"
+        f"/range/1/minute/{from_str}/{to_str}"
+        f"?adjusted=true&sort=desc&limit=5&apiKey={POLYGON_API_KEY}"
+    )
     try:
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            user=os.getenv("QUESTDB_USER", "admin"),
-            password=os.getenv("QUESTDB_PASSWORD", "quest"),
-            database="qdb"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        results = data.get("results", [])
+        if not results:
+            return
+
+        latest = results[0]
+        price = float(latest.get("c", 0))   # close price
+        volume = float(latest.get("v", 0))
+        ts_ms = latest.get("t", 0)
+        dt = datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc)
+
+        cursor.execute(
+            "INSERT INTO raw_market_ticks (symbol, price, volume, timestamp) "
+            "VALUES (%s, %s, %s, %s)",
+            (display_symbol, price, volume, dt)
         )
-        conn.autocommit = True
-        cursor = conn.cursor()
-        print(f"✅ Ingestion: Connected to Postgres at {DB_HOST}:{DB_PORT}")
+        n = len(results)
+        print(
+            f"POLYGON_REST: Fetched {n} ticks for {display_symbol}, "
+            f"latest price: ${price:.4f}"
+        )
+    except requests.HTTPError as e:
+        print(f"WARNING: Polygon HTTP error for {display_symbol}: {e} — skipping")
     except Exception as e:
-        print(f"❌ Ingestion: Database connection failure: {e}")
-        return
+        print(f"WARNING: Error fetching {display_symbol}: {e} — skipping")
 
-    try:
-        async with websockets.connect(POLYGON_WS_URL) as ws:
-            # 1. Authentication
-            auth_message = {"action": "auth", "params": POLYGON_API_KEY}
-            await ws.send(json.dumps(auth_message))
 
-            auth_resp = await ws.recv()
-            print(f"✅ Ingestion: Auth Status -> {auth_resp}")
+def run_poll_cycle(cursor, conn):
+    now = datetime.now(tz=timezone.utc)
+    yesterday = now - timedelta(days=1)
 
-            # 2. Subscription
-            # XT.* = All Crypto Trades | T.* = All Stock Trades
-            sub_message = {"action": "subscribe", "params": "XT.*"}
-            await ws.send(json.dumps(sub_message))
-            print("✅ Ingestion: Subscribed to XT.* (All Crypto Trades)")
+    all_symbols = [
+        (ticker, ticker.replace("X:", "").replace("USD", "-USD"))
+        for ticker in CRYPTO_SYMBOLS
+    ] + [(s, s) for s in STOCK_SYMBOLS]
 
-            while True:
-                try:
-                    message = await ws.recv()
-                    data = json.loads(message)
+    for ticker, display in all_symbols:
+        fetch_and_insert(cursor, ticker, display, yesterday, now)
+        time.sleep(RATE_LIMIT_SLEEP)
 
-                    for event in data:
-                        # Process Trade Events (T=Stocks, XT=Crypto)
-                        if event.get("ev") in ["T", "XT"]:
-                            symbol = event.get("sym") or event.get("pair")
-                            price = float(event.get("p", 0))
-                            size = float(event.get("s", 0))
-                            timestamp_ms = event.get("t")
-                            dt = datetime.fromtimestamp(timestamp_ms / 1000.0, tz=timezone.utc)
 
-                            cursor.execute(
-                                "INSERT INTO raw_market_ticks (symbol, price, volume, timestamp) VALUES (%s, %s, %s, %s)",
-                                (symbol, price, size, dt)
-                            )
+def main():
+    print("POLYGON_REST: Ingestor starting (REST polling mode)...")
 
-                except websockets.exceptions.ConnectionClosed:
-                    print("⚠️ Ingestion: Polygon connection lost. Retrying...")
-                    break
-                except Exception as e:
-                    print(f"❌ Ingestion: Loop error: {e}")
-                    continue
+    conn = None
+    while conn is None:
+        try:
+            conn = get_db_connection()
+            conn.autocommit = True
+            print(f"POLYGON_REST: Connected to Postgres at {DB_HOST}:{DB_PORT}")
+        except Exception as e:
+            print(f"WARNING: DB connection failed: {e} — retrying in 5s")
+            time.sleep(5)
 
-    except Exception as e:
-        print(f"❌ Ingestion: Connection failure: {e}")
-    finally:
-        conn.close()
+    cursor = conn.cursor()
+    ensure_table(cursor)
+    print("POLYGON_REST: raw_market_ticks table ready.")
+
+    while True:
+        try:
+            print("POLYGON_REST: Starting poll cycle...")
+            run_poll_cycle(cursor, conn)
+            print(f"POLYGON_REST: Cycle complete. Sleeping {POLL_INTERVAL}s...")
+            time.sleep(POLL_INTERVAL)
+        except psycopg2.InterfaceError:
+            print("WARNING: DB connection lost — reconnecting...")
+            try:
+                conn = get_db_connection()
+                conn.autocommit = True
+                cursor = conn.cursor()
+            except Exception as e:
+                print(f"WARNING: Reconnect failed: {e}")
+                time.sleep(10)
+        except Exception as e:
+            print(f"WARNING: Poll cycle error: {e}")
+            time.sleep(10)
+
 
 if __name__ == "__main__":
-    asyncio.run(ingest_polygon_ticks())
+    main()

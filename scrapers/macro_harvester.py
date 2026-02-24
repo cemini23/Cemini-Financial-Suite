@@ -44,19 +44,18 @@ def main():
                 yield_10y = float(hist['Close'].iloc[-1])
                 r.set("macro:10y_yield", yield_10y)
 
-            # 2. Fear & Greed Index — CNN production endpoint (public, no key required)
+            # 2. Fear & Greed Index — alternative.me (free, no key required)
             try:
                 fgi_resp = requests.get(
-                    "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+                    "https://api.alternative.me/fng/?limit=1",
                     timeout=8,
-                    headers={"User-Agent": "Mozilla/5.0"}
                 )
                 fgi_resp.raise_for_status()
-                new_fgi = float(fgi_resp.json()["fear_and_greed"]["score"])
+                new_fgi = float(fgi_resp.json()["data"][0]["value"])
                 r.set("macro:fear_greed", new_fgi)
             except Exception as fgi_err:
                 new_fgi = float(r.get("macro:fear_greed") or 50.0)
-                print(f"API_FAIL: CNN Fear & Greed fetch failed ({fgi_err}), keeping existing value {new_fgi:.1f}")
+                print(f"API_FAIL: Fear & Greed fetch failed ({fgi_err}), keeping existing value {new_fgi:.1f}")
 
             # 3. Log to Postgres
             cursor.execute(

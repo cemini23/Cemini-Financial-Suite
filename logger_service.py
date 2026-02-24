@@ -34,10 +34,15 @@ def main():
             symbol VARCHAR(50),
             action VARCHAR(20),
             price DOUBLE PRECISION,
-            reason VARCHAR(50),
+            reason TEXT,
             rsi DOUBLE PRECISION,
             strategy VARCHAR(100)
         );
+    """)
+    # Widen reason column if it was created with the old VARCHAR(50) definition
+    cursor.execute("""
+        ALTER TABLE trade_history
+        ALTER COLUMN reason TYPE TEXT;
     """)
     print("✅ Postgres: trade_history table ready.")
 

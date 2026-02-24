@@ -22,19 +22,18 @@ def main():
                 r.set("macro:10y_yield", float(yield_10y))
                 print(f"📊 10Y Yield Updated: {yield_10y:.2f}%")
 
-            # 2. Fear & Greed Index — CNN production endpoint (public, no key required)
+            # 2. Fear & Greed Index — alternative.me (free, no key required)
             try:
                 fgi_resp = requests.get(
-                    "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+                    "https://api.alternative.me/fng/?limit=1",
                     timeout=8,
-                    headers={"User-Agent": "Mozilla/5.0"}
                 )
                 fgi_resp.raise_for_status()
-                new_fgi = float(fgi_resp.json()["fear_and_greed"]["score"])
+                new_fgi = float(fgi_resp.json()["data"][0]["value"])
                 r.set("macro:fear_greed", new_fgi)
                 print(f"⚖️ Fear & Greed: {new_fgi:.1f}")
             except Exception as fgi_err:
-                print(f"API_FAIL: CNN Fear & Greed fetch failed ({fgi_err}), keeping existing value")
+                print(f"API_FAIL: Fear & Greed fetch failed ({fgi_err}), keeping existing value")
 
         except Exception as e:
             print(f"⚠️ Macro Error: {e}")

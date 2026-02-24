@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Core ingestion requirements
 RUN pip install --no-cache-dir \
-    websockets \
+    requests \
     questdb \
     python-dotenv \
     polars \
