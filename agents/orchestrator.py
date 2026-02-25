@@ -107,6 +107,14 @@ def _calc_sma(prices, period):
     return sum(prices[-period:]) / period
 
 
+def _get_playbook_regime():
+    """Read current macro regime from intel:playbook_snapshot. Returns str or None."""
+    snap = IntelReader.read("intel:playbook_snapshot")
+    if snap and isinstance(snap.get("value"), dict):
+        return snap["value"].get("regime")
+    return None
+
+
 # ---------------------------------------------------------------------------
 # 3. Analyst nodes
 # ---------------------------------------------------------------------------
@@ -374,6 +382,11 @@ def cio_debate_node(state: TradingState):
     """
     Aggregates real numeric scores from the three analysts.
     BUY if avg > 0.7, SELL if avg < 0.3, HOLD otherwise.
+
+    NOTE: Simplified numeric scoring — pending LLM-backed debate validation.
+    Thresholds (0.7 / 0.3) are empirically set; the regime gate in
+    publish_signal_to_bus is the primary macro filter before any EXECUTE
+    verdict reaches Redis.
     """
     tech_score = state.get("technical_score", 0.5)
     fund_score = state.get("fundamental_score", 0.5)
@@ -422,6 +435,21 @@ async def publish_signal_to_bus(state: TradingState):
     decision = state.get("final_decision")
 
     if decision and decision.get("verdict") == "EXECUTE":
+        # ── REGIME GATE ────────────────────────────────────────────────────────
+        # Playbook regime is authoritative over strategy_mode.
+        # YELLOW / RED = macro deterioration; no new longs are permitted.
+        # SELL signals are allowed through in any regime (reducing exposure is safe).
+        if decision.get("action", "").upper() == "BUY":
+            regime = _get_playbook_regime()
+            if regime in ("YELLOW", "RED"):
+                print(
+                    f"⛔ Trade blocked: regime={regime}, no new longs permitted"
+                    f" — {state['symbol']} {decision['action']}"
+                    f" (score={decision.get('confidence_score', 0):.2f})"
+                )
+                return {"execution_status": "BLOCKED_BY_REGIME"}
+        # ── END REGIME GATE ────────────────────────────────────────────────────
+
         # Log to Postgres audit table
         try:
             db_host = os.getenv("DB_HOST", "postgres")

@@ -138,6 +138,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - DB_HOST=postgres
+      - ENABLE_MOCK_SOCIAL=false
     depends_on:
       - redis
       - postgres

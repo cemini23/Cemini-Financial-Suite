@@ -45,6 +45,8 @@ REDDIT_INTERVAL = int(os.getenv("SOCIAL_SCRAPER_INTERVAL_MINUTES", "30")) * 60
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
 REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "CeminiBot v1.0")
+# Set to "true" only in dev/testing — keeps synthetic rows out of RL training data
+ENABLE_MOCK_SOCIAL = os.getenv("ENABLE_MOCK_SOCIAL", "false").lower() == "true"
 
 # ── FALLBACK SYMBOLS FOR MOCK MODE ────────────────────────────────────────────
 MOCK_SYMBOLS = [
@@ -335,13 +337,16 @@ def main():
                                 (timestamp, t, score, "reddit"),
                             )
                 else:
-                    for sym in MOCK_SYMBOLS:
-                        cursor.execute(
-                            "INSERT INTO sentiment_logs"
-                            " (timestamp, symbol, sentiment_score, source)"
-                            " VALUES (%s, %s, %s, %s)",
-                            (timestamp, sym, round(random.uniform(-0.2, 0.8), 2), "mock_social"),
-                        )
+                    if ENABLE_MOCK_SOCIAL:
+                        for sym in MOCK_SYMBOLS:
+                            cursor.execute(
+                                "INSERT INTO sentiment_logs"
+                                " (timestamp, symbol, sentiment_score, source)"
+                                " VALUES (%s, %s, %s, %s)",
+                                (timestamp, sym, round(random.uniform(-0.2, 0.8), 2), "mock_social"),
+                            )
+                    else:
+                        print("SOCIAL_SCRAPER: mock_social disabled (ENABLE_MOCK_SOCIAL=false) — no synthetic inserts")
                 x_spend = _get_x_spend(r)
                 src = "reddit" if reddit else "mock"
                 print(
