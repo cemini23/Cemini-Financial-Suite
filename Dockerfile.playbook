@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir \
     psycopg2-binary \
     requests
 # Code is volume-mounted from the host (same pattern as logger/analyzer)
-CMD ["python", "trading_playbook/runner.py"]
+CMD ["python", "-m", "trading_playbook.runner"]

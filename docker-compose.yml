@@ -307,6 +307,7 @@ services:
       - DB_HOST=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quest}
       - SCAN_INTERVAL=${PLAYBOOK_SCAN_INTERVAL:-300}
+    command: ["python", "-m", "trading_playbook.runner"]
     depends_on:
       - redis
       - postgres
