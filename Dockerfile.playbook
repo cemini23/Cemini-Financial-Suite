@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+RUN pip install --no-cache-dir \
+    yfinance \
+    numpy \
+    pandas \
+    redis \
+    psycopg2-binary \
+    requests
+# Code is volume-mounted from the host (same pattern as logger/analyzer)
+CMD ["python", "trading_playbook/runner.py"]

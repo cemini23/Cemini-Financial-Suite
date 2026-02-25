@@ -288,6 +288,29 @@ services:
     depends_on:
       - nginx
 
+  # --- PLAYBOOK LAYER (Regime + Signals + Risk → RL training bridge) ---
+  # Observation-only: classifies macro regime, detects tactical setups,
+  # computes risk metrics, and logs everything to Postgres + JSONL for the
+  # future RL model.  Does NOT place orders.  Harvesters are unaffected.
+  playbook:
+    build:
+      context: .
+      dockerfile: Dockerfile.playbook
+    container_name: playbook_runner
+    restart: always
+    volumes:
+      - .:/app
+      - ./archives:/mnt/archive
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quest}
+      - SCAN_INTERVAL=${PLAYBOOK_SCAN_INTERVAL:-300}
+    depends_on:
+      - redis
+      - postgres
+
 volumes:
   postgres_data:
   redis_data:
