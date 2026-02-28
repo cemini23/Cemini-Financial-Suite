@@ -28,8 +28,67 @@ jobs:
             --exclude="venv,.venv,venv_new,__pycache__,.git,QuantOS/data/kaggle_import,Kalshi by Cemini/venv,Kalshi by Cemini/venv_new,Cemini-Suite" \
             --config=.flake8
 
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit (all requirements files)
+        run: |
+          pip-audit \
+            -r requirements.txt \
+            -r QuantOS/requirements.txt \
+            -r "Kalshi by Cemini/requirements.txt" \
+            --strict
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install bandit
+        run: pip install bandit
+
+      - name: Run bandit (SAST) — generate JSON report
+        # Non-blocking: always produces the artifact even if issues are found
+        run: |
+          bandit -r . -ll -ii \
+            --exclude ./tests,./venv,./.venv,./venv_new,./Cemini-Suite,./QuantOS/data/kaggle_import \
+            -f json -o bandit-report.json || true
+
+      - name: Upload bandit JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+
+      - name: Run bandit (SAST) — enforce HIGH findings fail
+        # This step determines pass/fail: exits non-zero if any HIGH severity issue is found
+        run: |
+          bandit -r . -ll -ii \
+            --exclude ./tests,./venv,./.venv,./venv_new,./Cemini-Suite,./QuantOS/data/kaggle_import \
+            -f screen
+
   audit-and-deploy:
-    needs: lint
+    # All three parallel checks must pass before secrets scan + deploy
+    needs: [lint, pip-audit, bandit]
     runs-on: ubuntu-latest
 
     steps:
@@ -94,8 +153,11 @@ jobs:
         if: always()
         run: |
           echo "=== CI RESULTS ==="
-          echo "Security Scan: ${{ steps.security.outcome }}"
-          echo "Deploy:        ${{ steps.deploy.outcome }}"
+          echo "Lint (flake8):   ${{ needs.lint.result }}"
+          echo "Dep scan (pip-audit): ${{ needs.pip-audit.result }}"
+          echo "SAST (bandit):   ${{ needs.bandit.result }}"
+          echo "Secret Scan:     ${{ steps.security.outcome }}"
+          echo "Deploy:          ${{ steps.deploy.outcome }}"
           echo ""
           if [ "${{ steps.deploy.outcome }}" = "failure" ]; then
             echo "⚠️  Deploy failed — SSH or docker compose error on server"
@@ -103,3 +165,9 @@ jobs:
           if [ "${{ steps.deploy.outcome }}" = "success" ]; then
             echo "✅ Deployed successfully to root@5.161.53.103:/opt/cemini"
           fi
+
+# NOTE — Docker layer caching:
+# Builds run on the VPS server (via SSH in the deploy step), not inside the
+# GitHub Actions runner. The server's local Docker layer cache already provides
+# layer reuse between runs. GitHub Actions GHA cache (type=gha) applies only
+# when docker/build-push-action builds inside the runner — N/A here.

@@ -15,7 +15,8 @@ sys.path.append(os.getcwd())
 console = Console()
 
 def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    # B605: argument is a hardcoded constant ("cls"/"clear"), no user input
+    os.system("cls" if os.name == "nt" else "clear")  # nosec B605
 
 def show_header():
     clear_screen()

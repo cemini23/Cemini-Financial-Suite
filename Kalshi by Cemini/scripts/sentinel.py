@@ -12,7 +12,7 @@ def run_command(command, description):
         # Run command and capture output
         result = subprocess.run(
             command,
-            shell=True,
+            shell=True,  # nosec B602 - internal dev tool, not a production service
             check=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
