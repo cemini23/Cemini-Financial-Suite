@@ -49,4 +49,4 @@ if __name__ == "__main__":
     import uvicorn
     # Enforced fixed port for Suite Protocol
     # Changed host to 0.0.0.0 for Docker compatibility
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)  # nosec B104
