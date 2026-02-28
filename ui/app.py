@@ -123,7 +123,7 @@ elif page == "Stock Portfolio":
 elif page == "Satoshi Vision":
     st.title("₿ Satoshi Vision")
     col1, col2, col3 = st.columns(3)
-    ticks = get_db_data("SELECT price FROM raw_market_ticks WHERE symbol = 'BTC' ORDER BY timestamp DESC LIMIT 1")
+    ticks = get_db_data("SELECT price FROM raw_market_ticks WHERE symbol = 'BTC' ORDER BY created_at DESC LIMIT 1")
     price = ticks.iloc[0]['price'] if not ticks.empty else None
     real_price = get_real_btc_price()
 

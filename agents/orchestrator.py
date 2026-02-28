@@ -133,7 +133,7 @@ def technical_analyst_node(state: TradingState):
         cursor = conn.cursor()
         cursor.execute(
             "SELECT price FROM raw_market_ticks "
-            "WHERE symbol = %s ORDER BY timestamp DESC LIMIT 30",
+            "WHERE symbol = %s ORDER BY created_at DESC LIMIT 30",
             (tick_symbol,),
         )
         rows = cursor.fetchall()

@@ -16,7 +16,7 @@ def cold_storage_sync():
     conn = f"postgresql://{quest_user}:{quest_pass}@{quest_host}:8812/qdb"
 
     # 2. Extract yesterday's data
-    query = "SELECT * FROM raw_market_ticks WHERE timestamp < now() - 1d"
+    query = "SELECT * FROM raw_market_ticks WHERE created_at < now() - 1d"
 
     try:
         df_to_move = pl.read_database(query=query, connection=conn)

@@ -82,7 +82,7 @@ def send_discord_alert(action, symbol, price, reason=None, rsi=None):
 def get_recent_ticks(conn, symbol, limit=30):
     query = text(
         "SELECT timestamp, price FROM raw_market_ticks"
-        " WHERE symbol = :symbol ORDER BY timestamp DESC LIMIT :limit"
+        " WHERE symbol = :symbol ORDER BY created_at DESC LIMIT :limit"
     )
     try:
         engine = get_db_engine()
