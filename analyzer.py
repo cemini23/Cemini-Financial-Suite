@@ -37,6 +37,7 @@ def check_heatseeker_spikes(conn):
             SELECT r.symbol, r.recent_count, b.baseline_count FROM recent r JOIN baseline b ON r.symbol = b.symbol WHERE r.recent_count > (b.baseline_count * 3) AND r.recent_count > 10;
         """
         df = pd.read_sql(query, conn)
+        conn.commit()
         for _, row in df.iterrows():
             ratio = row['recent_count'] / row['baseline_count'] if row['baseline_count'] > 0 else 10.0
             send_heatseeker_alert(row['symbol'], ratio)
@@ -52,7 +53,8 @@ def improve_logic():
                 host=os.getenv('DB_HOST', 'postgres'),
                 database=os.getenv('POSTGRES_DB', 'qdb'),
                 user=os.getenv('POSTGRES_USER', 'admin'),
-                password=os.getenv('POSTGRES_PASSWORD', 'quest')
+                password=os.getenv('POSTGRES_PASSWORD', 'quest'),
+                options="-c idle_in_transaction_session_timeout=600000",
             )
             r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, password=os.getenv('REDIS_PASSWORD', 'cemini_redis_2026'), decode_responses=True)
             break
@@ -76,6 +78,7 @@ def improve_logic():
             print("🔗 Analyzer: Checking correlation matrix...")
             try:
                 df_corr = pd.read_sql("SELECT * FROM v_correlation_metrics", conn)
+                conn.commit()
                 if not df_corr.empty:
                     matches = df_corr[df_corr['pair'] == 'BTC/SPY']
                     if not matches.empty:
@@ -101,6 +104,7 @@ def improve_logic():
 
                 mode = "neutral"
                 df = pd.read_sql("SELECT * FROM trade_history", conn)
+                conn.commit()
                 if len(df) > 5:
                     sells = df[df['action'] == 'SELL']
                     wins = len(sells[sells['reason'] != 'SL'])
