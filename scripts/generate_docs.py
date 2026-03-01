@@ -174,7 +174,7 @@ def get_test_count():
             m = re.search(r"(\d+)\s+(?:test|item)", line)
             if m:
                 return int(m.group(1))
-        items = [l for l in result.stdout.splitlines() if "::" in l]
+        items = [ln for ln in result.stdout.splitlines() if "::" in ln]
         return len(items) if items else None
     except Exception:
         return None
