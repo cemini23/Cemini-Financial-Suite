@@ -3,7 +3,14 @@
 ![Multi-Architecture Ready](https://img.shields.io/badge/Multi--Architecture-amd64%20%7C%20arm64-blue)
 ![Cross-Platform](https://img.shields.io/badge/Cross--Platform-Windows%20%7C%20Linux%20%7C%20macOS-green)
 
-The **Cemini Financial Suite** is a **Universal, Cross-Platform Trading Architecture** designed for high-frequency financial operations. Built on a modular, Dockerized foundation, it integrates real-time market data, AI-driven decision-making, and institutional execution into a unified, hardware-agnostic environment.
+The **Cemini Financial Suite** is a private-use algorithmic trading platform built on a modular, Dockerized architecture. It integrates real-time market data ingestion, AI-driven signal generation, multi-broker execution, and a risk-gated trading playbook into a single deployable stack.
+
+**Current phase:** Data accumulation / paper mode. No live equity or crypto orders are placed. Kalshi prediction market activity is active. All broker adapters default to paper mode.
+
+**Three cooperating engines sharing intelligence via Redis pub/sub:**
+- **Brain (LangGraph):** Orchestrator + EMS signal router. Reads regime and playbook intel from Redis before forwarding any trade signal.
+- **QuantOS:** Stock/crypto engine (FastAPI, port 8001). RSI + FinBERT sentiment + BigQuery signal detection.
+- **Kalshi by Cemini:** Prediction market engine (FastAPI, port 8000). BTC TA, Fed rate analysis, weather/social/Musk modules.
 
 ---
 
@@ -95,7 +102,7 @@ This starts all services defined in `docker-compose.yml`:
 docker compose ps
 ```
 
-All 19 services should show `Up`. If you've pulled a code update, restart to apply changes:
+All 18 active services should show `Up`. If you've pulled a code update, restart to apply changes:
 
 ```bash
 docker compose down && docker compose up --build -d
@@ -134,7 +141,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-> **Note:** `torch` and `nautilus-trader` are large packages (~2–4 GB). If you only need the Docker stack (recommended for servers), you can skip them by commenting them out in `requirements.txt`.
+> **Note:** `torch` and `transformers` are large packages (~2–4 GB). If you only need the Docker stack (recommended for servers), you can skip them by commenting them out in `requirements.txt`.
 
 **Copy the env file:**
 
@@ -164,25 +171,111 @@ pip install -r requirements.txt
 
 The suite is designed as a modular organism, where each service plays a critical role. Because it leverages Docker, Redis, and standard PostgreSQL wire protocols, it runs seamlessly on **Windows (WSL2), Linux Servers, Intel Macs, and Apple Silicon (M-series)**.
 
--   **Memory (TimescaleDB):** A time-series-optimized PostgreSQL database (TimescaleDB) for market ticks and audit logs. Internal port `5432`.
--   **Nervous System (Redis):** The authenticated, password-protected message bus facilitating communication between all subsystems. Internal port `6379`. Also hosts the **Intel Bus** (`intel:*` key namespace) for cross-system AI signal sharing.
--   **Intel Bus (`core/intel_bus.py`):** A shared Redis-backed intelligence layer. QuantOS publishes market regime signals (`intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`, `intel:btc_volume_spike`). Kalshi by Cemini publishes sentiment signals (`intel:btc_sentiment`, `intel:fed_bias`, `intel:social_score`, `intel:weather_edge`). The playbook_runner publishes `intel:playbook_snapshot` — regime + signal + risk state every 5 min. Both systems read from each other — no HTTP calls between containers.
--   **Eyes (Ingestor):** Polls real-time market data via the Polygon.io REST API. Ingests 23 equity/ETF symbols during market hours and 7 crypto symbols 24/7, writing 1-min OHLCV ticks directly into TimescaleDB.
--   **Brain (Analyst Swarm):** A LangGraph-orchestrated AI that analyzes market sentiment, technicals, and fundamentals to generate trades.
--   **Hands (EMS):** The Execution Management System. Multi-broker adapter architecture: Kalshi (prediction market contracts via REST API v2, active), Robinhood (equities + options via robin_stocks, paper mode default), Alpaca (equities via official API, paper mode default).
--   **Trading Playbook:** Observation-only layer running every 5 minutes. Classifies macro regime (GREEN/YELLOW/RED) based on SPY vs EMA21/SMA50 with JNK/TLT credit cross-validation. Runs 6 tactical signal detectors (EpisodicPivot, MomentumBurst, ElephantBar, VCP, HighTightFlag, InsideBar212). Computes risk metrics (fractional Kelly, CVaR, drawdown). Logs to Postgres + JSONL for future RL training. Does NOT place orders.
--   **Regime Gate:** Safety mechanism in the brain's signal pipeline. When macro regime is YELLOW or RED, BUY signals are blocked before reaching the EMS.
--   **Kill Switch:** Monitors PnL velocity, order rates, latency, and price deviations. Broadcasts CANCEL_ALL on Redis `emergency_stop` channel.
--   **Rover Scanner:** Paginates all open Kalshi prediction markets every 15 minutes, categorizes them, and publishes intel to Redis.
--   **Face (Frontend UI):** A real-time dashboard (Deephaven + Streamlit via Cemini OS) and Grafana for metrics visualization.
--   **Perimeter (nginx + Cloudflare):** nginx reverse proxy on port 80 routes all traffic. Cloudflare Zero Trust tunnel provides secure public access without opening firewall ports.
+- **Memory (TimescaleDB):** A time-series-optimized PostgreSQL database for market ticks and audit logs. Internal port `5432`.
+- **Nervous System (Redis):** The authenticated, password-protected message bus facilitating communication between all subsystems. Internal port `6379`. Also hosts the **Intel Bus** (`intel:*` key namespace) for cross-system AI signal sharing.
+- **Intel Bus (`core/intel_bus.py`):** A shared Redis-backed intelligence layer. QuantOS publishes market regime signals (`intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`, `intel:btc_volume_spike`). Kalshi by Cemini publishes sentiment signals (`intel:btc_sentiment`, `intel:fed_bias`, `intel:social_score`, `intel:weather_edge`). The playbook_runner publishes `intel:playbook_snapshot` — regime + signal + risk state every 5 min. Both systems read from each other — no HTTP calls between containers.
+- **Eyes (Ingestor):** Polls real-time market data via the Polygon.io REST API. Ingests 23 equity/ETF symbols during market hours and 7 crypto symbols 24/7, writing 1-min OHLCV ticks directly into TimescaleDB.
+- **Brain (Analyst Swarm):** A LangGraph-orchestrated AI that analyzes market sentiment, technicals, and fundamentals to generate trade signals. Applies the **Regime Gate** — BUY signals are blocked before reaching the EMS when the playbook reports YELLOW or RED macro regime.
+- **Hands (EMS):** The Execution Management System. Multi-broker adapter architecture: Kalshi (prediction market contracts via REST API v2, active), Robinhood (equities + options via robin_stocks, paper mode default), Alpaca (equities via official API, paper mode default).
+- **Trading Playbook:** Observation-only layer running every 5 minutes. Classifies macro regime (GREEN/YELLOW/RED) based on SPY vs EMA21/SMA50 with JNK/TLT credit cross-validation. Runs 6 tactical signal detectors (EpisodicPivot, MomentumBurst, ElephantBar, VCP, HighTightFlag, InsideBar212). Computes risk metrics (fractional Kelly, CVaR, drawdown). Logs to Postgres + JSONL for future RL training. Does NOT place orders.
+- **Kill Switch:** Monitors PnL velocity, order rates, latency, and price deviations. Broadcasts `CANCEL_ALL` on Redis `emergency_stop` channel — all broker adapters are subscribed.
+- **Rover Scanner:** Paginates all open Kalshi prediction markets every 15 minutes, categorizes them by domain (weather / crypto / economics / politics), and publishes intel to Redis.
+- **GDELT Harvester:** Ingests geopolitical event data from the GDELT Project every 15 minutes. Publishes a 0–100 risk score, per-region risk breakdown, and top-5 high-impact events to `intel:geopolitical_risk`, `intel:regional_risk`, and `intel:conflict_events`.
+- **Face (Frontend UI):** A real-time dashboard (Deephaven + Streamlit via Cemini OS) and Grafana for metrics visualization.
+- **Perimeter (nginx + Cloudflare):** nginx reverse proxy on port 80 routes all traffic. Cloudflare Zero Trust tunnel provides secure public access without opening firewall ports.
+
+---
+
+## 📋 Trading Playbook
+
+The Trading Playbook (`trading_playbook/`) is an **observation-only layer** — it runs every 5 minutes, logs everything for future RL training, and publishes regime/signal state to Redis. It does **not** place orders.
+
+### Macro Regime Classification (`macro_regime.py`)
+
+| Regime | Condition | System Posture |
+|--------|-----------|----------------|
+| 🟢 GREEN | SPY > rising EMA21, JNK/TLT credit spread healthy | Normal operation — all signals pass regime gate |
+| 🟡 YELLOW | SPY < EMA21 but > SMA50, credit stress detected | Defensive — BUY signals blocked at regime gate |
+| 🔴 RED | SPY < SMA50, credit spread blowing out | Survival — cash/short only, all buys blocked |
+
+The regime gate in `agents/orchestrator.py` blocks all BUY signals forwarded to the EMS when regime is YELLOW or RED.
+
+### Signal Detectors (`signal_catalog.py`)
+
+| Detector | Description |
+|----------|-------------|
+| **EpisodicPivot** | Massive volume + gap on earnings/news catalyst |
+| **MomentumBurst** | Sustained directional move with expanding volume |
+| **ElephantBar** | Single outsized candle with full-range close |
+| **VCP** | Volatility Contraction Pattern — coil before breakout |
+| **HighTightFlag** | Post-spike tight consolidation, institutional accumulation |
+| **InsideBar212** | 2-candle inside bar with 12% thrust — gap-and-go setup |
+
+### Risk Engine (`risk_engine.py`)
+
+- **Fractional Kelly:** Position sizing at 25% of full Kelly (caps single-trade risk)
+- **CVaR:** 99th-percentile conditional Value-at-Risk computed per position
+- **DrawdownMonitor:** Tracks portfolio-level drawdown; escalates to YELLOW/RED posture
+
+### Kill Switch (`kill_switch.py`)
+
+Monitors four trip wires. Any breach broadcasts `CANCEL_ALL` on Redis `emergency_stop`:
+- PnL velocity (losses accelerating beyond threshold)
+- Order rate (orders-per-minute spike)
+- Latency (broker round-trip exceeds SLA)
+- Price deviation (fill price diverges from signal price)
+
+---
+
+## 🗄️ Data Pipeline
+
+All market data flows through Polygon.io REST API → TimescaleDB. No WebSocket streaming — polling at configured intervals keeps costs predictable.
+
+| Table | Source | Cadence | Content |
+|-------|--------|---------|---------|
+| `raw_market_ticks` | Polygon.io REST | 1-min | 1-min OHLCV for 23 equities + 7 crypto symbols |
+| `macro_logs` | Alternative.me + FRED | 5-min | Fear & Greed Index + 10Y Treasury yield |
+| `sentiment_logs` | X API (real data only) | On-demand | Social sentiment; mock mode permanently disabled |
+| `playbook_logs` | playbook_runner | 5-min | Regime + signal + risk snapshot (JSONB) |
+| `trade_history` | EMS / broker adapters | On-trade | Clean post-regime-gate trade records (since Feb 25, 2026) |
+| `ai_trade_logs` | Brain / LangGraph | On-signal | AI signal decisions with reasoning |
+| `gdelt_events` | GDELT Project | 15-min | ELEVATED+ geopolitical events |
+
+**Equity symbols (23):** SPY, QQQ, IWM, DIA, AAPL, MSFT, NVDA, GOOGL, AMZN, META, TSLA, AMD, AVGO, SMCI, ARM, PLTR, CRWD, DDOG, SNOW, COIN, MSTR, IBIT, ARKK
+
+**Crypto symbols (7):** BTC/USD, ETH/USD, SOL/USD, BNB/USD, XRP/USD, DOGE/USD, ADA/USD
+
+> **Data quarantine:** Pre-regime-gate data collected before Feb 25, 2026 is archived at `/opt/cemini/archives/data_quarantine/` and is not used for analysis or RL training.
+
+---
+
+## 🔄 CI/CD Pipeline
+
+Every push to `main` runs the full gate sequence. All gates must be green before deployment:
+
+```
+lint (flake8) → pip-audit → bandit → TruffleHog → SSH deploy + auto-docs
+                                                         ↕ (parallel)
+                                                    update-docs job
+```
+
+| Gate | Tool | What it checks |
+|------|------|----------------|
+| **lint** | flake8 (max-line-length=120) | Syntax errors (E999), undefined names (F821), ambiguous variable names (E741) |
+| **pip-audit** | pip-audit | CVE vulnerabilities in all pinned dependencies |
+| **bandit** | bandit (SAST) | Security anti-patterns in Python source |
+| **TruffleHog** | trufflehog | Secrets and credentials accidentally committed |
+| **deploy** | SSH + docker compose | Pulls latest, rebuilds changed images, restarts services |
+| **update-docs** | generate_docs.py | Refreshes AUTO: markers in README files, commits `[skip ci]` |
+
+The `update-docs` job runs in parallel with `audit-and-deploy` — doc failures are informational only and never block deployment.
 
 ---
 
 ## 🛠️ Components & Ports
 
 <!-- AUTO:SERVICES_TABLE -->
-**19 active containers** (1 disabled)
+**18 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -213,6 +306,8 @@ The suite is designed as a modular organism, where each service plays a critical
 
 ## 🔮 Broker Adapters
 
+All adapters implement a common `BrokerInterface`. The router in `ems/` dispatches by signal type and time-of-day availability. All adapters default to paper mode — live trading requires explicit `.env` flag.
+
 <!-- AUTO:BROKER_STATUS -->
 | Broker | Status | API | Default Mode |
 |--------|--------|-----|--------------|
@@ -225,6 +320,8 @@ The suite is designed as a modular organism, where each service plays a critical
 ---
 
 ## 📡 Intel Bus (Redis)
+
+All inter-service communication uses Redis pub/sub and key-value. No direct HTTP calls between containers.
 
 <!-- AUTO:REDIS_CHANNELS -->
 | Key | Publisher | Description |
