@@ -11,6 +11,13 @@ from typing import TypedDict, Dict, Any, Literal
 from langgraph.graph import StateGraph, END
 from core.schemas.trading_signals import TradingSignal
 from core.intel_bus import IntelReader
+from agents.regime_gate import (
+    CATALYST_BONUS,
+    CATALYST_PATTERNS,
+    REGIME_THRESHOLDS,
+    _REGIME_FALLBACK,
+    _regime_gate,
+)
 
 # Full watchlist: equities + crypto native
 WATCHLIST = [
@@ -55,6 +62,7 @@ class TradingState(TypedDict):
     sentiment_score: float          # 0.0–1.0
     rsi: float                      # forwarded into signal payload
     latest_price: float             # forwarded into signal payload
+    signal_type: str                # playbook pattern name (e.g. "EpisodicPivot"), "" if none
     final_decision: Dict[str, Any]
     position_size: float
     pydantic_signal: TradingSignal
@@ -113,6 +121,31 @@ def _get_playbook_regime():
     if snap and isinstance(snap.get("value"), dict):
         return snap["value"].get("regime")
     return None
+
+
+def _get_playbook_signal_for_symbol(symbol: str) -> str:
+    """
+    Query the most recent playbook signal for *symbol* logged in the last
+    10 minutes.  Returns the pattern_name (e.g. "EpisodicPivot") or ""
+    if none found or on any error.  Never raises.
+    """
+    try:
+        conn = _db_connect()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT payload->>'pattern_name' FROM playbook_logs "
+            "WHERE log_type = 'signal' AND payload->>'symbol' = %s "
+            "AND timestamp > NOW() - INTERVAL '10 minutes' "
+            "ORDER BY timestamp DESC LIMIT 1",
+            (symbol,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+        if row and row[0]:
+            return str(row[0])
+    except Exception:
+        pass
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -436,18 +469,26 @@ async def publish_signal_to_bus(state: TradingState):
 
     if decision and decision.get("verdict") == "EXECUTE":
         # ── REGIME GATE ────────────────────────────────────────────────────────
-        # Playbook regime is authoritative over strategy_mode.
-        # YELLOW / RED = macro deterioration; no new longs are permitted.
-        # SELL signals are allowed through in any regime (reducing exposure is safe).
-        if decision.get("action", "").upper() == "BUY":
-            regime = _get_playbook_regime()
-            if regime in ("YELLOW", "RED"):
-                print(
-                    f"⛔ Trade blocked: regime={regime}, no new longs permitted"
-                    f" — {state['symbol']} {decision['action']}"
-                    f" (score={decision.get('confidence_score', 0):.2f})"
-                )
-                return {"execution_status": "BLOCKED_BY_REGIME"}
+        # Dynamic confidence threshold — the system gets PICKIER in bad regimes,
+        # not blind.  Every EXECUTE signal is evaluated against REGIME_THRESHOLDS.
+        # BUY threshold rises in YELLOW/RED; SELL/SHORT threshold falls.
+        # EpisodicPivot and InsideBar212 receive a +0.10 catalyst bonus in bad
+        # regimes because they represent new information overriding macro headwinds.
+        # The kill switch (emergency_stop channel) still overrides EVERYTHING here.
+        action = decision.get("action", "").upper()
+        regime = _get_playbook_regime() or _REGIME_FALLBACK
+        confidence = decision.get("confidence_score", 0.0)
+        signal_type = state.get("signal_type", "")
+
+        blocked, _, gate_reason = _regime_gate(
+            action=action,
+            confidence=confidence,
+            regime=regime,
+            signal_type=signal_type,
+        )
+        if blocked:
+            print(gate_reason)
+            return {"execution_status": "BELOW_REGIME_THRESHOLD"}
         # ── END REGIME GATE ────────────────────────────────────────────────────
 
         # Log to Postgres audit table
@@ -598,6 +639,7 @@ async def main():
                     "sentiment_score": 0.5,
                     "rsi": 50.0,
                     "latest_price": 0.0,
+                    "signal_type": _get_playbook_signal_for_symbol(symbol),
                     "final_decision": {},
                     "position_size": 0.0,
                     "execution_status": "",
