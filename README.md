@@ -55,6 +55,10 @@ APCA_API_KEY_ID=your_alpaca_key
 APCA_API_SECRET_KEY=your_alpaca_secret
 POLYGON_API_KEY=your_polygon_key
 DISCORD_WEBHOOK_URL=your_discord_webhook   # optional but recommended
+
+# Infrastructure (defaults are set in docker-compose.yml, override here if needed):
+REDIS_PASSWORD=cemini_redis_2026
+POSTGRES_PASSWORD=quest
 ```
 
 > The `.env` file is in `.gitignore` and will never be committed. Keep your secrets local.
@@ -91,7 +95,7 @@ This starts all services defined in `docker-compose.yml`:
 docker compose ps
 ```
 
-All services should show `Up`. If you've pulled a code update, restart to apply changes:
+All 18 services should show `Up`. If you've pulled a code update, restart to apply changes:
 
 ```bash
 docker compose down && docker compose up --build -d
@@ -162,10 +166,14 @@ The suite is designed as a modular organism, where each service plays a critical
 
 -   **Memory (TimescaleDB):** A time-series-optimized PostgreSQL database (TimescaleDB) for market ticks and audit logs. Internal port `5432`.
 -   **Nervous System (Redis):** The authenticated, password-protected message bus facilitating communication between all subsystems. Internal port `6379`. Also hosts the **Intel Bus** (`intel:*` key namespace) for cross-system AI signal sharing.
--   **Intel Bus (`core/intel_bus.py`):** A shared Redis-backed intelligence layer. QuantOS publishes market regime signals (`intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`, `intel:btc_volume_spike`). Kalshi by Cemini publishes sentiment signals (`intel:btc_sentiment`, `intel:fed_bias`, `intel:social_score`, `intel:weather_edge`). Both systems read from each other — no HTTP calls between containers.
--   **Eyes (Ingestor):** Streams real-time market data (via Polygon.io or Alpaca) directly into TimescaleDB.
+-   **Intel Bus (`core/intel_bus.py`):** A shared Redis-backed intelligence layer. QuantOS publishes market regime signals (`intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`, `intel:btc_volume_spike`). Kalshi by Cemini publishes sentiment signals (`intel:btc_sentiment`, `intel:fed_bias`, `intel:social_score`, `intel:weather_edge`). The playbook_runner publishes `intel:playbook_snapshot` — regime + signal + risk state every 5 min. Both systems read from each other — no HTTP calls between containers.
+-   **Eyes (Ingestor):** Polls real-time market data via the Polygon.io REST API. Ingests 23 equity/ETF symbols during market hours and 7 crypto symbols 24/7, writing 1-min OHLCV ticks directly into TimescaleDB.
 -   **Brain (Analyst Swarm):** A LangGraph-orchestrated AI that analyzes market sentiment, technicals, and fundamentals to generate trades.
--   **Hands (EMS):** The Execution Management System, which handles brokerage adapters (Robinhood, Alpaca, Kalshi) to execute orders via the Redis bus.
+-   **Hands (EMS):** The Execution Management System. Multi-broker adapter architecture: Kalshi (prediction market contracts via REST API v2, active), Robinhood (equities + options via robin_stocks, paper mode default), Alpaca (equities via official API, paper mode default).
+-   **Trading Playbook:** Observation-only layer running every 5 minutes. Classifies macro regime (GREEN/YELLOW/RED) based on SPY vs EMA21/SMA50 with JNK/TLT credit cross-validation. Runs 6 tactical signal detectors (EpisodicPivot, MomentumBurst, ElephantBar, VCP, HighTightFlag, InsideBar212). Computes risk metrics (fractional Kelly, CVaR, drawdown). Logs to Postgres + JSONL for future RL training. Does NOT place orders.
+-   **Regime Gate:** Safety mechanism in the brain's signal pipeline. When macro regime is YELLOW or RED, BUY signals are blocked before reaching the EMS.
+-   **Kill Switch:** Monitors PnL velocity, order rates, latency, and price deviations. Broadcasts CANCEL_ALL on Redis `emergency_stop` channel.
+-   **Rover Scanner:** Paginates all open Kalshi prediction markets every 15 minutes, categorizes them, and publishes intel to Redis.
 -   **Face (Frontend UI):** A real-time dashboard (Deephaven + Streamlit via Cemini OS) and Grafana for metrics visualization.
 -   **Perimeter (nginx + Cloudflare):** nginx reverse proxy on port 80 routes all traffic. Cloudflare Zero Trust tunnel provides secure public access without opening firewall ports.
 
@@ -185,13 +193,18 @@ The suite is designed as a modular organism, where each service plays a critical
 
 ---
 
-## 🔮 Future Development
+## 🔮 Current Development Phase
 
-Our next phase of development focuses on:
--   **Live Mode Activation:** Intel Bus and all safety guards are in place. Live trading will be re-enabled after paper mode validation is complete.
--   **FinBERT News Pipeline:** Scaling the FinBERT news analysis module to feed higher-confidence catalyst data into the Master Strategy Matrix.
--   **Institutional Scaling:** Enhancing the FIX adapter for broader Prediction Market coverage across Kalshi contract categories.
--   **Backtesting Engine:** Leveraging TimescaleDB hypertables for historical replay and strategy validation against real tick data.
+The system is in **data accumulation / paper mode**. No live equity trading is active. The playbook runner, harvesters, and regime gate are accumulating clean post-regime-gate data for future reinforcement learning model training.
+
+Active development focuses on:
+-   **CI/CD Hardening:** ✅ Complete. Pipeline includes flake8 linting, pip-audit dependency CVE scanning, bandit static security analysis, and TruffleHog secret scanning — all must pass before deploy.
+-   **Docker Network Segmentation:** Isolating edge, application, and data tiers for defense-in-depth security.
+-   **Paper Trade Performance Dashboard:** Visualizing regime timelines, signal detection history, hypothetical P&L, and risk metrics to evaluate playbook accuracy.
+-   **Reinforcement Learning Foundation:** Building a Gym-compatible training environment using accumulated data, with Stable Baselines3 (PPO) and Weights & Biases experiment tracking.
+-   **Automated Backtesting in CI:** VectorBT-powered backtests with Sharpe ratio and max drawdown gates that block merges of regressed strategies.
+
+See the full development roadmap in the project's Research document.
 
 ---
 

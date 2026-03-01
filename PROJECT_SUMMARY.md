@@ -1,5 +1,5 @@
 # CEMINI SUITE — PROJECT SUMMARY
-*Generated: 2026-02-21 | Audited by Claude Sonnet 4.6*
+*Generated: 2026-02-21 | Last updated: 2026-02-28 | Audited by Claude Sonnet 4.6*
 *Intended for: deep analysis and strategic planning*
 
 ---
@@ -90,6 +90,8 @@ Three cooperating systems that share intelligence but execute independently:
 | grafana | grafana_viz | grafana/grafana | Monitoring dashboards |
 | nginx | cemini_proxy | nginx:alpine | Reverse proxy (port 80) |
 | cloudflared | cloudflare_tunnel | cloudflare/cloudflared | External tunnel |
+| playbook | playbook_runner | Dockerfile.playbook | Trading playbook: macro regime + 6 signal detectors + risk engine (observation-only, 5-min loop) |
+| rover_scanner | rover_scanner | Dockerfile.autopilot | Kalshi market discovery: paginates all open markets every 15 min, categorizes, publishes intel to Redis |
 
 **Networking:** All services internal except nginx (port 80). No ports exposed directly — nginx routes: `/grafana/*` → Grafana:3000, rest → cemini_os:8501.
 
@@ -99,6 +101,7 @@ Three cooperating systems that share intelligence but execute independently:
 - `strategy_mode` — analyzer sets: "conservative" | "aggressive" | "sniper"
 - `intel:btc_spy_corr` — BTC/SPY correlation float
 - `macro:fear_greed` — Fear & Greed Index
+- `intel:playbook_snapshot` — playbook_runner publishes regime/signal/risk state every 5 min (JSONB)
 
 ---
 
@@ -249,6 +252,23 @@ Exit Engine [every 30s]:
   yes_bid ≤ 10¢ → sell (Stop Loss)
 ```
 
+### Trading Playbook: Regime → Signals → Risk → Logging
+```
+playbook_runner (every 5 min, observation-only):
+  ├─▶ macro_regime.py → yfinance SPY/EMA21/SMA50 + JNK/TLT → GREEN|YELLOW|RED
+  ├─▶ signal_catalog.py → 6 detectors query raw_market_ticks
+  ├─▶ risk_engine.py → Fractional Kelly / CVaR / Drawdown
+  ├─▶ kill_switch.py → PnL velocity / order rate / latency checks
+  └─▶ playbook_logger.py
+        ├─▶ INSERT playbook_logs (Postgres JSONB)
+        ├─▶ JSONL append /mnt/archive/playbook/
+        └─▶ SET intel:playbook_snapshot (Redis)
+
+Regime Gate (agents/orchestrator.py):
+  BUY signal → regime GREEN? → pass to EMS
+                regime YELLOW|RED? → "⛔ Trade blocked" (logged, not executed)
+```
+
 ### agents/orchestrator.py: LangGraph Brain (currently unused in main flow)
 ```
 TradingState → technical_analyst_node (stub)
@@ -287,12 +307,12 @@ TradingState → technical_analyst_node (stub)
 | `REDDIT_CLIENT_ID/SECRET` | social_scraper | Root |
 
 ### Security Issues Found
-1. **`analyzer.py:49`** — Postgres password `"quest"` hardcoded: `psycopg2.connect(..., password='quest')`. Same in `ems/main.py:26`.
-2. **`docker-compose.yml`** — `POSTGRES_PASSWORD=quest` and `PGADMIN_DEFAULT_PASSWORD=admin` hardcoded in compose file (not via `.env`).
+1. **`analyzer.py:49`** — Postgres password `"quest"` hardcoded: `psycopg2.connect(..., password='quest')`. Same in `ems/main.py:26`. **PARTIALLY MITIGATED** (Feb 28). docker-compose.yml now uses env var. analyzer.py patched for idle-in-transaction fix.
+2. **`docker-compose.yml`** — `POSTGRES_PASSWORD=quest` and `PGADMIN_DEFAULT_PASSWORD=admin` hardcoded in compose file (not via `.env`). **FIXED.** Now uses `${POSTGRES_PASSWORD:-quest}` and `${PGADMIN_DEFAULT_PASSWORD:-admin}`.
 3. **`export_grafana.py:6-7`** — `GRAFANA_USER="admin"`, `GRAFANA_PASS="admin"` hardcoded.
 4. **`QuantOS/core/brokers/kalshi.py:24`** — Hardcoded absolute Mac path: `"/Users/<username>/Desktop/Kalshi by Cemini"`. Breaks in Docker or any other machine.
 5. **`private_key.pem`** — Present in the repo directory (tracked?). The `.gitignore` should cover it but was not verified in the audit.
-6. **`Kalshi by Cemini/.env`** — Separate `.env` from root. Docker compose only mounts root `.env`, so Kalshi secrets may not reach the `ems` container.
+6. **`Kalshi by Cemini/.env`** — Separate `.env` from root. Docker compose only mounts root `.env`, so Kalshi secrets may not reach the `ems` container. **FIXED.** docker-compose.yml now explicitly mounts `Kalshi by Cemini/.env` for kalshi_autopilot and rover_scanner.
 
 ---
 
@@ -436,50 +456,15 @@ Currently missing:
 
 ---
 
-## 8. PRIORITY ROADMAP (Top 10 to reach production quality)
+## 8. ACTIVE DEVELOPMENT ROADMAP
 
-**1. Fix `publish_signal_to_bus` in `agents/orchestrator.py`**
-The entire LangGraph brain is wired but dead. Complete the Redis publish and connect it to a real LLM (Gemini/GPT-4o) for the CIO debate. This is the architectural centerpiece that unifies all signals.
-*Effort: 1-2 days*
+The original priority list has been superseded by a 13-step development roadmap maintained in the project's Research document ("Claude Roadmap" section). As of Feb 28, 2026:
 
-**2. Replace simulated data in critical hot paths**
-- `social_alpha/analyzer.py`: remove simulated tweets, use live Tweepy.
-- `powell_protocol/analyzer.py`: fetch live Kalshi market prices for rate brackets.
-- `weather_alpha/analyzer.py`: fetch live Kalshi market prices for temperature brackets.
-These three modules drive real money decisions on fake data.
-*Effort: 2-3 days*
+**Completed:** Step 1 (CI/CD Hardening), Step 6 (Equity Tick Data)
+**Ready now:** Step 2 (Docker Network Segmentation), Step 4 (Kalshi Rewards Scanner), Step 5 (X Thread Tool)
+**Waiting on data:** Steps 3, 7-11, 13
 
-**3. Fix the BigQuery table name inconsistency (A4)**
-`DataHarvester` writes to `market_data`, `CloudSignalEngine` reads from `market_ticks`. Set both to the same env var or hardcode consistently. Without this fix, the volume spike detection has no data to query.
-*Effort: 30 minutes*
-
-**4. Fix the QuantOSBridge Docker networking (A2)**
-Change `QuantOSBridge(host="127.0.0.1")` to read from an env var `QUANTOS_HOST` defaulting to `"signal_generator"` (the Docker service name). This enables Kalshi ↔ QuantOS communication in the container environment.
-*Effort: 15 minutes*
-
-**5. Remove the hardcoded credential strings (C4, C1-security)**
-Move `password='quest'` and `GRAFANA_PASS="admin"` to ENV vars. These are in 3 files. Required before any security audit.
-*Effort: 1 hour*
-
-**6. Fix the fresh_start liquidation bug (L1)**
-`fresh_start_pending = True` on every init is dangerous. Replace with a persistent flag stored in Redis or Postgres that only fires when explicitly requested, not on every restart.
-*Effort: 2 hours*
-
-**7. Implement the shared intelligence Redis bus**
-Create a standardized set of `intel:*` Redis keys written by both QuantOS and Kalshi. Make the Autopilot read `intel:btc_sentiment`, `intel:fed_bias` directly from Redis rather than calling the bridge via HTTP (slower, fragile). This is the "different markets with different parameters" architecture.
-*Effort: 3-4 days*
-
-**8. Build a unified cross-system P&L and risk dashboard**
-Aggregate QuantOS ledger + Kalshi portfolio positions into a single view. Track total capital at risk across both systems with a shared daily drawdown limit. This is the minimum viable "portfolio manager" layer.
-*Effort: 3-5 days*
-
-**9. Add position persistence across restarts**
-Both `executed_trades` (Autopilot) and `history_cache` (TradingEngine) are in-memory only. On restart, all state is lost. Write these to Redis on update and reload on startup. Without this, the bot will double-trade after any crash.
-*Effort: 1-2 days*
-
-**10. Implement the Polymarket/Kalshi analyzer as a standalone tool**
-Use the Kalshi public API to enumerate all open markets, build a market-pricing model (compare implied probabilities against proprietary signals), and expose a `/analyzer/scan` endpoint that returns markets where the model disagrees with market consensus by >10%. This directly serves the stated vision.
-*Effort: 5-7 days*
+Step 12 (Copy Trading / Signal Service) has been removed — it triggered SEC/FINRA regulatory requirements incompatible with the private-use-first strategy.
 
 ---
 
@@ -488,8 +473,8 @@ Use the Kalshi public API to enumerate all open markets, build a market-pricing 
 ### Dockerfile Entrypoints vs docker-compose commands
 `Dockerfile.analyzer` and `Dockerfile.logger` both have **placeholder loop** default entrypoints (`time.sleep(60)` forever). This is intentional — docker-compose overrides them via `command:`. Do NOT remove the override lines from compose.
 
-### Redis Has No Password
-`docker-compose.yml` line 33: `redis-server --appendonly yes` — no `--requirepass`. Any process in the Docker network can read/write all channels including `trade_signals` and `strategy_mode`. Add `--requirepass` and corresponding `REDIS_PASSWORD` env vars.
+### Redis Password — FIXED
+Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_redis_2026}"` in docker-compose.yml. All services use the REDIS_PASSWORD environment variable.
 
 ### Live Trading is Active
 `Kalshi by Cemini/settings.json` has `paper_mode: false, trading_enabled: true`. **Real money is being traded.** Any restart of the Autopilot with `fresh_start_pending = True` (if that logic were ported) would execute live orders immediately.
