@@ -13,6 +13,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./archives:/mnt/archive
+    networks:
+      - data_net
 
   pgadmin:
     image: dpage/pgadmin4
@@ -25,6 +27,9 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-admin}
     depends_on:
       - postgres
+    networks:
+      - edge_net
+      - data_net
 
   # --- THE SPINAL CORD (Messaging) ---
   redis:
@@ -36,6 +41,8 @@ services:
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-cemini_redis_2026}"]
     volumes:
       - redis_data:/data
+    networks:
+      - data_net
 
   # --- NODE 1: PERCEPTION (Ingestion) ---
   polygon_feed:
@@ -49,6 +56,9 @@ services:
       - DB_HOST=postgres
     depends_on:
       - postgres
+    networks:
+      - app_net
+      - data_net
 
   # --- NODE 2-4: THE BRAIN (Intelligence) ---
   brain:
@@ -64,6 +74,9 @@ services:
     depends_on:
       - redis
       - postgres
+    networks:
+      - app_net
+      - data_net
 
   # --- SIGNAL GENERATOR (Brain logic) ---
   # DISABLED (2026-02-24): Redundant with the `brain` service.
@@ -90,6 +103,9 @@ services:
     depends_on:
       - postgres
       - redis
+    networks:
+      - app_net
+      - data_net
 
   # --- THE SCRIBE (Logging) ---
   logger:
@@ -107,6 +123,9 @@ services:
       - postgres
       - redis
     command: ["python", "logger_service.py"]
+    networks:
+      - app_net
+      - data_net
 
   # --- THE COACH (Analysis) ---
   analyzer:
@@ -126,6 +145,9 @@ services:
       - postgres
       - redis
     command: ["python", "analyzer.py"]
+    networks:
+      - app_net
+      - data_net
 
   # --- SCRAPERS (Intelligence) ---
   social_scraper:
@@ -143,6 +165,9 @@ services:
       - redis
       - postgres
     command: ["python", "scrapers/social_scraper.py"]
+    networks:
+      - app_net
+      - data_net
 
   macro_scraper:
     build:
@@ -157,6 +182,9 @@ services:
       - redis
       - postgres
     command: ["python", "scrapers/macro_harvester.py"]
+    networks:
+      - app_net
+      - data_net
 
   # --- KALSHI AUTOPILOT (Prediction Market Brain) ---
   # Runs CeminiAutopilot: weather_alpha, satoshi_vision, powell_protocol,
@@ -179,6 +207,9 @@ services:
     depends_on:
       - redis
       - postgres
+    networks:
+      - app_net
+      - data_net
 
   # --- ROVER SCANNER (Dynamic Kalshi Market Discovery) ---
   # Paginates all open Kalshi markets every 15 min, categorises them
@@ -198,6 +229,9 @@ services:
     depends_on:
       - redis
     command: ["python", "rover_runner.py"]
+    networks:
+      - app_net
+      - data_net
 
   # --- NODE 5: THE SWORD (Execution) ---
   ems:
@@ -220,6 +254,9 @@ services:
     depends_on:
       - redis
       - postgres
+    networks:
+      - app_net
+      - data_net
 
   # --- CEMINI OS (Streamlit Dashboard) ---
   cemini_os:
@@ -234,6 +271,9 @@ services:
       - DB_HOST=postgres
     depends_on:
       - postgres
+    networks:
+      - edge_net
+      - data_net
 
   # --- THE VISUAL NERVOUS SYSTEM (Telemetry) ---
   deephaven:
@@ -250,6 +290,9 @@ services:
     depends_on:
       - postgres
       - redis
+    networks:
+      - edge_net
+      - data_net
 
   grafana:
     image: grafana/grafana:latest
@@ -265,6 +308,9 @@ services:
       - ./.grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
     depends_on:
       - postgres
+    networks:
+      - edge_net
+      - data_net
 
   # --- PERIMETER DEFENSE ---
   nginx:
@@ -278,6 +324,9 @@ services:
     depends_on:
       - cemini_os
       - grafana
+    networks:
+      - edge_net
+      - app_net
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -288,6 +337,8 @@ services:
     command: tunnel --no-autoupdate run
     depends_on:
       - nginx
+    networks:
+      - edge_net
 
   # --- PLAYBOOK LAYER (Regime + Signals + Risk → RL training bridge) ---
   # Observation-only: classifies macro regime, detects tactical setups,
@@ -312,9 +363,20 @@ services:
     depends_on:
       - redis
       - postgres
+    networks:
+      - app_net
+      - data_net
 
 volumes:
   postgres_data:
   redis_data:
   deephaven_data:
   arcticdb_data:
+
+networks:
+  edge_net:
+    driver: bridge
+  app_net:
+    driver: bridge
+  data_net:
+    driver: bridge
