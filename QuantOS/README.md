@@ -1,45 +1,56 @@
-**Last Audit:** 2026-02-22 | **Version:** 15.0.0 | **Status:** ✅ Stable (Paper Mode)
+# QuantOS — Stock & Crypto Trading Engine
 
-# 💎 QuantOS™ (v15.0.0) | Cemini Financial Suite
+<!-- AUTO:LAST_UPDATED -->
+*Auto-generated: 2026-03-01 15:34 UTC*
+<!-- /AUTO:LAST_UPDATED -->
 
-Welcome to **QuantOS**, your professional-grade trading engine and the brain of the Cemini Financial Suite.
+## Overview
 
-## 🚀 Quick Start (For New Users)
-1.  **Dependencies**: Open your terminal and install the required libraries:
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-2.  **Configuration**: Open the `.env` file and enter your API keys for Robinhood or Alpaca.
-3.  **Launch**: Run the master script from your Desktop to start everything at once:
-    ```bash
-    python3 ~/Desktop/SuiteLauncher.py
-    ```
+QuantOS is the equity and cryptocurrency trading engine within the Cemini Financial Suite.
+It handles market scanning, RSI-based signal generation, order execution, and portfolio
+management through a modular broker-agnostic architecture.
 
-## 🏗 What is QuantOS?
-QuantOS is an automated execution engine that manages your stock and crypto portfolio. It is designed to work in tandem with the Kalshi bot to provide a unified financial dashboard.
+## Key Components
 
-## 🚀 New in v15.0.0
-- **Intel Bus (Shared Intelligence Layer)**: New `core/intel_bus.py` — a Redis-backed cross-system signal bus. QuantOS publishes `intel:vix_level`, `intel:spy_trend`, `intel:portfolio_heat`, and `intel:btc_volume_spike`. Reads `intel:fed_bias` and `intel:social_score` from Kalshi modules to enhance confidence scoring.
-- **Portfolio Heat Guard**: `TradingEngine` and `CeminiAutopilot` automatically pause new positions if combined cross-system load exceeds 80% of capacity.
-- **Confluence Score Bonuses**: +5% confidence when Fed is dovish, +3% when social sentiment is positive — both sourced from the Intel Bus.
-- **Paper Mode Kill Switch**: All execution paths locked to simulation via `config/dynamic_settings.json` (`environment: PAPER`).
-- **Redis Authentication**: All Redis connections now pass `REDIS_PASSWORD` for hardened security.
-- **QuantOSBridge Replaced**: HTTP inter-service calls removed. Cross-system data flows through the shared Redis Intel Bus.
+| Component | File | Purpose |
+|-----------|------|---------|
+| TradingEngine | `core/engine.py` | Main trading loop, bracket orders, sunset reports |
+| QuantBrain | `core/brain.py` | RSI signal scoring (rolling 1000-price window) |
+| ExecutionEngine | `core/execution.py` | Buy/sell/bracket execution + paper mode |
+| MoneyManager | `core/money_manager.py` | Score-based position sizing (90+→5%, 75+→2.5%) |
+| RiskManager | `core/risk_manager.py` | Daily 3% stop, 20% position cap, options check |
+| MasterStrategyMatrix | `core/strategy_matrix.py` | Confluence: BigQuery spikes + XOracle sentiment |
+| AsyncScanner | `core/async_scanner.py` | Alpaca primary, Yahoo fallback, async burst scanning |
+| TaxEngine | `core/tax_engine.py` | Wash sale guard + tax estimation |
+| XOracle | `core/sentiment/x_oracle.py` | Trust scoring + FinBERT sentiment |
 
-## 🚀 In v13.0.0
-- **24/7 Real-Time Harvester**: Optimized for around-the-clock data collection via Alpaca real-time streams and burst-mode scanners.
-- **Multi-Broker Dashboard**: Real-time balance reporting for Robinhood and Kalshi, with paper-trading balances hidden for accuracy.
-- **Fail-Safe Synchronization**: Robust historical data syncing using optimized chunking to prevent API rate limits.
-- **Unified Master Launcher**: Integrated with `SuiteLauncher.py` for one-click startup of the entire financial ecosystem.
+## Broker Adapters
 
-### Key Capabilities:
-*   **24/7 Data Harvester**: Automatically records market prices every 10 seconds into `data/historical/` for future AI training.
-*   **Multi-Broker Support**: Connects to **Robinhood**, **Alpaca**, **IBKR**, and more.
-*   **Smart Dashboard**: A web-based Mission Control showing your real-money balances and live trade logs.
-*   **Fail-Safe Logic**: Automatically retries orders if the broker is busy and handles fractional shares with precision.
+<!-- AUTO:BROKER_STATUS -->
+| Broker | Status | API | Default Mode |
+|--------|--------|-----|--------------|
+| Kalshi | Active | REST API v2 (RSA-signed) | Paper default |
+| Robinhood | Integrated | robin_stocks (unofficial) | Paper default |
+| Alpaca | Integrated | Official REST API | Paper default |
+| IBKR | Planned | TWS API / FIX CTCI | Requires LLC + LEI |
+<!-- /AUTO:BROKER_STATUS -->
 
-## 🏛 Suite Integration
-QuantOS integrates with Kalshi by Cemini via the **shared Intel Bus** (`core/intel_bus.py`) over the shared Redis instance. Intelligence signals are published and consumed without HTTP calls — this works reliably inside Docker networks. QuantOS acts as the "Banker" for the suite, aggregating net worth across all connected accounts.
+All adapters implement `BrokerInterface`. Factory in `core/brokers/factory.py` dispatches by name.
+Router in `core/brokers/router.py` handles time-aware routing and health checks.
 
-## 📄 License
-Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
+## Data Flow
+
+```
+AsyncScanner (Alpaca/Yahoo) → TradingEngine → QuantBrain (RSI)
+    → MasterStrategyMatrix (confluence) → ExecutionEngine → Broker adapter
+```
+
+## Running
+
+QuantOS runs as the `signal_generator` service (currently disabled — behind Docker profile,
+redundant with the `brain` service which covers equivalent functionality).
+
+```bash
+# Enable for isolated testing only:
+docker compose --profile signal_generator up -d signal_generator
+```

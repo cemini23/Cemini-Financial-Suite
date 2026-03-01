@@ -95,7 +95,7 @@ This starts all services defined in `docker-compose.yml`:
 docker compose ps
 ```
 
-All 18 services should show `Up`. If you've pulled a code update, restart to apply changes:
+All 19 services should show `Up`. If you've pulled a code update, restart to apply changes:
 
 ```bash
 docker compose down && docker compose up --build -d
@@ -181,31 +181,107 @@ The suite is designed as a modular organism, where each service plays a critical
 
 ## 🛠️ Components & Ports
 
-| Service | Internal Port | Description |
-| :--- | :--- | :--- |
-| **TimescaleDB (PostgreSQL)** | 5432 | Time-series data storage & querying |
-| **Redis** | 6379 | Messaging, pub/sub, and Intel Bus (password-protected) |
-| **Deephaven UI** | 10000 | Advanced analytics dashboarding |
-| **Cemini OS (Streamlit)** | 8501 | Real-time trading dashboard |
-| **Grafana** | 3000 | Metrics & performance visualization |
-| **nginx** | 80 | Reverse proxy (external entry point) |
-| **Cloudflare Tunnel** | — | Zero Trust remote access (no open ports) |
+<!-- AUTO:SERVICES_TABLE -->
+**19 active containers** (1 disabled)
+
+| Container | Image/Build | Ports | Notes |
+|-----------|-------------|-------|-------|
+| `postgres` | timescale/timescaledb:latest-pg16 | 5432 | THE HEART (Data Storage) |
+| `pgadmin` | dpage/pgadmin4 | 80 |  |
+| `redis` | redis:7-alpine | 6379 | THE SPINAL CORD (Messaging) |
+| `polygon_ingestor` | (build: Dockerfile.ingestor) | internal | NODE 1: PERCEPTION (Ingestion) |
+| `brain` | (build: Dockerfile.brain) | internal | NODE 2-4: THE BRAIN (Intelligence) |
+| `scribe_logger` | (build: Dockerfile.logger) | internal | THE SCRIBE (Logging) |
+| `coach_analyzer` | (build: Dockerfile.analyzer) | internal | THE COACH (Analysis) |
+| `social_scraper` | (build: Dockerfile.scraper) | internal | SCRAPERS (Intelligence) |
+| `macro_scraper` | (build: Dockerfile.scraper) | internal |  |
+| `gdelt_harvester` | (build: Dockerfile.scraper) | internal | intel:conflict_events / intel:regional_risk, logs ELEVATED+ events to Postgres. |
+| `kalshi_autopilot` | (build: Dockerfile.autopilot) | internal | social_alpha, musk_monitor — all in paper mode by default. |
+| `rover_scanner` | (build: Dockerfile.autopilot) | internal | (weather / crypto / economics / politics), and publishes intel to Redis. |
+| `ems_executor` | (build: Dockerfile.ems) | internal | NODE 5: THE SWORD (Execution) |
+| `cemini_os` | (build: Dockerfile.ui) | 8501 | CEMINI OS (Streamlit Dashboard) |
+| `deephaven` | ghcr.io/deephaven/server:latest | 10000 | THE VISUAL NERVOUS SYSTEM (Telemetry) |
+| `grafana_viz` | grafana/grafana:latest | 3000 |  |
+| `cemini_proxy` | nginx:alpine | 80 | PERIMETER DEFENSE |
+| `cloudflare_tunnel` | cloudflare/cloudflared:latest | internal |  |
+| `playbook_runner` | (build: Dockerfile.playbook) | internal | future RL model.  Does NOT place orders.  Harvesters are unaffected. |
+
+**Disabled (profile-gated):** `signal_generator`
+<!-- /AUTO:SERVICES_TABLE -->
 
 ---
 
-## 🔮 Current Development Phase
+## 🔮 Broker Adapters
 
-The system is in **data accumulation / paper mode**. No live equity trading is active. The playbook runner, harvesters, and regime gate are accumulating clean post-regime-gate data for future reinforcement learning model training.
-
-Active development focuses on:
--   **CI/CD Hardening:** ✅ Complete. Pipeline includes flake8 linting, pip-audit dependency CVE scanning, bandit static security analysis, and TruffleHog secret scanning — all must pass before deploy.
--   **Docker Network Segmentation:** Isolating edge, application, and data tiers for defense-in-depth security.
--   **Paper Trade Performance Dashboard:** Visualizing regime timelines, signal detection history, hypothetical P&L, and risk metrics to evaluate playbook accuracy.
--   **Reinforcement Learning Foundation:** Building a Gym-compatible training environment using accumulated data, with Stable Baselines3 (PPO) and Weights & Biases experiment tracking.
--   **Automated Backtesting in CI:** VectorBT-powered backtests with Sharpe ratio and max drawdown gates that block merges of regressed strategies.
-
-See the full development roadmap in the project's Research document.
+<!-- AUTO:BROKER_STATUS -->
+| Broker | Status | API | Default Mode |
+|--------|--------|-----|--------------|
+| Kalshi | Active | REST API v2 (RSA-signed) | Paper default |
+| Robinhood | Integrated | robin_stocks (unofficial) | Paper default |
+| Alpaca | Integrated | Official REST API | Paper default |
+| IBKR | Planned | TWS API / FIX CTCI | Requires LLC + LEI |
+<!-- /AUTO:BROKER_STATUS -->
 
 ---
+
+## 📡 Intel Bus (Redis)
+
+<!-- AUTO:REDIS_CHANNELS -->
+| Key | Publisher | Description |
+|-----|-----------|-------------|
+| `trade_signals` | various | brain → EMS (trade execution commands) |
+| `emergency_stop` | various | Kill switch CANCEL_ALL broadcast |
+| `strategy_mode` | various | analyzer → conservative | aggressive | sniper |
+| `intel:btc_spy_corr` | various | BTC/SPY 30-day rolling correlation float |
+| `intel:playbook_snapshot` | various | playbook_runner: regime + signal + risk state (every 5 min) |
+| `intel:spy_trend` | various | SPY trend direction from playbook_runner |
+| `intel:geopolitical_risk` | various | GDELT: 0-100 risk score, level, top event (every 15 min) |
+| `intel:conflict_events` | various | GDELT: top-5 high-impact events JSON list |
+| `intel:regional_risk` | various | GDELT: per-region risk scores (asia_pacific, middle_east, europe, americas) |
+| `macro:fear_greed` | various | Fear & Greed Index (macro_scraper, every 5 min) |
+<!-- /AUTO:REDIS_CHANNELS -->
+
+---
+
+## 🗺️ Development Roadmap
+
+<!-- AUTO:ROADMAP_STATUS -->
+**Progress: 5/14 steps complete (35%)**
+
+| Step | Name | Status |
+|------|------|--------|
+| 1 | CI/CD Hardening | ✅ Complete (Feb 28, 2026) |
+| 2 | Docker Network Segmentation | ✅ Complete (Mar 1, 2026) |
+| 3 | Performance Dashboard | ⬜ Pending |
+| 4 | Kalshi Rewards Scanner | ⬜ Pending |
+| 5 | X/Twitter Thread Tool | ⬜ Pending |
+| 6 | Equity Tick Data | ✅ Complete (Feb 26, 2026) |
+| 7 | RL Training Loop | ⬜ Pending |
+| 8 | Backtesting in CI/CD | ⬜ Pending |
+| 9 | Options Strategies | ⬜ Pending |
+| 10 | Live Trading Integration | ⬜ Pending |
+| 11 | Shadow Testing Infra | ⬜ Pending |
+| 12 | Copy Trading / Signals | ~~Removed~~ |
+| 13 | Arbitrage Scanner | ⬜ Pending |
+| 14 | GDELT Geopolitical Intel | ✅ Complete (Mar 1, 2026) |
+| 15 | Auto-Documentation CI | ✅ Complete (Mar 1, 2026) |
+<!-- /AUTO:ROADMAP_STATUS -->
+
+---
+
+## 🔬 Test & Security Status
+
+<!-- AUTO:TEST_SUMMARY -->
+**Tests:** 93 passing
+**pip-audit:** clean (0 vulnerabilities)
+**bandit (SAST):** see CI
+**CI gates:** lint → pip-audit → bandit → TruffleHog → deploy (all required)
+<!-- /AUTO:TEST_SUMMARY -->
+
+---
+
+<!-- AUTO:LAST_UPDATED -->
+*Auto-generated: 2026-03-01 15:34 UTC*
+<!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**

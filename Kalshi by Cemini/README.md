@@ -1,35 +1,40 @@
-**Last Audit:** 2026-02-22 | **Version:** 2.1.0 | **Status:** ✅ Stable (Paper Mode)
+# Kalshi by Cemini — Prediction Market Engine
 
-# 🔮 Kalshi by Cemini (v2.1.0) | Cemini Financial Suite
+<!-- AUTO:LAST_UPDATED -->
+*Auto-generated: 2026-03-01 15:34 UTC*
+<!-- /AUTO:LAST_UPDATED -->
 
-Welcome to **Kalshi by Cemini**, your automated command center for event-contract arbitrage and high-speed prediction markets.
+## Overview
 
-## 🚀 One-Click Setup
-1.  **Run the Installer**:
-    ```bash
-    ./RUN_KALSHI.sh
-    ```
-    This will automatically create your environment and install all tools.
-2.  **Add Your Keys**: Open the `.env` file and paste your Kalshi Email, Password, and API Key.
-3.  **Private Key**: Ensure your `private_key.pem` file is located in this folder.
+Prediction market trading engine for Kalshi. Integrates multi-domain analysis (BTC,
+Fed rates, weather, geopolitical) with Kelly Criterion position sizing and RSA-signed
+API execution.
 
-## 🧠 The Intelligence Modules
-This bot uses 4 distinct "Brains" to find trades:
-*   **Weather Alpha**: Scans the entire US for temperature arbitrage opportunities. Publishes `intel:weather_edge` to the Intel Bus.
-*   **Musk Monitor (Powell Protocol)**: Tracks Fed communications and macro catalysts to predict rate decisions. Publishes `intel:fed_bias` to the Intel Bus.
-*   **Social Alpha**: Analyzes the top crypto influencers on X (Twitter) using AI. Publishes `intel:social_score` to the Intel Bus.
-*   **Satoshi Vision**: Uses institutional math to find high-probability BTC setups. Publishes `intel:btc_sentiment` to the Intel Bus.
+## Modules
 
-## 🛡️ Built-in Safety
-*   **Budget Guard**: Automatically stops scanning if you hit 90% of your X API budget.
-*   **Portfolio Guard**: Never buys the same trade twice in one day.
-*   **Exit Engine**: Automatically sells to lock in profits at 90c or cut losses at 10c.
-*   **Portfolio Heat Guard**: Reads `intel:portfolio_heat` from the shared Intel Bus. If combined active positions across QuantOS and Kalshi exceed 80% of capacity, new trades are automatically skipped.
-*   **Paper Mode Kill Switch**: `trading_enabled: false` and `paper_mode: true` in `settings.json`. No live orders are placed until these are explicitly re-enabled.
+| Module | File | Purpose |
+|--------|------|---------|
+| Autopilot | `modules/execution/autopilot.py` | Main 30s scan-and-execute loop |
+| SatoshiAnalyzer | `modules/satoshi_vision/analyzer.py` | Multi-timeframe BTC TA (SCALP/SWING/MACRO) |
+| PowellAnalyzer | `modules/powell_protocol/analyzer.py` | Treasury yields + rate decision analysis |
+| WeatherAnalyzer | `modules/weather_alpha/analyzer.py` | NWS/OpenWeather forecast consensus |
+| SocialAnalyzer | `modules/social_alpha/analyzer.py` | X/Twitter sentiment (⚠️ simulated data) |
+| MuskPredictor | `modules/musk_monitor/predictor.py` | Tweet velocity + empire/launch data model |
+| GeoPulseMonitor | `modules/geo_pulse/monitor.py` | Geopolitical signals — live GDELT fallback via Redis |
+| MarketRover | `modules/market_rover/rover.py` | Cross-references QuantOS sentiment with Kalshi markets |
+| CapitalAllocator | `modules/execution/allocator.py` | Kelly Criterion position sizing |
 
-## 🏛 Suite Integration
-Kalshi by Cemini integrates with QuantOS via the **shared Intel Bus** — a Redis-backed signal layer (`core/intel_bus.py`). Both systems publish and read from the same `intel:*` key namespace over the shared Redis instance. There are no HTTP calls between containers; all cross-system intelligence is exchanged through Redis, making the integration reliable in Docker networks where `localhost` inter-service calls fail.
+## Data Gaps
 
-## 🚦 Usage
-To start the full suite, use the master button on your Desktop:
-`python3 ~/Desktop/SuiteLauncher.py`
+- `social_alpha/analyzer.py` — Uses hardcoded simulated tweets (not live X API)
+- `powell_protocol/analyzer.py` — Mock Kalshi rate bracket prices (not live)
+- `weather_alpha/analyzer.py` — Simulated order book prices (not live)
+- `geo_pulse/monitor.py` — Falls back to live GDELT data from Redis (`intel:conflict_events`);
+  if Redis unavailable, uses X API; if both unavailable, returns NO_SIGNAL
+
+## Running
+
+```bash
+docker compose up -d kalshi_autopilot rover_scanner
+docker logs kalshi_autopilot --since '30 minutes ago'
+```

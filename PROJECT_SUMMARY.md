@@ -72,28 +72,36 @@ Three cooperating systems that share intelligence but execute independently:
 ```
 
 ### Docker Services (docker-compose.yml)
-| Service | Container | Image/Build | Purpose |
-|---|---|---|---|
-| postgres | postgres | timescale/timescaledb:pg16 | Primary DB (TimescaleDB) |
-| redis | redis | redis:7-alpine | Pub/sub message bus |
-| pgadmin | pgadmin | dpage/pgadmin4 | DB admin UI |
-| polygon_feed | polygon_ingestor | Dockerfile.ingestor | Polygon WebSocket → Postgres |
-| brain | brain | Dockerfile.brain | LangGraph orchestrator |
-| signal_generator | signal_generator | QuantOS/Dockerfile.brain | QuantOS trading engine |
-| logger | scribe_logger | Dockerfile.logger | Trade logging service |
-| analyzer | coach_analyzer | Dockerfile.analyzer | analyzer.py (hourly coach) |
-| social_scraper | social_scraper | Dockerfile.scraper | Reddit/social feeds |
-| macro_scraper | macro_scraper | Dockerfile.scraper | Macro data harvester |
-| ems | ems_executor | Dockerfile.ems | EMS signal router |
-| cemini_os | cemini_os | ui/Dockerfile.ui | Streamlit dashboard |
-| deephaven | deephaven | ghcr.io/deephaven/server | Real-time data viz |
-| grafana | grafana_viz | grafana/grafana | Monitoring dashboards |
-| nginx | cemini_proxy | nginx:alpine | Reverse proxy (port 80) |
-| cloudflared | cloudflare_tunnel | cloudflare/cloudflared | External tunnel |
-| playbook | playbook_runner | Dockerfile.playbook | Trading playbook: macro regime + 6 signal detectors + risk engine (observation-only, 5-min loop) |
-| rover_scanner | rover_scanner | Dockerfile.autopilot | Kalshi market discovery: paginates all open markets every 15 min, categorizes, publishes intel to Redis |
 
-**Networking:** All services internal except nginx (port 80). No ports exposed directly — nginx routes: `/grafana/*` → Grafana:3000, rest → cemini_os:8501.
+<!-- AUTO:SERVICES_TABLE -->
+**19 active containers** (1 disabled)
+
+| Container | Image/Build | Ports | Notes |
+|-----------|-------------|-------|-------|
+| `postgres` | timescale/timescaledb:latest-pg16 | 5432 | THE HEART (Data Storage) |
+| `pgadmin` | dpage/pgadmin4 | 80 |  |
+| `redis` | redis:7-alpine | 6379 | THE SPINAL CORD (Messaging) |
+| `polygon_ingestor` | (build: Dockerfile.ingestor) | internal | NODE 1: PERCEPTION (Ingestion) |
+| `brain` | (build: Dockerfile.brain) | internal | NODE 2-4: THE BRAIN (Intelligence) |
+| `scribe_logger` | (build: Dockerfile.logger) | internal | THE SCRIBE (Logging) |
+| `coach_analyzer` | (build: Dockerfile.analyzer) | internal | THE COACH (Analysis) |
+| `social_scraper` | (build: Dockerfile.scraper) | internal | SCRAPERS (Intelligence) |
+| `macro_scraper` | (build: Dockerfile.scraper) | internal |  |
+| `gdelt_harvester` | (build: Dockerfile.scraper) | internal | intel:conflict_events / intel:regional_risk, logs ELEVATED+ events to Postgres. |
+| `kalshi_autopilot` | (build: Dockerfile.autopilot) | internal | social_alpha, musk_monitor — all in paper mode by default. |
+| `rover_scanner` | (build: Dockerfile.autopilot) | internal | (weather / crypto / economics / politics), and publishes intel to Redis. |
+| `ems_executor` | (build: Dockerfile.ems) | internal | NODE 5: THE SWORD (Execution) |
+| `cemini_os` | (build: Dockerfile.ui) | 8501 | CEMINI OS (Streamlit Dashboard) |
+| `deephaven` | ghcr.io/deephaven/server:latest | 10000 | THE VISUAL NERVOUS SYSTEM (Telemetry) |
+| `grafana_viz` | grafana/grafana:latest | 3000 |  |
+| `cemini_proxy` | nginx:alpine | 80 | PERIMETER DEFENSE |
+| `cloudflare_tunnel` | cloudflare/cloudflared:latest | internal |  |
+| `playbook_runner` | (build: Dockerfile.playbook) | internal | future RL model.  Does NOT place orders.  Harvesters are unaffected. |
+
+**Disabled (profile-gated):** `signal_generator`
+<!-- /AUTO:SERVICES_TABLE -->
+
+**Networking:** Three isolated networks — `edge_net` (nginx, cloudflared), `app_net` (brain, scrapers, harvesters), `data_net` (postgres, redis, deephaven). Defense-in-depth segmentation.
 
 ### Key Redis Channels
 - `trade_signals` — brain → EMS (trade execution commands)
@@ -342,11 +350,46 @@ TradingState → technical_analyst_node (stub)
 | Cloudflare Tunnel | infra | Tunnel token |
 
 ### Key Python Libraries
-**QuantOS:** `alpaca-trade-api`, `ib_insync`, `robin_stocks`, `google-cloud-bigquery`, `transformers` (FinBERT), `torch`, `pandas`, `numpy`, `aiohttp`, `langgraph`, `fastapi`, `pytz`, `nest_asyncio`
 
-**Kalshi by Cemini:** `fastapi`, `httpx`, `tweepy`, `textblob`, `yfinance`, `ccxt`, `pandas-ta`, `cryptography`, `pydantic-settings`, `sqlalchemy`, `aiosqlite`
-
-**Root EMS:** `redis`, `psycopg2`, `pydantic`, `websockets`
+<!-- AUTO:DEPENDENCY_VERSIONS -->
+| Package | Pinned version | Source |
+|---------|---------------|--------|
+| `alpaca-py` | `>=0.25.0` | root/requirements.txt |
+| `alpaca-py` | `>=0.20.0` | QuantOS/requirements.txt |
+| `ccxt` | `>=4.2.80` | root/requirements.txt |
+| `ccxt` | `any` | Kalshi by Cemini/requirements.txt |
+| `fastapi` | `>=0.110.0` | root/requirements.txt |
+| `fastapi` | `any` | Kalshi by Cemini/requirements.txt |
+| `gdeltdoc` | `>=1.4.0` | root/requirements.txt |
+| `httpx` | `>=0.27.0` | root/requirements.txt |
+| `httpx` | `any` | Kalshi by Cemini/requirements.txt |
+| `langgraph` | `>=0.1.0` | root/requirements.txt |
+| `numpy` | `>=1.26.4` | root/requirements.txt |
+| `numpy` | `>=1.24.0` | QuantOS/requirements.txt |
+| `pandas` | `>=2.2.1` | root/requirements.txt |
+| `pandas` | `>=2.0.0` | QuantOS/requirements.txt |
+| `pandas` | `any` | Kalshi by Cemini/requirements.txt |
+| `polars` | `>=0.20.15` | root/requirements.txt |
+| `psycopg2-binary` | `>=2.9.9` | root/requirements.txt |
+| `psycopg2-binary` | `any` | Kalshi by Cemini/requirements.txt |
+| `pydantic` | `>=2.6.4` | root/requirements.txt |
+| `redis` | `>=5.0.3` | root/requirements.txt |
+| `redis` | `any` | Kalshi by Cemini/requirements.txt |
+| `robin-stocks` | `>=3.0.0` | root/requirements.txt |
+| `robin-stocks` | `>=3.2.1` | QuantOS/requirements.txt |
+| `scikit-learn` | `>=1.4.1` | root/requirements.txt |
+| `scikit-learn` | `>=1.3.0` | QuantOS/requirements.txt |
+| `streamlit` | `>=1.32.2` | root/requirements.txt |
+| `textblob` | `>=0.18.0` | root/requirements.txt |
+| `textblob` | `any` | Kalshi by Cemini/requirements.txt |
+| `torch` | `>=2.2.1` | root/requirements.txt |
+| `torch` | `>=2.2.1` | QuantOS/requirements.txt |
+| `transformers` | `>=4.38.2` | root/requirements.txt |
+| `transformers` | `>=4.38.2` | QuantOS/requirements.txt |
+| `tweepy` | `>=4.14.0` | root/requirements.txt |
+| `tweepy` | `any` | Kalshi by Cemini/requirements.txt |
+| `websockets` | `>=12.0` | root/requirements.txt |
+<!-- /AUTO:DEPENDENCY_VERSIONS -->
 
 ---
 
@@ -458,13 +501,29 @@ Currently missing:
 
 ## 8. ACTIVE DEVELOPMENT ROADMAP
 
-The original priority list has been superseded by a 13-step development roadmap maintained in the project's Research document ("Claude Roadmap" section). As of Feb 28, 2026:
+<!-- AUTO:ROADMAP_STATUS -->
+**Progress: 5/14 steps complete (35%)**
 
-**Completed:** Step 1 (CI/CD Hardening), Step 6 (Equity Tick Data)
-**Ready now:** Step 2 (Docker Network Segmentation), Step 4 (Kalshi Rewards Scanner), Step 5 (X Thread Tool)
-**Waiting on data:** Steps 3, 7-11, 13
+| Step | Name | Status |
+|------|------|--------|
+| 1 | CI/CD Hardening | ✅ Complete (Feb 28, 2026) |
+| 2 | Docker Network Segmentation | ✅ Complete (Mar 1, 2026) |
+| 3 | Performance Dashboard | ⬜ Pending |
+| 4 | Kalshi Rewards Scanner | ⬜ Pending |
+| 5 | X/Twitter Thread Tool | ⬜ Pending |
+| 6 | Equity Tick Data | ✅ Complete (Feb 26, 2026) |
+| 7 | RL Training Loop | ⬜ Pending |
+| 8 | Backtesting in CI/CD | ⬜ Pending |
+| 9 | Options Strategies | ⬜ Pending |
+| 10 | Live Trading Integration | ⬜ Pending |
+| 11 | Shadow Testing Infra | ⬜ Pending |
+| 12 | Copy Trading / Signals | ~~Removed~~ |
+| 13 | Arbitrage Scanner | ⬜ Pending |
+| 14 | GDELT Geopolitical Intel | ✅ Complete (Mar 1, 2026) |
+| 15 | Auto-Documentation CI | ✅ Complete (Mar 1, 2026) |
+<!-- /AUTO:ROADMAP_STATUS -->
 
-Step 12 (Copy Trading / Signal Service) has been removed — it triggered SEC/FINRA regulatory requirements incompatible with the private-use-first strategy.
+Step 12 removed — triggered SEC/FINRA regulatory requirements incompatible with private-use-first strategy.
 
 ---
 
@@ -496,5 +555,9 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 - `venv_new/` inside `Kalshi by Cemini/` — Committed venv directory with full Python 3.9 installation. **Must be gitignored.** Adds enormous noise to diffs and TruffleHog scans.
 
 ---
+
+<!-- AUTO:LAST_UPDATED -->
+*Auto-generated: 2026-03-01 15:34 UTC*
+<!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*

@@ -166,6 +166,53 @@ jobs:
             echo "✅ Deployed successfully to root@5.161.53.103:/opt/cemini"
           fi
 
+  # ── AUTO-DOCUMENTATION ───────────────────────────────────────────────────────
+  # Runs in parallel with audit-and-deploy after security gates pass.
+  # Parses docker-compose.yml, requirements, and test suite to inject fresh
+  # sections into README.md, PROJECT_SUMMARY.md, and per-directory READMEs.
+  # Only commits when content actually changed — never creates empty commits.
+  # [skip ci] in the commit message prevents infinite CI loops.
+  update-docs:
+    runs-on: ubuntu-latest
+    needs: [lint, pip-audit, bandit]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml pytest
+
+      - name: Generate documentation
+        run: python scripts/generate_docs.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md PROJECT_SUMMARY.md \
+                  QuantOS/README.md \
+                  "Kalshi by Cemini/README.md" \
+                  trading_playbook/README.md || true
+          if git diff --cached --quiet; then
+            echo "📝 No documentation changes to commit."
+          else
+            git commit -m "docs: auto-update READMEs [skip ci]"
+            git push
+            echo "📝 Documentation committed and pushed."
+          fi
+
 # NOTE — Docker layer caching:
 # Builds run on the VPS server (via SSH in the deploy step), not inside the
 # GitHub Actions runner. The server's local Docker layer cache already provides
