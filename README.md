@@ -275,7 +275,7 @@ The `update-docs` job runs in parallel with `audit-and-deploy` — doc failures 
 ## 🛠️ Components & Ports
 
 <!-- AUTO:SERVICES_TABLE -->
-**18 active containers** (1 disabled)
+**19 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -378,7 +378,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-01 15:58 UTC*
+*Auto-generated: 2026-03-01 20:18 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**
