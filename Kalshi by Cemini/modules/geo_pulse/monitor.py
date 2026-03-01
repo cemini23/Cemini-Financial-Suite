@@ -1,5 +1,7 @@
 import httpx
 import asyncio
+import json
+import os
 from app.core.config import settings
 from app.core.settings_manager import settings_manager
 import time
@@ -27,13 +29,16 @@ class GeoPulseMonitor:
         Scans for high-impact geopolitical and election-related signals.
         """
         if not self.bearer_token:
-            print("[WARNING] Geo-Pulse: X_BEARER_TOKEN not configured. Returning NO_SIGNAL.")
+            print("[WARNING] Geo-Pulse: X_BEARER_TOKEN not configured. Trying GDELT Redis fallback.")
+            gdelt_result = self._read_gdelt_fallback()
+            if gdelt_result:
+                return gdelt_result
             return {
                 "module": "GEO-PULSE",
                 "signals": [],
                 "aggregate_impact_score": 0,
                 "status": "NO_SIGNAL",
-                "msg": "X_BEARER_TOKEN not configured"
+                "msg": "X_BEARER_TOKEN not configured and GDELT fallback unavailable"
             }
 
         # Cost tracking
@@ -66,13 +71,16 @@ class GeoPulseMonitor:
                     print(f"[WARNING] Geo-Pulse: X API failed for user {user_id} ({e}).")
 
         if not live_data:
-            print("[WARNING] Geo-Pulse: No tweets fetched from X API. Returning NO_SIGNAL.")
+            print("[WARNING] Geo-Pulse: No tweets fetched from X API. Trying GDELT Redis fallback.")
+            gdelt_result = self._read_gdelt_fallback()
+            if gdelt_result:
+                return gdelt_result
             return {
                 "module": "GEO-PULSE",
                 "signals": [],
                 "aggregate_impact_score": 0,
                 "status": "NO_SIGNAL",
-                "msg": "X API returned no data"
+                "msg": "X API returned no data and GDELT fallback unavailable"
             }
 
         total_score = 0
@@ -116,3 +124,68 @@ class GeoPulseMonitor:
             "aggregate_impact_score": round(avg_impact, 2),
             "status": "ACTIVE"
         }
+
+    def _read_gdelt_fallback(self):
+        """
+        Read intel:conflict_events and intel:geopolitical_risk from Redis
+        (published by gdelt_harvester) and return a GeoPulse-compatible response.
+        Returns None if Redis is unavailable or has no data.
+        """
+        try:
+            import redis as redis_lib
+            redis_host = os.environ.get("REDIS_HOST", "redis")
+            redis_password = os.environ.get("REDIS_PASSWORD", "cemini_redis_2026")
+            r = redis_lib.Redis(
+                host=redis_host, port=6379, password=redis_password,
+                decode_responses=True, socket_connect_timeout=2
+            )
+            events_raw = r.get("intel:conflict_events")
+            risk_raw = r.get("intel:geopolitical_risk")
+            if not events_raw:
+                return None
+
+            events = json.loads(events_raw)
+            if not events:
+                return None
+
+            aggregate_score = 0.0
+            if risk_raw:
+                risk_payload = json.loads(risk_raw)
+                aggregate_score = float(risk_payload.get("score", 0.0))
+
+            def _score_to_level(score):
+                if score >= 80:
+                    return "CRITICAL"
+                if score >= 60:
+                    return "HIGH"
+                if score >= 40:
+                    return "ELEVATED"
+                return "LOW"
+
+            _LEVEL_MAP = {
+                "CRITICAL": ("WAR ALERT", "CRITICAL", "VOLATILE"),
+                "HIGH": ("Geopolitical", "HIGH", "VOLATILE"),
+                "ELEVATED": ("Geopolitical", "MODERATE", "VOLATILE"),
+                "LOW": ("Geopolitical", "MODERATE", "STABLE"),
+            }
+            signals = []
+            for ev in events[:10]:
+                level = _score_to_level(float(ev.get("risk_score", 0.0)))
+                category, impact, verdict = _LEVEL_MAP.get(level, ("Geopolitical", "MODERATE", "STABLE"))
+                signals.append({
+                    "source": "GDELT",
+                    "category": category,
+                    "content": ev.get("title", "Geopolitical event detected"),
+                    "impact": impact,
+                    "verdict": verdict,
+                })
+
+            return {
+                "module": "GEO-PULSE",
+                "signals": signals,
+                "aggregate_impact_score": round(aggregate_score, 2),
+                "status": "GDELT_FALLBACK",
+            }
+        except Exception as e:
+            print(f"[WARNING] Geo-Pulse: GDELT Redis fallback failed ({e}).")
+            return None

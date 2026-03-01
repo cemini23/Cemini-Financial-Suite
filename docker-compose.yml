@@ -186,6 +186,33 @@ services:
       - app_net
       - data_net
 
+  # --- GDELT GEOPOLITICAL HARVESTER ---
+  # Polls GDELT 2.0 every 15 min. Filters CAMEO 10-20 + market-relevant countries.
+  # Computes 0-100 risk scores, publishes to intel:geopolitical_risk /
+  # intel:conflict_events / intel:regional_risk, logs ELEVATED+ events to Postgres.
+  gdelt_harvester:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: gdelt_harvester
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quest}
+      - GDELT_SCAN_INTERVAL=${GDELT_SCAN_INTERVAL:-900}
+    volumes:
+      - .:/app
+      - ./archives:/mnt/archive
+    command: ["python", "scrapers/gdelt_harvester.py"]
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+      - data_net
+
   # --- KALSHI AUTOPILOT (Prediction Market Brain) ---
   # Runs CeminiAutopilot: weather_alpha, satoshi_vision, powell_protocol,
   # social_alpha, musk_monitor — all in paper mode by default.

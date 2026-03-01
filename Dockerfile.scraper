@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
-RUN pip install --no-cache-dir redis yfinance praw requests pandas psycopg2-binary tweepy textblob
+RUN pip install --no-cache-dir redis yfinance praw requests pandas psycopg2-binary tweepy textblob gdelt-doc-api
 RUN python -m textblob.download_corpora
 COPY . .
 # Entry point will be set in docker-compose per service
