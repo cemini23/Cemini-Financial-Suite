@@ -272,8 +272,8 @@ The suite is designed as a modular organism, where each service plays a critical
 ## 🔬 Test & Security Status
 
 <!-- AUTO:TEST_SUMMARY -->
-**Tests:** 93 passing
-**pip-audit:** clean (0 vulnerabilities)
+**Tests:** run `pytest` locally to verify
+**pip-audit:** not available locally (check CI)
 **bandit (SAST):** see CI
 **CI gates:** lint → pip-audit → bandit → TruffleHog → deploy (all required)
 <!-- /AUTO:TEST_SUMMARY -->
@@ -281,7 +281,7 @@ The suite is designed as a modular organism, where each service plays a critical
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-01 15:50 UTC*
+*Auto-generated: 2026-03-01 15:58 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**

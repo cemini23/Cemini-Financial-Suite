@@ -1,7 +1,7 @@
 # Trading Playbook — Observation & Risk Layer
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-01 15:50 UTC*
+*Auto-generated: 2026-03-01 15:58 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 ## Overview
