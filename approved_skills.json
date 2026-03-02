@@ -1,0 +1,6 @@
+{
+  "version": "1.0",
+  "updated": "2026-03-02",
+  "description": "Vetted community skills approved for use in Cemini Financial Suite agent sessions. All entries must pass Stage 1 (automated scan) and Stage 2 (manual audit) per SECURITY.md.",
+  "skills": []
+}
