@@ -57,7 +57,7 @@ class WeatherAnalyzer:
         if data['variance'] < 2.5: # Relaxed for wider scanning
             for contract in live_market:
                 # If price is < 0.30 but models agree on this bracket -> ARBITRAGE
-                if contract['price'] < 0.30:
+                if 0 < contract['price'] < 0.30:
                     opportunities.append({
                         "city": city_code,
                         "bracket": contract['bracket'],

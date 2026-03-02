@@ -36,39 +36,46 @@ class WeatherSource:
 
     async def get_nws_forecast(self, client, city):
         """
-        Async fetch for NWS
+        Async fetch for NWS — returns high and overnight low for degree-day calculations.
         """
         url = f"https://api.weather.gov/gridpoints/{city['office']}/{city['gridX']},{city['gridY']}/forecast"
         data = await self._fetch_url(client, url, headers=self.nws_headers)
-        
+
         if not data: return None
         try:
             periods = data['properties']['periods']
-            today = next((p for p in periods if p['isDaytime']), None)
-            return today['temperature'] if today else None
+            day   = next((p for p in periods if p['isDaytime']), None)
+            night = next((p for p in periods if not p['isDaytime']), None)
+            return {
+                "high": day['temperature']   if day   else None,
+                "low":  night['temperature'] if night else None,
+            }
         except (KeyError, TypeError):
             return None
 
     async def get_open_meteo_consensus(self, client, city):
         """
-        Async fetch for Models
+        Async fetch for ECMWF + GFS — max and min for degree-day calculations.
         """
         url = "https://api.open-meteo.com/v1/forecast"
         params = {
             "latitude": city['lat'],
             "longitude": city['lon'],
-            "daily": "temperature_2m_max",
+            "daily": "temperature_2m_max,temperature_2m_min",
             "temperature_unit": "fahrenheit",
             "timezone": "auto",
             "models": "ecmwf_ifs,gfs_seamless"
         }
         res = await self._fetch_url(client, url, params=params)
-        
+
         if not res: return None
         try:
+            d = res['daily']
             return {
-                "ECMWF": res['daily']['temperature_2m_max_ecmwf_ifs'][0],
-                "GFS": res['daily']['temperature_2m_max_gfs_seamless'][0]
+                "ECMWF":     d['temperature_2m_max_ecmwf_ifs'][0],
+                "GFS":       d['temperature_2m_max_gfs_seamless'][0],
+                "ECMWF_min": d['temperature_2m_min_ecmwf_ifs'][0],
+                "GFS_min":   d['temperature_2m_min_gfs_seamless'][0],
             }
         except (KeyError, TypeError, IndexError):
             return None
@@ -90,7 +97,7 @@ class WeatherSource:
     async def get_visual_crossing_data(self, client, city):
         """
         Async fetch for Visual Crossing (Model 5)
-        Returns today's forecast high in Fahrenheit.
+        Returns today's forecast high and low in Fahrenheit.
         """
         url = f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{city['lat']},{city['lon']}/today"
         params = {
@@ -98,11 +105,12 @@ class WeatherSource:
             "key": settings.VISUAL_CROSSING_API_KEY,
             "contentType": "json",
             "include": "days",
-            "elements": "tempmax"
+            "elements": "tempmax,tempmin"
         }
         res = await self._fetch_url(client, url, params=params)
         try:
-            return res['days'][0]['tempmax']
+            day = res['days'][0]
+            return {"max": day['tempmax'], "min": day['tempmin']}
         except (KeyError, TypeError, IndexError):
             return None
 
@@ -133,14 +141,22 @@ class WeatherSource:
                 nws, models, owm, vc = None, None, None, None
 
         # 3. ROBUST ERROR HANDLING
-        if isinstance(nws, Exception) or nws is None: nws = 0.0
-        if isinstance(models, Exception) or models is None: models = {'ECMWF': 0.0, 'GFS': 0.0}
-        if isinstance(owm, Exception) or owm is None: owm = 0.0
-        if isinstance(vc, Exception) or vc is None: vc = 0.0
+        if isinstance(nws, Exception) or nws is None:
+            nws = {"high": 0.0, "low": 0.0}
+        if isinstance(models, Exception) or models is None:
+            models = {"ECMWF": 0.0, "GFS": 0.0, "ECMWF_min": 0.0, "GFS_min": 0.0}
+        if isinstance(owm, Exception) or owm is None:
+            owm = 0.0
+        if isinstance(vc, Exception) or vc is None:
+            vc = {"max": 0.0, "min": 0.0}
 
-        # Calculate Consensus (Avoid crash if sources are missing)
-        # Weighting: NWS 2x (~33%), ECMWF 1x (~17%), GFS 1x (~17%), OWM 1x (~17%), VC 1x (~17%)
-        sources_list = [nws, models.get('ECMWF', 0), models.get('GFS', 0), owm, vc]
+        nws_high = nws.get("high") or 0.0
+        nws_low  = nws.get("low")  or 0.0
+        vc_max   = vc.get("max")   or 0.0
+        vc_min   = vc.get("min")   or 0.0
+
+        # Consensus high: NWS 2x (~33%), ECMWF/GFS/OWM/VC 1x (~17% each)
+        sources_list = [nws_high, models.get("ECMWF", 0), models.get("GFS", 0), owm, vc_max]
         valid_sources = [s for s in sources_list if s > 1.0]
 
         if not valid_sources:
@@ -148,25 +164,51 @@ class WeatherSource:
             variance = 0.0
         else:
             weighted_sources = []
-            if nws > 1.0: weighted_sources.extend([nws, nws])  # NWS weighted double
-            if models.get('ECMWF', 0) > 1.0: weighted_sources.append(models['ECMWF'])
-            if models.get('GFS', 0) > 1.0: weighted_sources.append(models['GFS'])
+            if nws_high > 1.0: weighted_sources.extend([nws_high, nws_high])
+            if models.get("ECMWF", 0) > 1.0: weighted_sources.append(models["ECMWF"])
+            if models.get("GFS", 0) > 1.0: weighted_sources.append(models["GFS"])
             if owm > 1.0: weighted_sources.append(owm)
-            if vc > 1.0: weighted_sources.append(vc)
+            if vc_max > 1.0: weighted_sources.append(vc_max)
 
             avg_temp = statistics.mean(weighted_sources)
             variance = statistics.stdev(weighted_sources) if len(weighted_sources) > 1 else 0.0
+
+        # Consensus low — used for degree-day T_avg; fall back to T_high - 15 if no lows available
+        min_sources = []
+        if nws_low > 1.0: min_sources.extend([nws_low, nws_low])
+        if models.get("ECMWF_min", 0) > 1.0: min_sources.append(models["ECMWF_min"])
+        if models.get("GFS_min", 0) > 1.0: min_sources.append(models["GFS_min"])
+        if vc_min > 1.0: min_sources.append(vc_min)
+
+        avg_min = statistics.mean(min_sources) if min_sources else max(0.0, avg_temp - 15.0)
+        t_avg = (avg_temp + avg_min) / 2.0
+
+        # Agricultural degree-day metrics (all base °F)
+        gdd_50 = max(0.0, t_avg - 50.0)   # Standard crops: corn, soy, cotton
+        gdd_41 = max(0.0, t_avg - 41.0)   # Cool-season crops: wheat, barley, canola
+        hdd = max(0.0, 65.0 - t_avg)       # Heating demand proxy
+        cdd = max(0.0, t_avg - 65.0)       # Cooling demand proxy
 
         result = {
             "city": city_code,
             "consensus_temp": round(avg_temp, 1),
             "variance": round(variance, 2),
             "sources": {
-                "NWS": nws if nws > 1.0 else 0,
-                "ECMWF": models.get('ECMWF', 0) if models.get('ECMWF', 0) > 1.0 else 0,
-                "GFS": models.get('GFS', 0) if models.get('GFS', 0) > 1.0 else 0,
+                "NWS": nws_high if nws_high > 1.0 else 0,
+                "ECMWF": models.get("ECMWF", 0) if models.get("ECMWF", 0) > 1.0 else 0,
+                "GFS": models.get("GFS", 0) if models.get("GFS", 0) > 1.0 else 0,
                 "OpenWeather": owm if owm > 1.0 else 0,
-                "VisualCrossing": vc if vc > 1.0 else 0
+                "VisualCrossing": vc_max if vc_max > 1.0 else 0
+            },
+            "agricultural_metrics": {
+                "t_avg": round(t_avg, 1),
+                "t_min_consensus": round(avg_min, 1),
+                "gdd": {
+                    "base_50": round(gdd_50, 1),
+                    "base_41": round(gdd_41, 1),
+                },
+                "hdd": round(hdd, 1),
+                "cdd": round(cdd, 1),
             }
         }
 
