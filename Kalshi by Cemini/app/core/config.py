@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     
     # --- WEATHER CONFIG ---
     OPENWEATHER_API_KEY: str = ""
+    VISUAL_CROSSING_API_KEY: str = ""
     # NWS requires a User-Agent with contact info
     NWS_USER_AGENT: str = "(kalshi-bot-cemini, contact@cemini.dev)"
     

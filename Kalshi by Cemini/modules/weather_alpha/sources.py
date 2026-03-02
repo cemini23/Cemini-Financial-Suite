@@ -87,6 +87,25 @@ class WeatherSource:
         res = await self._fetch_url(client, url, params=params)
         return res['main']['temp'] if res and 'main' in res else None
 
+    async def get_visual_crossing_data(self, client, city):
+        """
+        Async fetch for Visual Crossing (Model 5)
+        Returns today's forecast high in Fahrenheit.
+        """
+        url = f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{city['lat']},{city['lon']}/today"
+        params = {
+            "unitGroup": "us",
+            "key": settings.VISUAL_CROSSING_API_KEY,
+            "contentType": "json",
+            "include": "days",
+            "elements": "tempmax"
+        }
+        res = await self._fetch_url(client, url, params=params)
+        try:
+            return res['days'][0]['tempmax']
+        except (KeyError, TypeError, IndexError):
+            return None
+
     async def get_aggregated_forecast(self, city_code: str):
         # 1. CHECK CACHE (Speed Optimization)
         now = time.time()
@@ -105,48 +124,49 @@ class WeatherSource:
                 nws_task = self.get_nws_forecast(client, city)
                 models_task = self.get_open_meteo_consensus(client, city)
                 owm_task = self.get_openweather_data(client, city)
-                
+                vc_task = self.get_visual_crossing_data(client, city)
+
                 # Wait for all models to finish in parallel, capturing exceptions
-                nws, models, owm = await asyncio.gather(nws_task, models_task, owm_task, return_exceptions=True)
+                nws, models, owm, vc = await asyncio.gather(nws_task, models_task, owm_task, vc_task, return_exceptions=True)
             except Exception as e:
                 print(f"[!] Weather Fetch Critical Fail: {e}")
-                nws, models, owm = None, None, None
+                nws, models, owm, vc = None, None, None, None
 
-        # 3. ROBUST ERROR HANDLING (The Fix)
-        # Handle exceptions or None returns from gather
+        # 3. ROBUST ERROR HANDLING
         if isinstance(nws, Exception) or nws is None: nws = 0.0
         if isinstance(models, Exception) or models is None: models = {'ECMWF': 0.0, 'GFS': 0.0}
         if isinstance(owm, Exception) or owm is None: owm = 0.0
+        if isinstance(vc, Exception) or vc is None: vc = 0.0
 
         # Calculate Consensus (Avoid crash if sources are missing)
-        # Weighting: NWS (40%), ECMWF (20%), GFS (20%), OpenWeather (20%)
-        # Filter out 0.0s to get real average
-        sources_list = [nws, models.get('ECMWF', 0), models.get('GFS', 0), owm]
+        # Weighting: NWS 2x (~33%), ECMWF 1x (~17%), GFS 1x (~17%), OWM 1x (~17%), VC 1x (~17%)
+        sources_list = [nws, models.get('ECMWF', 0), models.get('GFS', 0), owm, vc]
         valid_sources = [s for s in sources_list if s > 1.0]
-        
+
         if not valid_sources:
             avg_temp = 0.0
             variance = 0.0
         else:
-            # Re-build weighted list with valid data
             weighted_sources = []
-            if nws > 1.0: weighted_sources.extend([nws, nws]) # NWS weighted double
+            if nws > 1.0: weighted_sources.extend([nws, nws])  # NWS weighted double
             if models.get('ECMWF', 0) > 1.0: weighted_sources.append(models['ECMWF'])
             if models.get('GFS', 0) > 1.0: weighted_sources.append(models['GFS'])
             if owm > 1.0: weighted_sources.append(owm)
-            
+            if vc > 1.0: weighted_sources.append(vc)
+
             avg_temp = statistics.mean(weighted_sources)
             variance = statistics.stdev(weighted_sources) if len(weighted_sources) > 1 else 0.0
-        
+
         result = {
             "city": city_code,
             "consensus_temp": round(avg_temp, 1),
             "variance": round(variance, 2),
             "sources": {
-                "NWS": nws if nws > 1.0 else 0, 
-                "ECMWF": models.get('ECMWF', 0) if models.get('ECMWF', 0) > 1.0 else 0, 
+                "NWS": nws if nws > 1.0 else 0,
+                "ECMWF": models.get('ECMWF', 0) if models.get('ECMWF', 0) > 1.0 else 0,
                 "GFS": models.get('GFS', 0) if models.get('GFS', 0) > 1.0 else 0,
-                "OpenWeather": owm if owm > 1.0 else 0
+                "OpenWeather": owm if owm > 1.0 else 0,
+                "VisualCrossing": vc if vc > 1.0 else 0
             }
         }
 
