@@ -12,6 +12,7 @@ yfinance
 pydantic-settings
 feedparser
 cryptography
+websockets>=14.0
 ccxt
 sqlalchemy
 aiosqlite

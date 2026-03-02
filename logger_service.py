@@ -46,27 +46,18 @@ def main():
     """)
     print("✅ Postgres: trade_history table ready.")
 
-    # 4. Listen and Log
+    # 4. Listen and echo (EMS is the authoritative writer to trade_history)
     for message in pubsub.listen():
         if message['type'] == 'message':
             try:
                 data = json.loads(message['data'])
-                # Standardize data extraction from both Pydantic and simplified payloads
                 signal = data.get("pydantic_signal", data)
 
-                timestamp = data.get("timestamp", datetime.now())
                 symbol = signal.get("ticker_or_event") or data.get("symbol")
-                action = (signal.get("action") or data.get("action")).upper()
+                action = (signal.get("action") or data.get("action", "?")).upper()
                 price = data.get("price") or 0.0
-                reason = data.get("reason") or signal.get("agent_reasoning") or "Signal"
-                rsi = data.get("rsi") or 0.0
-                strategy = data.get("strategy") or "Unknown"
 
-                cursor.execute(
-                    "INSERT INTO trade_history (timestamp, symbol, action, price, reason, rsi, strategy) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                    (timestamp, symbol, action, price, reason, rsi, strategy)
-                )
-                print(f"📝 Logged: {action} {symbol} @ ${price:.2f}")
+                print(f"📝 Signal received: {action} {symbol} @ ${price:.2f}")
 
             except Exception as e:
                 print(f"⚠️ Logger Error: {e}")

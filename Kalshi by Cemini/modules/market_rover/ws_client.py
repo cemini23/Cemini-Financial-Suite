@@ -168,7 +168,7 @@ class KalshiWebSocketClient:
                 headers = self._build_headers()
                 async with websockets.connect(
                     WS_URL,
-                    extra_headers=headers,
+                    additional_headers=headers,
                     ping_interval=20,
                     ping_timeout=30,
                 ) as ws:
