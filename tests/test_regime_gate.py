@@ -136,12 +136,12 @@ class TestYellowRegime:
 # ============================================================================
 class TestRedRegime:
     def test_buy_blocks_moderate_confidence(self):
-        """0.60 < 0.85 → blocked in RED."""
+        """0.60 < 0.74 → blocked in RED."""
         blocked, _, _ = _regime_gate("BUY", 0.60, "RED")
         assert blocked
 
     def test_buy_passes_high_confidence(self):
-        """0.90 >= 0.85 → passes in RED."""
+        """0.90 >= 0.74 → passes in RED."""
         blocked, _, _ = _regime_gate("BUY", 0.90, "RED")
         assert not blocked
 
@@ -189,7 +189,7 @@ class TestShortAction:
 # ============================================================================
 class TestCatalystBonus:
     def test_episodic_pivot_bonus_in_red_causes_pass(self):
-        """0.78 + 0.10 bonus = 0.88 >= 0.85 → passes in RED."""
+        """0.78 + 0.10 bonus = 0.88 >= 0.74 → passes in RED."""
         blocked, eff, _ = _regime_gate("BUY", 0.78, "RED", signal_type="EpisodicPivot")
         assert not blocked
         assert eff == pytest.approx(0.88, abs=1e-9)
@@ -201,13 +201,13 @@ class TestCatalystBonus:
         assert eff == pytest.approx(0.88, abs=1e-9)
 
     def test_episodic_pivot_bonus_insufficient(self):
-        """0.74 + 0.10 = 0.84 < 0.85 → still blocked in RED."""
-        blocked, eff, _ = _regime_gate("BUY", 0.74, "RED", signal_type="EpisodicPivot")
+        """0.60 + 0.10 = 0.70 < 0.74 → still blocked in RED."""
+        blocked, eff, _ = _regime_gate("BUY", 0.60, "RED", signal_type="EpisodicPivot")
         assert blocked
-        assert eff == pytest.approx(0.84, abs=1e-9)
+        assert eff == pytest.approx(0.70, abs=1e-9)
 
     def test_episodic_pivot_bonus_in_yellow_causes_pass(self):
-        """Bonus applies in YELLOW too: 0.68 + 0.10 = 0.78 >= 0.75."""
+        """Bonus applies in YELLOW too: 0.68 + 0.10 = 0.78 >= 0.71."""
         blocked, eff, _ = _regime_gate("BUY", 0.68, "YELLOW", signal_type="EpisodicPivot")
         assert not blocked
         assert eff == pytest.approx(0.78, abs=1e-9)
@@ -283,7 +283,7 @@ class TestReasonString:
     def test_blocked_reason_contains_required_threshold(self):
         blocked, _, reason = _regime_gate("BUY", 0.60, "RED")
         assert blocked
-        assert "0.85" in reason
+        assert "0.74" in reason
 
     def test_blocked_reason_contains_regime(self):
         blocked, _, reason = _regime_gate("BUY", 0.60, "RED")
@@ -297,7 +297,7 @@ class TestReasonString:
 
     def test_catalyst_bonus_shown_in_blocked_reason(self):
         """When bonus applied but still insufficient, reason includes catalyst name."""
-        blocked, _, reason = _regime_gate("BUY", 0.74, "RED", signal_type="EpisodicPivot")
+        blocked, _, reason = _regime_gate("BUY", 0.60, "RED", signal_type="EpisodicPivot")
         assert blocked
         assert "EpisodicPivot" in reason
 

@@ -63,6 +63,7 @@ def improve_logic():
     last_hourly_review = 0
     last_heat_check = 0
     last_corr_check = 0
+    last_intel_publish = 0   # Intel Bus refresh: every 4 min (< 5 min TTL)
     prev_btc_spy_corr = None
 
     while True:
@@ -93,7 +94,36 @@ def improve_logic():
                 print(f"⚠️ Correlation Error: {e}")
                 conn.rollback()
 
-        # 3. Performance Review (Every Hour)
+        # 3. Intel Bus refresh (Every 4 mins — keeps VIX/SPY signals alive within 5 min TTL)
+        if now - last_intel_publish > 240:
+            try:
+                fgi_val = r.get("macro:fear_greed")
+                if fgi_val:
+                    # VIX proxy: maps FGI (0=fear, 100=greed) → VIX-like float.
+                    # FGI=10 → proxy=45, FGI=50 → proxy=25, FGI=80 → proxy=10.
+                    vix_proxy = max(10.0, 50.0 - (float(fgi_val) / 2.0))
+                    IntelPublisher.publish("intel:vix_level", round(vix_proxy, 1), "analyzer")
+
+                # SPY trend from strategy_mode in Redis.
+                # "sniper" (extreme fear) maps to "neutral" — extreme fear is a contrarian
+                # buy signal, not a bearish penalty on top of the regime gate's own RED filter.
+                _mode = r.get("strategy_mode") or "neutral"
+                _spy_map = {"aggressive": "bullish", "sniper": "neutral", "conservative": "neutral"}
+                IntelPublisher.publish("intel:spy_trend", _spy_map.get(_mode, "neutral"), "analyzer", confidence=0.7)
+
+                # Portfolio heat: fraction of active positions across both systems
+                _positions_raw = r.get("quantos:active_positions")
+                _kalshi_raw = r.get("kalshi:executed_trades")
+                _active = len(json.loads(_positions_raw)) if _positions_raw else 0
+                _kalshi = len(json.loads(_kalshi_raw)) if _kalshi_raw else 0
+                _heat = min(1.0, (_active + _kalshi) / 30.0)
+                IntelPublisher.publish("intel:portfolio_heat", round(_heat, 3), "analyzer", confidence=0.9)
+
+                last_intel_publish = now
+            except Exception as _be:
+                print(f"⚠️ Intel Bus publish failed: {_be}")
+
+        # 4. Performance Review (Every Hour)
         if now - last_hourly_review > 3600:
             try:
                 fgi = r.get("macro:fear_greed")
@@ -112,28 +142,6 @@ def improve_logic():
                     mode = "conservative" if win_rate < 0.45 else "aggressive"
                     r.set("strategy_mode", mode)
                     send_discord_report(win_rate, mode, len(sells))
-
-                # Intel Bus: publish market regime signals for cross-system confluence
-                try:
-                    # VIX proxy: map Fear & Greed Index (0=fear, 100=greed) to a VIX-like float
-                    fgi_val = r.get("macro:fear_greed")
-                    if fgi_val:
-                        vix_proxy = max(10.0, 50.0 - (float(fgi_val) / 2.0))
-                        IntelPublisher.publish("intel:vix_level", round(vix_proxy, 1), "analyzer")
-
-                    # SPY trend from current strategy mode
-                    _spy_map = {"aggressive": "bullish", "sniper": "bearish", "conservative": "neutral"}
-                    IntelPublisher.publish("intel:spy_trend", _spy_map.get(mode, "neutral"), "analyzer", confidence=0.7)
-
-                    # Portfolio heat: fraction of active positions across both systems
-                    _positions_raw = r.get("quantos:active_positions")
-                    _kalshi_raw = r.get("kalshi:executed_trades")
-                    _active = len(json.loads(_positions_raw)) if _positions_raw else 0
-                    _kalshi = len(json.loads(_kalshi_raw)) if _kalshi_raw else 0
-                    _heat = min(1.0, (_active + _kalshi) / 30.0)
-                    IntelPublisher.publish("intel:portfolio_heat", round(_heat, 3), "analyzer", confidence=0.9)
-                except Exception as _be:
-                    print(f"⚠️ Intel Bus publish failed: {_be}")
 
                 last_hourly_review = now
             except Exception as e:

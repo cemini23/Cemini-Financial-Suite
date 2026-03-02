@@ -26,8 +26,8 @@ this module has no knowledge of it.
 # SELL/SHORT: threshold falls in worse regimes (easier exits).
 REGIME_THRESHOLDS: dict[str, dict[str, float]] = {
     "GREEN":  {"BUY": 0.55, "SELL": 0.55, "SHORT": 0.55},
-    "YELLOW": {"BUY": 0.75, "SELL": 0.50, "SHORT": 0.50},
-    "RED":    {"BUY": 0.85, "SELL": 0.45, "SHORT": 0.45},
+    "YELLOW": {"BUY": 0.71, "SELL": 0.50, "SHORT": 0.50},
+    "RED":    {"BUY": 0.74, "SELL": 0.45, "SHORT": 0.45},
 }
 
 # Catalyst-driven patterns that earn a confidence bonus in YELLOW/RED.
