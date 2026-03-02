@@ -44,11 +44,11 @@ class WeatherSource:
         if not data: return None
         try:
             periods = data['properties']['periods']
-            day   = next((p for p in periods if p['isDaytime']), None)
+            day = next((p for p in periods if p['isDaytime']), None)
             night = next((p for p in periods if not p['isDaytime']), None)
             return {
-                "high": day['temperature']   if day   else None,
-                "low":  night['temperature'] if night else None,
+                "high": day['temperature'] if day else None,
+                "low": night['temperature'] if night else None,
             }
         except (KeyError, TypeError):
             return None
@@ -151,9 +151,9 @@ class WeatherSource:
             vc = {"max": 0.0, "min": 0.0}
 
         nws_high = nws.get("high") or 0.0
-        nws_low  = nws.get("low")  or 0.0
-        vc_max   = vc.get("max")   or 0.0
-        vc_min   = vc.get("min")   or 0.0
+        nws_low = nws.get("low") or 0.0
+        vc_max = vc.get("max") or 0.0
+        vc_min = vc.get("min") or 0.0
 
         # Consensus high: NWS 2x (~33%), ECMWF/GFS/OWM/VC 1x (~17% each)
         sources_list = [nws_high, models.get("ECMWF", 0), models.get("GFS", 0), owm, vc_max]
