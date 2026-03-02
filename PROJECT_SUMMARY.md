@@ -389,6 +389,7 @@ TradingState → technical_analyst_node (stub)
 | `tweepy` | `>=4.14.0` | root/requirements.txt |
 | `tweepy` | `any` | Kalshi by Cemini/requirements.txt |
 | `websockets` | `>=12.0` | root/requirements.txt |
+| `websockets` | `>=14.0` | Kalshi by Cemini/requirements.txt |
 <!-- /AUTO:DEPENDENCY_VERSIONS -->
 
 ---
@@ -557,7 +558,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-02 02:42 UTC*
+*Auto-generated: 2026-03-02 15:46 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
