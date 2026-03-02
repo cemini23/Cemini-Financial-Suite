@@ -89,7 +89,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `macro_scraper` | (build: Dockerfile.scraper) | internal |  |
 | `gdelt_harvester` | (build: Dockerfile.scraper) | internal | intel:conflict_events / intel:regional_risk, logs ELEVATED+ events to Postgres. |
 | `kalshi_autopilot` | (build: Dockerfile.autopilot) | internal | social_alpha, musk_monitor — all in paper mode by default. |
-| `rover_scanner` | (build: Dockerfile.autopilot) | internal | (weather / crypto / economics / politics), and publishes intel to Redis. |
+| `rover_scanner` | (build: Dockerfile.autopilot) | internal | REST API is only used once on startup for the initial market bootstrap. |
 | `ems_executor` | (build: Dockerfile.ems) | internal | NODE 5: THE SWORD (Execution) |
 | `cemini_os` | (build: Dockerfile.ui) | 8501 | CEMINI OS (Streamlit Dashboard) |
 | `deephaven` | ghcr.io/deephaven/server:latest | 10000 | THE VISUAL NERVOUS SYSTEM (Telemetry) |
@@ -557,7 +557,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-02 02:17 UTC*
+*Auto-generated: 2026-03-02 02:42 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
