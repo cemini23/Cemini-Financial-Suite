@@ -238,9 +238,10 @@ services:
       - app_net
       - data_net
 
-  # --- ROVER SCANNER (Dynamic Kalshi Market Discovery) ---
-  # Paginates all open Kalshi markets every 15 min, categorises them
-  # (weather / crypto / economics / politics), and publishes intel to Redis.
+  # --- ROVER SCANNER (Real-time Kalshi WebSocket Market Intelligence) ---
+  # Step 16: Replaced 15-min REST polling with a single long-lived WebSocket
+  # connection. Maintains live order books, OI tracking, and liquidity detection.
+  # REST API is only used once on startup for the initial market bootstrap.
   rover_scanner:
     build:
       context: .
@@ -253,9 +254,12 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
       - DB_HOST=postgres
+      - KALSHI_PRIVATE_KEY_PATH=private_key.pem
+    volumes:
+      - "./Kalshi by Cemini/private_key.pem:/app/Kalshi by Cemini/private_key.pem:ro"
     depends_on:
       - redis
-    command: ["python", "rover_runner.py"]
+    command: ["python", "ws_rover_runner.py"]
     networks:
       - app_net
       - data_net
