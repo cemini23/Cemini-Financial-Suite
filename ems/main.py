@@ -13,6 +13,7 @@ from core.ems.adapters.robinhood import RobinhoodAdapter
 from core.ems.adapters.hardrock import HardRockBetAdapter
 from core.schemas.trading_signals import TradingSignal
 from ems.kalshi_rest import KalshiRESTv2
+from cemini_contracts import safe_validate, TradeSignalEnvelope
 
 PAPER_MODE = os.getenv("PAPER_MODE", "False").lower() == "true"
 
@@ -53,6 +54,7 @@ async def signal_listener():
         if message["type"] == "message":
             try:
                 data = json.loads(message["data"])
+                safe_validate(TradeSignalEnvelope, data)  # contract check
                 signal_data = data.get("pydantic_signal", data)
 
                 if signal_data.get("target_brokerage") == "Kalshi":

@@ -11,6 +11,12 @@ from typing import TypedDict, Dict, Any, Literal
 from langgraph.graph import StateGraph, END
 from core.schemas.trading_signals import TradingSignal
 from core.intel_bus import IntelReader
+from cemini_contracts import (
+    safe_validate,
+    IntelPayload,
+    PlaybookRegimePayload,
+    TradeSignalEnvelope,
+)
 from agents.regime_gate import (
     CATALYST_BONUS,
     CATALYST_PATTERNS,
@@ -118,6 +124,8 @@ def _calc_sma(prices, period):
 def _get_playbook_regime():
     """Read current macro regime from intel:playbook_snapshot. Returns str or None."""
     snap = IntelReader.read("intel:playbook_snapshot")
+    if snap:
+        safe_validate(IntelPayload, snap)  # contract check — warns on shape drift
     if snap and isinstance(snap.get("value"), dict):
         return snap["value"].get("regime")
     return None
@@ -267,6 +275,9 @@ def fundamental_analyst_node(state: TradingState):
     vix_sig = IntelReader.read("intel:vix_level")
     spy_sig = IntelReader.read("intel:spy_trend")
     fed_sig = IntelReader.read("intel:fed_bias")
+    for _sig in (vix_sig, spy_sig, fed_sig):
+        if _sig:
+            safe_validate(IntelPayload, _sig)
 
     vix = float(vix_sig["value"]) if vix_sig else 20.0
     spy_trend = (spy_sig["value"] or "neutral").lower() if spy_sig else "neutral"
@@ -326,6 +337,7 @@ def fundamental_analyst_node(state: TradingState):
     if is_crypto:
         btc_sig = IntelReader.read("intel:btc_sentiment")
         if btc_sig:
+            safe_validate(IntelPayload, btc_sig)
             btc_sent = float(btc_sig["value"])
             if btc_sent > 0.3:
                 score = min(1.0, score + 0.05)
@@ -355,6 +367,7 @@ def sentiment_analyst_node(state: TradingState):
     social_raw = 0.0
     social_sig = IntelReader.read("intel:social_score")
     if social_sig:
+        safe_validate(IntelPayload, social_sig)
         val = social_sig.get("value")
         if isinstance(val, dict):
             social_raw = float(val.get("score", 0.0))
@@ -536,7 +549,7 @@ async def publish_signal_to_bus(state: TradingState):
             decode_responses=True,
         )
         try:
-            payload = json.dumps({
+            _signal_dict = {
                 "pydantic_signal": {
                     "ticker_or_event": state["symbol"],
                     "action": decision["action"].lower(),
@@ -559,7 +572,9 @@ async def publish_signal_to_bus(state: TradingState):
                 # Real market data forwarded to EMS/logger
                 "price": state.get("latest_price", 0.0),
                 "rsi": state.get("rsi", 0.0),
-            })
+            }
+            safe_validate(TradeSignalEnvelope, _signal_dict)  # contract check
+            payload = json.dumps(_signal_dict)
             await r.publish("trade_signals", payload)
             print(
                 f"📡 Signal published → trade_signals: "

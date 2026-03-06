@@ -2,6 +2,11 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Literal, Optional
 from datetime import date
 
+# NOTE: Step 28 — canonical location is now cemini_contracts.trade.TradingSignal
+# (re-exported from cemini_contracts.trade via cemini_contracts.__init__).
+# This class remains here for backward compatibility with existing imports.
+
+
 class TradingSignal(BaseModel):
     """
     The strictly enforced output schema for the Analyst Swarm.
