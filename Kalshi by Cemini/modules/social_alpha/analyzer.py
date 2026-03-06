@@ -56,6 +56,17 @@ class SocialAnalyzer:
         """
         Analyzes recent tweets from the target pool for BTC sentiment.
         """
+        # C5 Safety Guard: gate simulated/unreliable social data from live trading
+        if _os.getenv("SOCIAL_ALPHA_LIVE", "false").lower() != "true":
+            return {
+                "status": "disabled",
+                "msg": "SOCIAL_ALPHA_LIVE != true — signal gated",
+                "score": 0,
+                "aggregate_sentiment": "NEUTRAL",
+                "traders_monitored": [],
+                "signals": [],
+            }
+
         if not settings.X_BEARER_TOKEN:
             return {"status": "error", "msg": "X API Token Missing"}
 

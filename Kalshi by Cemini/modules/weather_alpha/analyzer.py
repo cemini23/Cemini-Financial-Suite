@@ -13,6 +13,15 @@ class WeatherAnalyzer:
         self.source = WeatherSource()
 
     async def analyze_market(self, city_code: str):
+        # C7 Safety Guard: gate weather signal when not confirmed live
+        if _os.getenv("WEATHER_ALPHA_LIVE", "false").lower() != "true":
+            return {
+                "opportunities": [],
+                "status": "disabled",
+                "msg": "WEATHER_ALPHA_LIVE != true — signal gated",
+                "city": city_code,
+            }
+
         # ... (Existing logic) ...
         # Await the high-speed async data fetch
         data = await self.source.get_aggregated_forecast(city_code)
