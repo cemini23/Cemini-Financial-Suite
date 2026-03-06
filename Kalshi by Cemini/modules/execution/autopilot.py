@@ -23,6 +23,14 @@ if _repo_root not in _sys.path:
     _sys.path.append(_repo_root)
 from core.intel_bus import IntelReader
 
+# Step 30: logit-space exit signals
+try:
+    from logit_pricing import LogitPricingEngine as _ExitLogitEngine
+    _exit_logit_engine = _ExitLogitEngine()
+except ImportError:
+    _exit_logit_engine = None
+
+
 class CeminiAutopilot:
     """
     The Active Trading Daemon.
@@ -38,6 +46,7 @@ class CeminiAutopilot:
         self.is_running = False
         self.executed_trades = {} # Maps trade_id to timestamp
         self.blacklist = {} # Maps ticker to cooldown expiry timestamp
+        self._exit_price_history: dict = {}  # ticker -> list[float] mid-price in [0, 1]
         _redis_host = os.getenv('REDIS_HOST', 'redis')
         _redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
         self._redis_url = f"redis://:{_redis_pass}@{_redis_host}:6379"
@@ -227,12 +236,45 @@ class CeminiAutopilot:
                     market_data = m_resp.json().get('market', {})
                     current_yes_bid = market_data.get('yes_bid', 0)
 
-                    if current_yes_bid >= 90:
-                        print(f"💰 Take Profit: {ticker} reached 90c. Selling.")
-                        await self.execute_kalshi_exit(ticker, shares, "Take Profit")
-                    elif current_yes_bid <= 10 and current_yes_bid > 0:
-                        print(f"📉 Stop Loss: {ticker} dropped to 10c (Resilient). Cutting losses.")
-                        await self.execute_kalshi_exit(ticker, shares, "Stop Loss")
+                    # Step 30: logit-space exit signal (fires before TP/SL backstops)
+                    _price_p = max(0.001, min(0.999, current_yes_bid / 100.0))
+                    _exit_hist = self._exit_price_history.setdefault(ticker, [])
+                    _exit_hist.append(_price_p)
+                    if len(_exit_hist) > 50:
+                        _exit_hist.pop(0)
+                    _logit_exited = False
+                    if _exit_logit_engine is not None and len(_exit_hist) >= 10:
+                        try:
+                            _la = _exit_logit_engine.assess_contract(
+                                _exit_hist, ticker=ticker, current_price=_price_p
+                            )
+                            if _la.is_sufficient:
+                                _side = "yes" if shares > 0 else "no"
+                                _esig = _exit_logit_engine.logit_exit_signal(_la, _side)
+                                if _esig.get("exit"):
+                                    print(f"📐 Logit exit {ticker}: {_esig.get('reason')} regime={_la.regime}")
+                                    await self.execute_kalshi_exit(ticker, shares, f"Logit:{_esig.get('reason')}")
+                                    _logit_exited = True
+                                elif _la.regime == "jump":
+                                    # Tighter stops in jump regime: 75c TP / 25c SL
+                                    if current_yes_bid >= 75:
+                                        print(f"💰 Jump-regime TP: {ticker} at 75c.")
+                                        await self.execute_kalshi_exit(ticker, shares, "JumpTP-75c")
+                                        _logit_exited = True
+                                    elif 0 < current_yes_bid <= 25:
+                                        print(f"📉 Jump-regime SL: {ticker} at 25c.")
+                                        await self.execute_kalshi_exit(ticker, shares, "JumpSL-25c")
+                                        _logit_exited = True
+                        except Exception:
+                            pass
+
+                    if not _logit_exited:
+                        if current_yes_bid >= 90:
+                            print(f"💰 Take Profit: {ticker} reached 90c. Selling.")
+                            await self.execute_kalshi_exit(ticker, shares, "Take Profit")
+                        elif current_yes_bid <= 10 and current_yes_bid > 0:
+                            print(f"📉 Stop Loss: {ticker} dropped to 10c (Resilient). Cutting losses.")
+                            await self.execute_kalshi_exit(ticker, shares, "Stop Loss")
 
         except Exception as e:
             print(f"⚠️ Exit Engine Error: {e}")

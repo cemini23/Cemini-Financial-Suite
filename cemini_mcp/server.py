@@ -354,6 +354,60 @@ def get_data_health() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# 10. Contract Pricing (Logit Jump-Diffusion)
+# ---------------------------------------------------------------------------
+@mcp.tool(annotations={"destructive": False, "readOnly": True})
+def get_contract_pricing(ticker: Optional[str] = None) -> dict[str, Any]:
+    """Logit-space contract pricing assessments for Kalshi markets.
+
+    Uses the Shaw & Dalen Logit Jump-Diffusion model to compute
+    mispricing scores, regime classification (diffusion vs jump),
+    confidence, and fair-value probabilities for each actively-tracked
+    Kalshi market.
+
+    Markets in 'jump' regime are flagged human_review=True — these
+    should be manually reviewed before auto-trading.
+
+    Args:
+        ticker: Return assessment for a single ticker. Omit for all.
+
+    Source: intel:logit_assessments (WebSocketRover, every 5 min).
+    """
+    envelope = readers.read_intel("intel:logit_assessments")
+    if envelope.get("error"):
+        return {"assessments": None, **envelope}
+
+    value = envelope.get("value", {})
+    if not isinstance(value, dict) or not value:
+        return {
+            "assessments": None,
+            "note": "no_assessments_yet — rover needs 10+ orderbook observations per ticker",
+            "stale": envelope.get("stale", True),
+        }
+
+    if ticker:
+        assessment = value.get(ticker)
+        return {
+            "ticker": ticker,
+            "assessment": assessment,
+            "found": assessment is not None,
+            "total_assessed": len(value),
+            "stale": envelope.get("stale", False),
+            "age_seconds": envelope.get("age_seconds"),
+        }
+
+    jump_markets = [t for t, a in value.items() if isinstance(a, dict) and a.get("human_review")]
+    return {
+        "total_assessed": len(value),
+        "jump_regime_markets": jump_markets,
+        "assessments": value,
+        "stale": envelope.get("stale", False),
+        "age_seconds": envelope.get("age_seconds"),
+        "source": envelope.get("source_system"),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":

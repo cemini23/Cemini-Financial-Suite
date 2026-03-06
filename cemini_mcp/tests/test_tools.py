@@ -402,3 +402,65 @@ class TestGetDataHealth:
         assert "error" in result["redis"]
         assert "error" in result["postgres"]
         assert "timestamp" in result
+
+
+# ---------------------------------------------------------------------------
+# Tool: get_contract_pricing
+# ---------------------------------------------------------------------------
+
+class TestGetContractPricing:
+    def _assessments_payload(self):
+        assessments = {
+            "BTC-24SEP": {
+                "mispricing_score": 1.2,
+                "regime": "diffusion",
+                "confidence": 0.85,
+                "human_review": False,
+                "fair_value_prob": 0.63,
+            },
+            "ETH-JUMP": {
+                "mispricing_score": -0.5,
+                "regime": "jump",
+                "confidence": 0.60,
+                "human_review": True,
+                "fair_value_prob": 0.45,
+            },
+        }
+        return {"intel:logit_assessments": _intel_payload(assessments, "WebSocketRover")}
+
+    def test_returns_all_assessments(self):
+        with patch("cemini_mcp.readers._client", return_value=_make_redis_mock(self._assessments_payload())):
+            from cemini_mcp.server import get_contract_pricing
+            result = get_contract_pricing()
+        assert result["total_assessed"] == 2
+        assert "BTC-24SEP" in result["assessments"]
+        assert "ETH-JUMP" in result["jump_regime_markets"]
+
+    def test_ticker_filter(self):
+        with patch("cemini_mcp.readers._client", return_value=_make_redis_mock(self._assessments_payload())):
+            from cemini_mcp.server import get_contract_pricing
+            result = get_contract_pricing(ticker="BTC-24SEP")
+        assert result["found"] is True
+        assert result["assessment"]["mispricing_score"] == 1.2
+        assert result["assessment"]["regime"] == "diffusion"
+
+    def test_ticker_not_found(self):
+        with patch("cemini_mcp.readers._client", return_value=_make_redis_mock(self._assessments_payload())):
+            from cemini_mcp.server import get_contract_pricing
+            result = get_contract_pricing(ticker="NONEXISTENT")
+        assert result["found"] is False
+        assert result["assessment"] is None
+
+    def test_no_assessments_yet(self):
+        data = {"intel:logit_assessments": _intel_payload({}, "WebSocketRover")}
+        with patch("cemini_mcp.readers._client", return_value=_make_redis_mock(data)):
+            from cemini_mcp.server import get_contract_pricing
+            result = get_contract_pricing()
+        assert result["assessments"] is None
+        assert "no_assessments_yet" in result.get("note", "")
+
+    def test_missing_key_returns_error(self):
+        with patch("cemini_mcp.readers._client", return_value=_make_redis_mock({})):
+            from cemini_mcp.server import get_contract_pricing
+            result = get_contract_pricing()
+        assert result["assessments"] is None

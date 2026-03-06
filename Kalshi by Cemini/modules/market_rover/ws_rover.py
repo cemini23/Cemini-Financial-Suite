@@ -27,6 +27,16 @@ import httpx
 
 logger = logging.getLogger("kalshi.ws_rover")
 
+# ── Step 30: Logit-space contract pricing ─────────────────────────────────────
+try:
+    from logit_pricing import LogitPricingEngine as _LogitEngine
+    _LOGIT_AVAILABLE = True
+except ImportError:
+    _LOGIT_AVAILABLE = False
+
+_logit_engine = _LogitEngine() if _LOGIT_AVAILABLE else None
+_MAX_PRICE_HISTORY = 100  # rolling window per ticker
+
 # ── Repo root on sys.path (for core.intel_bus) ────────────────────────────────
 _REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
@@ -82,6 +92,7 @@ class WebSocketRover:
         self._ws_client: KalshiWebSocketClient = None
         self._active_tickers: list = []
         self._last_summary_ts = 0.0
+        self._price_history: dict = {}  # ticker -> list[float] mid-price in [0, 1]
 
     # ── Redis ──────────────────────────────────────────────────────────────────
 
@@ -161,6 +172,7 @@ class WebSocketRover:
             ticker = msg.get("msg", {}).get("market_ticker", "")
             await self._ob_manager.apply_snapshot(msg)
             await self._liq_detector.on_orderbook_update(ticker)
+            await self._sample_bbo(ticker)
 
         elif msg_type == "orderbook_delta":
             ticker = msg.get("msg", {}).get("market_ticker", "")
@@ -173,6 +185,7 @@ class WebSocketRover:
                 )
             else:
                 await self._liq_detector.on_orderbook_update(ticker)
+                await self._sample_bbo(ticker)
 
         elif msg_type == "trade":
             await self._oi_tracker.process_trade(msg)
@@ -203,6 +216,24 @@ class WebSocketRover:
             await redis_client.srem("kalshi:markets:active", ticker)
             logger.debug("📋 Market closed: %s", ticker)
 
+    async def _sample_bbo(self, ticker: str) -> None:
+        """Append the current BBO mid-price (0-1) to the per-ticker price history."""
+        r = await self._redis()
+        if not r:
+            return
+        try:
+            bbo = await r.hgetall(f"kalshi:ob:{ticker}:bbo")
+            bid_s = bbo.get("best_bid", "")
+            ask_s = bbo.get("best_ask", "")
+            if bid_s and ask_s:
+                mid = (float(bid_s) + float(ask_s)) / 200.0  # cents → [0, 1]
+                hist = self._price_history.setdefault(ticker, [])
+                hist.append(mid)
+                if len(hist) > _MAX_PRICE_HISTORY:
+                    hist.pop(0)
+        except Exception:
+            pass
+
     async def _publish_summary(self) -> None:
         """Publish a top-level market summary to the intel bus every 5 minutes."""
         redis_client = await self._redis()
@@ -215,15 +246,42 @@ class WebSocketRover:
             for cat in categories.values():
                 cat_counts[cat] = cat_counts.get(cat, 0) + 1
 
+            # Step 30: logit-space assessments for top orderbook markets
+            market_assessments: dict = {}
+            if _logit_engine is not None:
+                for ticker in self._active_tickers[:ORDERBOOK_MARKETS_MAX]:
+                    hist = self._price_history.get(ticker, [])
+                    if len(hist) >= 10:
+                        try:
+                            assessment = _logit_engine.assess_contract(
+                                hist, ticker=ticker, current_price=hist[-1]
+                            )
+                            if assessment.is_sufficient:
+                                market_assessments[ticker] = {
+                                    "mispricing_score": assessment.mispricing_score,
+                                    "regime":           assessment.regime,
+                                    "confidence":       assessment.confidence,
+                                    "human_review":     assessment.regime == "jump",
+                                    "fair_value_prob":  assessment.fair_value_probability,
+                                }
+                        except Exception:
+                            pass
+
             payload = {
                 "active_markets":     len(active),
                 "category_breakdown": cat_counts,
                 "orderbook_tickers":  self._active_tickers[:ORDERBOOK_MARKETS_MAX],
+                "market_assessments": market_assessments,
                 "timestamp":          time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
             await IntelPublisher.publish_async(
                 "intel:kalshi_orderbook_summary", payload, "WebSocketRover"
             )
+            # Publish assessments separately for the MCP get_contract_pricing tool
+            if market_assessments:
+                await IntelPublisher.publish_async(
+                    "intel:logit_assessments", market_assessments, "WebSocketRover"
+                )
         except Exception as exc:
             logger.warning("⚠️  Summary publish failed: %s", exc)
 

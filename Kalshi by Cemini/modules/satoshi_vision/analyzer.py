@@ -9,6 +9,17 @@ if _repo_root not in _sys.path:
     _sys.path.append(_repo_root)
 from core.intel_bus import IntelPublisher
 
+# Step 30: logit-space pricing for BTC Kalshi contracts
+try:
+    from logit_pricing import LogitPricingEngine as _LogitEngine
+    _LOGIT_AVAILABLE = True
+except ImportError:
+    _LOGIT_AVAILABLE = False
+
+_logit_engine = _LogitEngine() if _LOGIT_AVAILABLE else None
+_btc_price_history: list[float] = []  # rolling 50-point BTC contract price history
+_BTC_HISTORY_MAX = 50
+
 class SatoshiAnalyzer:
     def __init__(self):
         self.reader = ChartReader()

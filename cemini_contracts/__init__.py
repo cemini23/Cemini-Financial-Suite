@@ -19,3 +19,4 @@ from cemini_contracts.kalshi import *       # noqa: F401,F403
 from cemini_contracts._compat import safe_validate, safe_dump  # noqa: F401
 
 __version__ = "1.0.0"
+from cemini_contracts.pricing import *       # noqa: F401,F403
