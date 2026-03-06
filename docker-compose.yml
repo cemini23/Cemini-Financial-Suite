@@ -400,6 +400,35 @@ services:
       - app_net
       - data_net
 
+
+  # --- CEMINI MCP INTELLIGENCE SERVER (Step 27) ---
+  # Read-only MCP server exposing the intel:* Redis bus as typed, callable tools.
+  # FastMCP 3.1.0 / streamable-http on port 8002 (localhost only).
+  # 9 tools: regime, signals, risk, playbook_snapshot, kalshi_intel,
+  #          geopolitical_risk, sentiment, strategy_mode, data_health.
+  cemini_mcp:
+    build:
+      context: .
+      dockerfile: cemini_mcp/Dockerfile
+    container_name: cemini_mcp
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=cemini_redis_2026
+      - DB_HOST=postgres
+      - POSTGRES_PASSWORD=quest
+      - MCP_PORT=8002
+    ports:
+      - "127.0.0.1:8002:8002"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+      - data_net
+
 volumes:
   postgres_data:
   redis_data:

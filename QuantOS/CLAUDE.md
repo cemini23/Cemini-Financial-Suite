@@ -31,3 +31,7 @@ Stock/crypto trading engine. FastAPI on port 8001.
 ## Rebuild Required After
 
 Dockerfile.brain bakes agents/ — any agent change requires `docker compose build brain`.
+
+## Token Efficiency
+Always use RTK (installed globally) to compress verbose CLI output before sending to context.
+RTK reduces directory trees, error logs, git diffs, and JSON payloads by 60-90%.

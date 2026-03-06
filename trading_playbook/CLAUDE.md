@@ -34,3 +34,7 @@ Catalyst bonus: +0.10 for EpisodicPivot/InsideBar212 in YELLOW/RED only.
 
 - Regime gate uses dynamic confidence thresholds, not binary blocking
 - RSI uses SMA not Wilder's SMMA — do NOT "fix" without explicit approval
+
+## Token Efficiency
+Always use RTK (installed globally) to compress verbose CLI output before sending to context.
+RTK reduces directory trees, error logs, git diffs, and JSON payloads by 60-90%.

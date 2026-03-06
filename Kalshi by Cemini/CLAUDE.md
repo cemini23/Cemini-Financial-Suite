@@ -41,3 +41,7 @@ MuskPredictor   → musk_status
          ↓
 CeminiAutopilot.scan_and_execute() → Kelly allocation → order
 ```
+
+## Token Efficiency
+Always use RTK (installed globally) to compress verbose CLI output before sending to context.
+RTK reduces directory trees, error logs, git diffs, and JSON payloads by 60-90%.

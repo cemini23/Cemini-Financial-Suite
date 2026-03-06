@@ -49,3 +49,7 @@ Steps 1 (CI/CD), 2 (Docker Networks), 6 (Equity Ticks), 14 (GDELT), 15 (Auto-Doc
 - All tests in `/opt/cemini/tests/` — pure, no network/Redis/Postgres
 - Run: `pytest tests/ -v`
 - Current target: 192+ tests, all green, flake8 clean
+
+## Token Efficiency
+Always use RTK (installed globally) to compress verbose CLI output before sending to context.
+RTK reduces directory trees, error logs, git diffs, and JSON payloads by 60-90%.
