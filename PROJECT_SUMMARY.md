@@ -74,7 +74,7 @@ Three cooperating systems that share intelligence but execute independently:
 ### Docker Services (docker-compose.yml)
 
 <!-- AUTO:SERVICES_TABLE -->
-**19 active containers** (1 disabled)
+**20 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -97,6 +97,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `cemini_proxy` | nginx:alpine | 80 | PERIMETER DEFENSE |
 | `cloudflare_tunnel` | cloudflare/cloudflared:latest | internal |  |
 | `playbook_runner` | (build: Dockerfile.playbook) | internal | future RL model.  Does NOT place orders.  Harvesters are unaffected. |
+| `cemini_mcp` | (build: cemini_mcp/Dockerfile) | 127.0.0.1 | geopolitical_risk, sentiment, strategy_mode, data_health. |
 
 **Disabled (profile-gated):** `signal_generator`
 <!-- /AUTO:SERVICES_TABLE -->
@@ -558,7 +559,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-06 15:42 UTC*
+*Auto-generated: 2026-03-06 21:37 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
