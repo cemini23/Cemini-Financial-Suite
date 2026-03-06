@@ -15,7 +15,7 @@ DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "quest")
 DB_NAME = os.getenv("POSTGRES_DB", "qdb")
 
 MCP_PORT = int(os.getenv("MCP_PORT", "8002"))
-MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")  # nosec B104 — inside Docker, port exposed only to 127.0.0.1 on host
 
 # Staleness threshold: signal is "stale" if older than this many seconds
 STALE_THRESHOLD_SEC = int(os.getenv("STALE_THRESHOLD_SEC", "600"))
