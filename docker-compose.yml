@@ -634,6 +634,27 @@ services:
       update_config:
         order: start-first
 
+  # --- DBMATE (Step 38) — Schema Migration Runner ---
+  # Runs db/migrations in order then exits (restart_policy: none).
+  # Depends on postgres healthcheck so it waits for the DB to be ready.
+  # In Swarm mode deploy.restart_policy condition: none prevents restart loops.
+  dbmate:
+    image: ghcr.io/amacneil/dbmate:2
+    container_name: dbmate
+    command: ["--wait", "up"]
+    environment:
+      - DATABASE_URL=postgres://admin:${POSTGRES_PASSWORD:-quest}@postgres:5432/qdb?sslmode=disable
+    volumes:
+      - ./db:/db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_net
+    deploy:
+      restart_policy:
+        condition: none
+
 volumes:
   postgres_data:
   redis_data:
