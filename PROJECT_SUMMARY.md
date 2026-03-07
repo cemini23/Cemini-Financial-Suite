@@ -74,7 +74,7 @@ Three cooperating systems that share intelligence but execute independently:
 ### Docker Services (docker-compose.yml)
 
 <!-- AUTO:SERVICES_TABLE -->
-**29 active containers** (1 disabled)
+**30 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -100,6 +100,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `cemini_mcp` | cemini-mcp:latest | 127.0.0.1 | CEMINI MCP INTELLIGENCE SERVER (Step 27) |
 | `portainer` | portainer/portainer-ce:latest | 9000 | Port 9000 (HTTP) — nginx handles TLS termination upstream. |
 | `dbmate` | ghcr.io/amacneil/dbmate:2 | internal | In Swarm mode deploy.restart_policy condition: none prevents restart loops. |
+| `opportunity_screener` | cemini-opportunity-screener:latest | 8003 | ============================================================ |
 | `prometheus` | prom/prometheus:latest | 9090 | Prometheus (metrics collector + TSDB) |
 | `loki` | grafana/loki:latest | 3100 | Loki (log aggregation) |
 | `alloy` | grafana/alloy:latest | 4317, 4318, 12345 | Grafana Alloy (unified collector: logs → Loki, traces → Tempo) |
@@ -513,14 +514,14 @@ Currently missing:
 ## 8. ACTIVE DEVELOPMENT ROADMAP
 
 <!-- AUTO:ROADMAP_STATUS -->
-**Progress: 5/14 steps complete (35%)**
+**Progress: 20/27 steps complete (74%)**
 
 | Step | Name | Status |
 |------|------|--------|
 | 1 | CI/CD Hardening | ✅ Complete (Feb 28, 2026) |
 | 2 | Docker Network Segmentation | ✅ Complete (Mar 1, 2026) |
-| 3 | Performance Dashboard | ⬜ Pending |
-| 4 | Kalshi Rewards Scanner | ⬜ Pending |
+| 3 | Performance Dashboard | ✅ Complete (Mar 7, 2026) |
+| 4 | Kalshi Rewards Scanner | ✅ Complete (Mar 7, 2026) |
 | 5 | X/Twitter Thread Tool | ⬜ Pending |
 | 6 | Equity Tick Data | ✅ Complete (Feb 26, 2026) |
 | 7 | RL Training Loop | ⬜ Pending |
@@ -532,6 +533,19 @@ Currently missing:
 | 13 | Arbitrage Scanner | ⬜ Pending |
 | 14 | GDELT Geopolitical Intel | ✅ Complete (Mar 1, 2026) |
 | 15 | Auto-Documentation CI | ✅ Complete (Mar 1, 2026) |
+| 16 | Kalshi WebSocket | ✅ Complete (Mar 1, 2026) |
+| 20 | Skill Vetting Protocol | ✅ Complete (Mar 1, 2026) |
+| 21 | Cemini SKILL.md | ✅ Complete (Mar 7, 2026) |
+| 24 | Visual Crossing Weather | ✅ Complete (Mar 2, 2026) |
+| 26 | Opportunity Discovery Engine | ✅ Complete (Mar 7, 2026) |
+| 27 | MCP Intelligence Server | ✅ Complete (Mar 6, 2026) |
+| 28 | Pydantic Data Contracts | ✅ Complete (Mar 6, 2026) |
+| 30 | Logit Jump-Diffusion Pricing | ✅ Complete (Mar 6, 2026) |
+| 32 | Per-service CLAUDE.md + LESSONS.md | ✅ Complete (Mar 6, 2026) |
+| 33 | Safety Guards (C4+C5+C7) | ✅ Complete (Mar 6, 2026) |
+| 34 | DevOps Hardening | ✅ Complete (Mar 7, 2026) |
+| 35 | Observability Stack (LGTM) | ✅ Complete (Mar 7, 2026) |
+| 38 | Schema Migrations (dbmate) | ✅ Complete (Mar 7, 2026) |
 <!-- /AUTO:ROADMAP_STATUS -->
 
 Step 12 removed — triggered SEC/FINRA regulatory requirements incompatible with private-use-first strategy.
@@ -568,7 +582,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-07 22:12 UTC*
+*Auto-generated: 2026-03-07 22:48 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
