@@ -6,6 +6,7 @@ import requests
 import random
 import yfinance as yf
 from datetime import datetime
+import performance
 
 # --- Page Config ---
 st.set_page_config(page_title="Cemini OS", layout="wide", initial_sidebar_state="expanded")
@@ -58,7 +59,7 @@ def get_musk_sentiment():
 
 # --- Sidebar Navigation ---
 st.sidebar.title("🚀 Cemini OS")
-page = st.sidebar.radio("Navigation", ["Mission Control", "Stock Portfolio", "Satoshi Vision", "Weather Alpha", "Musk Monitor"])
+page = st.sidebar.radio("Navigation", ["Mission Control", "Stock Portfolio", "Satoshi Vision", "Weather Alpha", "Musk Monitor", "Performance Dashboard"])
 st.sidebar.markdown("---")
 st.sidebar.subheader("System Status")
 st.sidebar.success("📡 Market Data: ONLINE")
@@ -155,3 +156,7 @@ elif page == "Musk Monitor":
     c1, c2 = st.columns(2)
     with c1: st.metric("Tweet Volume", m['volume'], delta=m['sentiment'])
     with c2: st.info(f"**Context:** {m['context']}")
+
+# --- Performance Dashboard ---
+elif page == "Performance Dashboard":
+    performance.render()

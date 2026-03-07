@@ -20,6 +20,8 @@ RUN pip install --no-cache-dir \
     psycopg2-binary
 
 # Copy the core architecture and agent logic
+COPY ./cemini_contracts /app/cemini_contracts
+COPY ./logit_pricing /app/logit_pricing
 COPY ./core /app/core
 COPY ./agents /app/agents
 

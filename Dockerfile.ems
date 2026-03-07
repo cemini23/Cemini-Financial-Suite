@@ -31,10 +31,14 @@ RUN pip install \
     redis \
     pydantic \
     pydantic-settings \
-    kalshi-python
+    kalshi-python \
+    numpy \
+    scipy
 
 # Copy the execution scripts into the container
 # We assume the context is the project root
+COPY ./cemini_contracts /app/cemini_contracts
+COPY ./logit_pricing /app/logit_pricing
 COPY ./core /app/core
 COPY ./ems /app/ems
 
