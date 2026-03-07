@@ -276,7 +276,7 @@ The `update-docs`, `trivy`, and `semgrep` jobs run in parallel with `audit-and-d
 ## 🛠️ Components & Ports
 
 <!-- AUTO:SERVICES_TABLE -->
-**21 active containers** (1 disabled)
+**22 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -301,6 +301,7 @@ The `update-docs`, `trivy`, and `semgrep` jobs run in parallel with `audit-and-d
 | `playbook_runner` | cemini-playbook:latest | internal | PLAYBOOK LAYER (Regime + Signals + Risk → RL training bridge) |
 | `cemini_mcp` | cemini-mcp:latest | 127.0.0.1 | CEMINI MCP INTELLIGENCE SERVER (Step 27) |
 | `portainer` | portainer/portainer-ce:latest | 9000 | Port 9000 (HTTP) — nginx handles TLS termination upstream. |
+| `dbmate` | ghcr.io/amacneil/dbmate:2 | internal | In Swarm mode deploy.restart_policy condition: none prevents restart loops. |
 
 **Disabled (profile-gated):** `signal_generator`
 <!-- /AUTO:SERVICES_TABLE -->
@@ -381,7 +382,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-07 16:00 UTC*
+*Auto-generated: 2026-03-07 16:28 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**

@@ -74,7 +74,7 @@ Three cooperating systems that share intelligence but execute independently:
 ### Docker Services (docker-compose.yml)
 
 <!-- AUTO:SERVICES_TABLE -->
-**21 active containers** (1 disabled)
+**22 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -99,6 +99,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `playbook_runner` | cemini-playbook:latest | internal | PLAYBOOK LAYER (Regime + Signals + Risk → RL training bridge) |
 | `cemini_mcp` | cemini-mcp:latest | 127.0.0.1 | CEMINI MCP INTELLIGENCE SERVER (Step 27) |
 | `portainer` | portainer/portainer-ce:latest | 9000 | Port 9000 (HTTP) — nginx handles TLS termination upstream. |
+| `dbmate` | ghcr.io/amacneil/dbmate:2 | internal | In Swarm mode deploy.restart_policy condition: none prevents restart loops. |
 
 **Disabled (profile-gated):** `signal_generator`
 <!-- /AUTO:SERVICES_TABLE -->
@@ -560,7 +561,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-07 16:00 UTC*
+*Auto-generated: 2026-03-07 16:28 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
