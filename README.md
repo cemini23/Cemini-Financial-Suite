@@ -275,30 +275,31 @@ The `update-docs` job runs in parallel with `audit-and-deploy` — doc failures 
 ## 🛠️ Components & Ports
 
 <!-- AUTO:SERVICES_TABLE -->
-**20 active containers** (1 disabled)
+**21 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
 | `postgres` | timescale/timescaledb:latest-pg16 | 5432 | THE HEART (Data Storage) |
 | `pgadmin` | dpage/pgadmin4 | 80 |  |
 | `redis` | redis:7-alpine | 6379 | THE SPINAL CORD (Messaging) |
-| `polygon_ingestor` | (build: Dockerfile.ingestor) | internal | NODE 1: PERCEPTION (Ingestion) |
-| `brain` | (build: Dockerfile.brain) | internal | NODE 2-4: THE BRAIN (Intelligence) |
-| `scribe_logger` | (build: Dockerfile.logger) | internal | THE SCRIBE (Logging) |
-| `coach_analyzer` | (build: Dockerfile.analyzer) | internal | THE COACH (Analysis) |
-| `social_scraper` | (build: Dockerfile.scraper) | internal | SCRAPERS (Intelligence) |
-| `macro_scraper` | (build: Dockerfile.scraper) | internal |  |
-| `gdelt_harvester` | (build: Dockerfile.scraper) | internal | intel:conflict_events / intel:regional_risk, logs ELEVATED+ events to Postgres. |
-| `kalshi_autopilot` | (build: Dockerfile.autopilot) | internal | social_alpha, musk_monitor — all in paper mode by default. |
-| `rover_scanner` | (build: Dockerfile.autopilot) | internal | REST API is only used once on startup for the initial market bootstrap. |
-| `ems_executor` | (build: Dockerfile.ems) | internal | NODE 5: THE SWORD (Execution) |
-| `cemini_os` | (build: Dockerfile.ui) | 8501 | CEMINI OS (Streamlit Dashboard) |
+| `polygon_ingestor` | cemini-ingestor:latest | internal | NODE 1: PERCEPTION (Ingestion) |
+| `brain` | cemini-brain:latest | internal | NODE 2-4: THE BRAIN (Intelligence) |
+| `scribe_logger` | cemini-logger:latest | internal | THE SCRIBE (Logging) |
+| `coach_analyzer` | cemini-analyzer:latest | internal | THE COACH (Analysis) |
+| `social_scraper` | cemini-scraper:latest | internal | SCRAPERS (Intelligence) |
+| `macro_scraper` | cemini-scraper:latest | internal |  |
+| `gdelt_harvester` | cemini-scraper:latest | internal | GDELT GEOPOLITICAL HARVESTER |
+| `kalshi_autopilot` | cemini-autopilot:latest | internal | KALSHI AUTOPILOT (Prediction Market Brain) |
+| `rover_scanner` | cemini-autopilot:latest | internal | ROVER SCANNER (Real-time Kalshi WebSocket Market Intelligence) |
+| `ems_executor` | cemini-ems:latest | internal | NODE 5: THE SWORD (Execution) |
+| `cemini_os` | cemini-ui:latest | 8501 | CEMINI OS (Streamlit Dashboard) |
 | `deephaven` | ghcr.io/deephaven/server:latest | 10000 | THE VISUAL NERVOUS SYSTEM (Telemetry) |
 | `grafana_viz` | grafana/grafana:latest | 3000 |  |
 | `cemini_proxy` | nginx:alpine | 80 | PERIMETER DEFENSE |
 | `cloudflare_tunnel` | cloudflare/cloudflared:latest | internal |  |
-| `playbook_runner` | (build: Dockerfile.playbook) | internal | future RL model.  Does NOT place orders.  Harvesters are unaffected. |
-| `cemini_mcp` | (build: cemini_mcp/Dockerfile) | 127.0.0.1 | geopolitical_risk, sentiment, strategy_mode, data_health. |
+| `playbook_runner` | cemini-playbook:latest | internal | PLAYBOOK LAYER (Regime + Signals + Risk → RL training bridge) |
+| `cemini_mcp` | cemini-mcp:latest | 127.0.0.1 | CEMINI MCP INTELLIGENCE SERVER (Step 27) |
+| `portainer` | portainer/portainer-ce:latest | 9000 | Port 9000 (HTTP) — nginx handles TLS termination upstream. |
 
 **Disabled (profile-gated):** `signal_generator`
 <!-- /AUTO:SERVICES_TABLE -->
@@ -379,7 +380,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-07 03:15 UTC*
+*Auto-generated: 2026-03-07 16:00 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**
