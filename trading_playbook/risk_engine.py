@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 import numpy as np
+from beartype import beartype
 
 logger = logging.getLogger("playbook.risk_engine")
 
@@ -58,6 +59,7 @@ class FractionalKelly:
             raise ValueError(f"fraction must be in (0, 1], got {fraction}")
         self.fraction = fraction
 
+    @beartype
     def calculate(
         self,
         win_rate: float,
@@ -97,6 +99,7 @@ class FractionalKelly:
         )
         return result
 
+    @beartype
     def max_allocation(self) -> float:
         """Return the theoretical maximum allocation (fraction × 1.0)."""
         return self.fraction
@@ -126,6 +129,7 @@ class CVaRCalculator:
             raise ValueError(f"confidence must be in (0, 1), got {confidence}")
         self.confidence = confidence
 
+    @beartype
     def calculate(self, returns: np.ndarray) -> float:
         """
         Compute CVaR from a 1-D array of P&L returns.
@@ -160,7 +164,8 @@ class CVaRCalculator:
         logger.debug("[CVaR] %.0f%% CVaR = %.6f  (VaR threshold = %.6f)", self.confidence * 100, cvar, var_threshold)
         return cvar
 
-    def exceeds_limit(self, returns: np.ndarray, nav: float, limit_pct: float = 0.05) -> bool:
+    @beartype
+    def exceeds_limit(self, returns: np.ndarray, nav: float | int, limit_pct: float = 0.05) -> bool:
         """
         Return True if CVaR in dollar terms exceeds *limit_pct* of NAV.
 
@@ -214,6 +219,7 @@ class DrawdownMonitor:
         self.threshold = threshold
         self._strategies: Dict[str, _StrategyState] = {}
 
+    @beartype
     def update(self, strategy: str, equity: float) -> Optional[str]:
         """
         Update equity for *strategy* and check for drawdown breach.
@@ -256,6 +262,7 @@ class DrawdownMonitor:
 
         return None
 
+    @beartype
     def is_halted(self, strategy: str) -> bool:
         """Return True if *strategy* is currently quarantined."""
         return self._strategies.get(strategy, _StrategyState()).halted
@@ -288,6 +295,7 @@ class DrawdownMonitor:
     # Portfolio-level helpers
     # ---------------------------------------------------------------------- #
     @staticmethod
+    @beartype
     def portfolio_drawdown(equity_curve: np.ndarray) -> float:
         """
         Compute the current drawdown of a portfolio equity curve.

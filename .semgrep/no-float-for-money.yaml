@@ -1,0 +1,13 @@
+rules:
+  - id: no-float-for-money
+    message: >
+      Avoid float() for monetary values in financial calculations.
+      Floating-point arithmetic can cause precision loss (e.g., 0.1 + 0.2 != 0.3).
+      Use Decimal for prices/quantities, or integer cents for exchange values.
+    severity: WARNING
+    languages: [python]
+    pattern: float($X)
+    paths:
+      include:
+        - "**/core/ems/**"
+        - "**/trading_playbook/**"

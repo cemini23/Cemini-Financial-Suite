@@ -31,11 +31,13 @@ class ArcticDBManager:
         self.library.write(symbol, pandas_df)
         print(f"✅ ArcticDB: [{symbol}] versioned and committed.")
 
-    def read_to_numpy(self, symbol: str, columns: list = ['close']) -> np.ndarray:
+    def read_to_numpy(self, symbol: str, columns: list = None) -> np.ndarray:
         """
         Reads specific columns directly from storage into NumPy for VectorBT.
         Extremely memory efficient as it avoids loading the full DataFrame.
         """
+        if columns is None:
+            columns = ['close']
         try:
             item = self.library.read(symbol, columns=columns)
             return item.data[columns[0]].to_numpy()

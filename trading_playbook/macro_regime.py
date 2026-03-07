@@ -26,6 +26,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from beartype import beartype
 
 logger = logging.getLogger("playbook.macro_regime")
 
@@ -101,6 +102,7 @@ def _jnk_tlt_divergence(jnk: pd.Series, tlt: pd.Series, lookback: int = 5) -> bo
 
 
 # ----- public API ---------------------------------------------------------- #
+@beartype
 def classify_regime() -> RegimeState:
     """
     Classify the current macro market regime.

@@ -1,0 +1,18 @@
+rules:
+  - id: unsafe-redis-no-auth
+    message: >
+      Redis connection created without a password= argument.
+      All Cemini Redis instances require REDIS_PASSWORD authentication.
+      Use: redis.Redis(..., password=os.getenv("REDIS_PASSWORD"), ...)
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: redis.Redis(...)
+          - pattern: redis.StrictRedis(...)
+      - pattern-not: redis.Redis(..., password=..., ...)
+      - pattern-not: redis.StrictRedis(..., password=..., ...)
+    paths:
+      exclude:
+        - "**/tests/**"
+        - "**/venv*/**"

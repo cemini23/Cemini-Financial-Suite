@@ -1,4 +1,5 @@
 from typing import Dict, Any, Type
+from beartype import beartype
 from core.ems.base import BaseExecutionAdapter
 from core.schemas.trading_signals import TradingSignal
 from core.ems.adapters.coinbase import CoinbaseAdapter
@@ -14,9 +15,11 @@ class EMS:
     def __init__(self):
         self.adapters: Dict[str, BaseExecutionAdapter] = {}
 
+    @beartype
     def register_adapter(self, name: str, adapter: BaseExecutionAdapter):
         self.adapters[name] = adapter
 
+    @beartype
     async def execute(self, signal: TradingSignal) -> Dict[str, Any]:
         adapter = self.adapters.get(signal.target_brokerage)
         if not adapter:

@@ -1,0 +1,32 @@
+rules:
+  - id: missing-rate-limit-requests
+    message: >
+      Direct requests.get/post/put call in broker adapter or scraper — verify
+      that a rate-limit / retry / backoff mechanism is in place above this call.
+      Unthrottled calls can exhaust API quotas and trigger IP bans.
+    severity: WARNING
+    languages: [python]
+    pattern-either:
+      - pattern: requests.get(...)
+      - pattern: requests.post(...)
+      - pattern: requests.put(...)
+    paths:
+      include:
+        - "**/core/ems/adapters/**"
+        - "**/scrapers/**"
+
+  - id: missing-rate-limit-httpx
+    message: >
+      Direct httpx.get/post/put call in broker adapter — verify that a
+      rate-limit / retry / backoff mechanism is in place above this call.
+      Unthrottled calls can exhaust broker API quotas.
+    severity: WARNING
+    languages: [python]
+    pattern-either:
+      - pattern: httpx.get(...)
+      - pattern: httpx.post(...)
+      - pattern: httpx.put(...)
+    paths:
+      include:
+        - "**/core/ems/adapters/**"
+        - "**/scrapers/**"

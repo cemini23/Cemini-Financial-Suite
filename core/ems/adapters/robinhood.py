@@ -2,6 +2,7 @@ import asyncio
 import os
 import robin_stocks.robinhood as r
 from typing import Dict, Any
+from beartype import beartype
 from core.ems.base import BaseExecutionAdapter
 from core.schemas.trading_signals import TradingSignal
 
@@ -10,6 +11,7 @@ class RobinhoodAdapter(BaseExecutionAdapter):
         # Initial login - in production, this uses the cached session token logic we built earlier
         r.login(username, password, store_session=True)
 
+    @beartype
     async def get_buying_power(self) -> float:
         profile = await asyncio.to_thread(r.profiles.load_account_profile)
         # Handle cases where margin might not be enabled
@@ -18,6 +20,7 @@ class RobinhoodAdapter(BaseExecutionAdapter):
         except (KeyError, TypeError):
             return float(profile.get('portfolio_cash', 0.0))
 
+    @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:
         # --- CRITICAL SAFETY GUARDRAIL ---
         # Hardcoded to never use real money during current debug session.

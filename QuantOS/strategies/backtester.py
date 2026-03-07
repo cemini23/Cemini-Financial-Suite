@@ -59,7 +59,7 @@ class BacktestEngine:
                 
         except Exception as e:
             if isinstance(e, ValueError): raise e
-            raise ValueError(f"CRITICAL: Failed to read data file: {e}")
+            raise ValueError(f"CRITICAL: Failed to read data file: {e}") from e
 
         # Fetch dynamic settings
         stop_loss = settings_manager.get("stop_loss_pct")

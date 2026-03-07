@@ -1,6 +1,7 @@
 import asyncio
 import math
 from typing import Dict, Any
+from beartype import beartype
 from coinbase.rest import RESTClient
 from core.ems.base import BaseExecutionAdapter
 from core.schemas.trading_signals import TradingSignal
@@ -9,12 +10,14 @@ class CoinbaseAdapter(BaseExecutionAdapter):
     def __init__(self, api_key: str, api_secret: str):
         self.client = RESTClient(api_key=api_key, api_secret=api_secret)
 
+    @beartype
     async def get_buying_power(self) -> float:
         # Runs synchronously in the background via asyncio.to_thread
         accounts = await asyncio.to_thread(self.client.get_accounts)
         usd_account = next((acc for acc in accounts['accounts'] if acc['currency'] == 'USD'), None)
         return float(usd_account['available_balance']['value']) if usd_account else 0.0
 
+    @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:
         ticker = signal.ticker_or_event  # e.g., "BTC-USD"
         action = signal.action

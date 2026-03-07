@@ -1,5 +1,6 @@
 import aiohttp
 from typing import Dict, Any
+from beartype import beartype
 from core.ems.base import BaseExecutionAdapter
 from core.schemas.trading_signals import TradingSignal
 
@@ -8,6 +9,7 @@ class HardRockBetAdapter(BaseExecutionAdapter):
         self.headers = {"Authorization": f"Bearer {bearer_token}"}
         self.base_url = "https://api.hardrock.bet/v1" # Hypothetical endpoint
 
+    @beartype
     async def get_buying_power(self) -> float:
         async with aiohttp.ClientSession(headers=self.headers) as session:
             try:
@@ -19,6 +21,7 @@ class HardRockBetAdapter(BaseExecutionAdapter):
                 return 0.0
         return 0.0
 
+    @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:
         payload = {
             "event_id": signal.ticker_or_event,

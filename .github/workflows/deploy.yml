@@ -17,16 +17,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install flake8
-        run: pip install flake8
+      - name: Install ruff
+        run: pip install ruff
 
-      - name: Run flake8
-        id: flake8
-        continue-on-error: false
-        run: |
-          flake8 . \
-            --exclude="venv,.venv,venv_new,__pycache__,.git,QuantOS/data/kaggle_import,Kalshi by Cemini/venv,Kalshi by Cemini/venv_new,Cemini-Suite" \
-            --config=.flake8
+      - name: Run ruff check (lint + security via S rules)
+        run: ruff check .
+
+      - name: Run ruff format check (format drift report — non-blocking)
+        # Documents format drift; auto-formatting is a separate cleanup PR.
+        # 196 files have known drift from Step 34c migration.
+        continue-on-error: true
+        run: ruff format --check .
 
   pip-audit:
     runs-on: ubuntu-latest
@@ -50,8 +51,44 @@ jobs:
             -r "Kalshi by Cemini/requirements.txt" \
             --strict
 
-  bandit:
+  # ── TRIVY CONTAINER & FILESYSTEM SCANNING (Step 34d) ──────────────────────
+  # Scans repo filesystem for misconfigs and embedded secrets.
+  # Image scanning (trivy image) is done on the server via scripts/trivy-scan.sh
+  # because Docker builds happen on the VPS, not in the CI runner.
+  trivy:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan (misconfigs, secrets, Dockerfiles)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-fs.sarif
+          # exit-code 0 here; image scan (exit 1 on CRITICAL) runs via trivy-scan.sh
+          exit-code: 0
+
+      - name: Upload Trivy FS SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-filesystem
+
+  # ── SEMGREP CUSTOM RULES + TRAIL OF BITS (Step 34e) ──────────────────────
+  # Runs 4 trading-specific custom rules + Trail of Bits baseline.
+  # Non-blocking: findings appear in GitHub Security tab as SARIF.
+  # Requires no Semgrep account token for custom + public rules.
+  semgrep:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -61,34 +98,32 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install bandit
-        run: pip install bandit
+      - name: Install semgrep
+        run: pip install semgrep
 
-      - name: Run bandit (SAST) — generate JSON report
-        # Non-blocking: always produces the artifact even if issues are found
+      - name: Run Semgrep (custom trading rules + Trail of Bits)
+        # continue-on-error so SARIF upload always runs even if findings exist
+        continue-on-error: true
         run: |
-          bandit -r . -ll -ii \
-            --exclude ./tests,./venv,./.venv,./venv_new,./Cemini-Suite,./QuantOS/data/kaggle_import \
-            -f json -o bandit-report.json || true
+          semgrep scan \
+            --config .semgrep/ \
+            --config p/trailofbits \
+            --sarif \
+            -o semgrep.sarif \
+            --metrics=off \
+            .
 
-      - name: Upload bandit JSON report
+      - name: Upload Semgrep SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: bandit-report
-          path: bandit-report.json
-          retention-days: 30
-
-      - name: Run bandit (SAST) — enforce HIGH findings fail
-        # This step determines pass/fail: exits non-zero if any HIGH severity issue is found
-        run: |
-          bandit -r . -ll -ii \
-            --exclude ./tests,./venv,./.venv,./venv_new,./Cemini-Suite,./QuantOS/data/kaggle_import \
-            -f screen
+          sarif_file: semgrep.sarif
+          category: semgrep-custom
 
   audit-and-deploy:
-    # All three parallel checks must pass before secrets scan + deploy
-    needs: [lint, pip-audit, bandit]
+    # Core quality gates: lint + dep audit must pass before secrets scan + deploy.
+    # trivy + semgrep run in parallel but are informational (non-blocking on deploy).
+    needs: [lint, pip-audit]
     runs-on: ubuntu-latest
 
     steps:
@@ -153,17 +188,17 @@ jobs:
         if: always()
         run: |
           echo "=== CI RESULTS ==="
-          echo "Lint (flake8):   ${{ needs.lint.result }}"
+          echo "Lint (ruff):          ${{ needs.lint.result }}"
           echo "Dep scan (pip-audit): ${{ needs.pip-audit.result }}"
-          echo "SAST (bandit):   ${{ needs.bandit.result }}"
-          echo "Secret Scan:     ${{ steps.security.outcome }}"
-          echo "Deploy:          ${{ steps.deploy.outcome }}"
+          echo "Secret Scan:          ${{ steps.security.outcome }}"
+          echo "Deploy:               ${{ steps.deploy.outcome }}"
+          echo "(trivy + semgrep run in parallel — check Security tab for findings)"
           echo ""
           if [ "${{ steps.deploy.outcome }}" = "failure" ]; then
-            echo "⚠️  Deploy failed — SSH or docker compose error on server"
+            echo "WARNING: Deploy failed — SSH or docker compose error on server"
           fi
           if [ "${{ steps.deploy.outcome }}" = "success" ]; then
-            echo "✅ Deployed successfully to root@5.161.53.103:/opt/cemini"
+            echo "OK: Deployed successfully to root@5.161.53.103:/opt/cemini"
           fi
 
   # ── AUTO-DOCUMENTATION ───────────────────────────────────────────────────────
@@ -174,7 +209,7 @@ jobs:
   # [skip ci] in the commit message prevents infinite CI loops.
   update-docs:
     runs-on: ubuntu-latest
-    needs: [lint, pip-audit, bandit]
+    needs: [lint, pip-audit]
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
@@ -206,11 +241,11 @@ jobs:
                   "Kalshi by Cemini/README.md" \
                   trading_playbook/README.md || true
           if git diff --cached --quiet; then
-            echo "📝 No documentation changes to commit."
+            echo "No documentation changes to commit."
           else
             git commit -m "docs: auto-update READMEs [skip ci]"
             git push
-            echo "📝 Documentation committed and pushed."
+            echo "Documentation committed and pushed."
           fi
 
 # NOTE — Docker layer caching:

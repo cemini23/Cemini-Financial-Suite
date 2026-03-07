@@ -1,3 +1,20 @@
+# ============================================================
+# Cemini Financial Suite — Docker Compose / Swarm Stack
+# Step 34a: Added deploy: blocks for Swarm compatibility.
+#
+# deploy: mode:
+#   docker compose up --build -d        (development, local)
+#   docker stack deploy -c docker-compose.yml cemini  (production Swarm)
+#
+# NOTE: docker stack deploy requires pre-built images (build: is ignored).
+#   Run `docker compose build` first, then `docker stack deploy`.
+#   See scripts/swarm-init.sh for full procedure.
+#
+# Network note: networks have no explicit driver here.
+#   docker compose uses bridge (default)
+#   docker stack deploy uses overlay (default)
+# ============================================================
+
 services:
   # --- THE HEART (Data Storage) ---
   postgres:
@@ -15,6 +32,19 @@ services:
       - ./archives:/mnt/archive
     networks:
       - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d qdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 10
+      update_config:
+        order: stop-first   # postgres is stateful — stop old before starting new
 
   pgadmin:
     image: dpage/pgadmin4
@@ -30,6 +60,13 @@ services:
     networks:
       - edge_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        order: start-first
 
   # --- THE SPINAL CORD (Messaging) ---
   redis:
@@ -39,16 +76,32 @@ services:
     expose:
       - "6379"
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-cemini_redis_2026}"]
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
     volumes:
       - redis_data:/data
     networks:
       - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+      update_config:
+        order: stop-first   # redis is stateful — stop old before starting new
 
   # --- NODE 1: PERCEPTION (Ingestion) ---
   polygon_feed:
     build:
       context: .
       dockerfile: Dockerfile.ingestor
+    image: cemini-ingestor:latest
     container_name: polygon_ingestor
     restart: always
     env_file: .env
@@ -59,12 +112,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- NODE 2-4: THE BRAIN (Intelligence) ---
   brain:
     build:
       context: .
       dockerfile: Dockerfile.brain
+    image: cemini-brain:latest
     container_name: brain
     restart: always
     env_file: .env
@@ -77,21 +138,23 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- SIGNAL GENERATOR (Brain logic) ---
   # DISABLED (2026-02-24): Redundant with the `brain` service.
-  # signal_generator covers only SPY, QQQ, BTC using SMA(3)/SMA(10) crossover.
-  # `brain` covers those same 3 symbols plus 27 more, uses RSI-14 + macro FGI +
-  # sentiment scoring via the Intel Bus, and produces richer signal payloads
-  # (price, rsi). Both publish to the same `trade_signals` Redis channel, which
-  # would cause duplicate/conflicting EMS executions. Additionally, signal_generator
-  # had a hard bug: BTC ticks are stored as "BTC-USD" but it queries "BTC", so it
-  # never accumulates the 15 rows needed to emit any signal.
   # Use `docker compose --profile signal_generator up` to re-enable for testing.
+  # In Swarm mode: profiles are not supported; replicas: 0 keeps this disabled.
   signal_generator:
     build:
       context: ./QuantOS
       dockerfile: Dockerfile.brain
+    image: cemini-signal-generator:latest
     container_name: signal_generator
     restart: always
     profiles: ["signal_generator"]
@@ -106,12 +169,21 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      replicas: 0    # Swarm-native gate — keeps service disabled in stack mode
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        order: start-first
 
   # --- THE SCRIBE (Logging) ---
   logger:
     build:
       context: .
       dockerfile: Dockerfile.logger
+    image: cemini-logger:latest
     container_name: scribe_logger
     restart: always
     volumes:
@@ -126,12 +198,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- THE COACH (Analysis) ---
   analyzer:
     build:
       context: .
       dockerfile: Dockerfile.analyzer
+    image: cemini-analyzer:latest
     container_name: coach_analyzer
     restart: always
     volumes:
@@ -148,12 +228,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- SCRAPERS (Intelligence) ---
   social_scraper:
     build:
       context: .
       dockerfile: Dockerfile.scraper
+    image: cemini-scraper:latest
     container_name: social_scraper
     restart: always
     env_file: .env
@@ -168,11 +256,19 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   macro_scraper:
     build:
       context: .
       dockerfile: Dockerfile.scraper
+    image: cemini-scraper:latest
     container_name: macro_scraper
     restart: always
     environment:
@@ -185,15 +281,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- GDELT GEOPOLITICAL HARVESTER ---
-  # Polls GDELT 2.0 every 15 min. Filters CAMEO 10-20 + market-relevant countries.
-  # Computes 0-100 risk scores, publishes to intel:geopolitical_risk /
-  # intel:conflict_events / intel:regional_risk, logs ELEVATED+ events to Postgres.
   gdelt_harvester:
     build:
       context: .
       dockerfile: Dockerfile.scraper
+    image: cemini-scraper:latest
     container_name: gdelt_harvester
     restart: always
     environment:
@@ -212,14 +313,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- KALSHI AUTOPILOT (Prediction Market Brain) ---
-  # Runs CeminiAutopilot: weather_alpha, satoshi_vision, powell_protocol,
-  # social_alpha, musk_monitor — all in paper mode by default.
   kalshi_autopilot:
     build:
       context: .
       dockerfile: Dockerfile.autopilot
+    image: cemini-autopilot:latest
     container_name: kalshi_autopilot
     restart: always
     env_file:
@@ -239,15 +346,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- ROVER SCANNER (Real-time Kalshi WebSocket Market Intelligence) ---
-  # Step 16: Replaced 15-min REST polling with a single long-lived WebSocket
-  # connection. Maintains live order books, OI tracking, and liquidity detection.
-  # REST API is only used once on startup for the initial market bootstrap.
   rover_scanner:
     build:
       context: .
       dockerfile: Dockerfile.autopilot
+    image: cemini-autopilot:latest
     container_name: rover_scanner
     restart: always
     env_file:
@@ -265,12 +377,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- NODE 5: THE SWORD (Execution) ---
   ems:
     build:
       context: .
       dockerfile: Dockerfile.ems
+    image: cemini-ems:latest
     container_name: ems_executor
     restart: always
     env_file: .env
@@ -290,12 +410,20 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- CEMINI OS (Streamlit Dashboard) ---
   cemini_os:
     build:
       context: ./ui
       dockerfile: Dockerfile.ui
+    image: cemini-ui:latest
     container_name: cemini_os
     restart: always
     expose:
@@ -307,6 +435,13 @@ services:
     networks:
       - edge_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- THE VISUAL NERVOUS SYSTEM (Telemetry) ---
   deephaven:
@@ -326,6 +461,13 @@ services:
     networks:
       - edge_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        order: start-first
 
   grafana:
     image: grafana/grafana:latest
@@ -344,6 +486,13 @@ services:
     networks:
       - edge_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        order: start-first
 
   # --- PERIMETER DEFENSE ---
   nginx:
@@ -360,6 +509,19 @@ services:
     networks:
       - edge_net
       - app_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -372,15 +534,20 @@ services:
       - nginx
     networks:
       - edge_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- PLAYBOOK LAYER (Regime + Signals + Risk → RL training bridge) ---
-  # Observation-only: classifies macro regime, detects tactical setups,
-  # computes risk metrics, and logs everything to Postgres + JSONL for the
-  # future RL model.  Does NOT place orders.  Harvesters are unaffected.
   playbook:
     build:
       context: .
       dockerfile: Dockerfile.playbook
+    image: cemini-playbook:latest
     container_name: playbook_runner
     restart: always
     volumes:
@@ -399,17 +566,20 @@ services:
     networks:
       - app_net
       - data_net
-
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
   # --- CEMINI MCP INTELLIGENCE SERVER (Step 27) ---
-  # Read-only MCP server exposing the intel:* Redis bus as typed, callable tools.
-  # FastMCP 3.1.0 / streamable-http on port 8002 (localhost only).
-  # 9 tools: regime, signals, risk, playbook_snapshot, kalshi_intel,
-  #          geopolitical_risk, sentiment, strategy_mode, data_health.
   cemini_mcp:
     build:
       context: .
       dockerfile: cemini_mcp/Dockerfile
+    image: cemini-mcp:latest
     container_name: cemini_mcp
     restart: unless-stopped
     env_file:
@@ -428,17 +598,55 @@ services:
     networks:
       - app_net
       - data_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
+
+  # --- PORTAINER CE (Step 34b) — Container Management UI ---
+  # Accessible at /portainer/ via nginx proxy.
+  # In Swarm mode: pinned to manager node via placement constraint.
+  # Port 9000 (HTTP) — nginx handles TLS termination upstream.
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    command: ["--base-url", "/portainer"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    expose:
+      - "9000"
+    networks:
+      - edge_net
+      - app_net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager   # must run on manager for socket access
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
 
 volumes:
   postgres_data:
   redis_data:
   deephaven_data:
   arcticdb_data:
+  portainer_data:    # Step 34b
 
 networks:
+  # No explicit driver — compose uses bridge, Swarm uses overlay (default).
+  # Both modes work with these names; Swarm adds stack prefix: cemini_<net>.
   edge_net:
-    driver: bridge
+    attachable: true
   app_net:
-    driver: bridge
+    attachable: true
   data_net:
-    driver: bridge
+    attachable: true

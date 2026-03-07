@@ -107,7 +107,7 @@ async def get_sentiment():
     }
 
 @router.post("/api/settings")
-async def update_settings(new_settings: dict = Body(...)):
+async def update_settings(new_settings: dict = Body(...)):  # noqa: B008
     from config.settings_manager import settings_manager
     current = settings_manager.settings
     for key, val in new_settings.items():

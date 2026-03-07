@@ -1,0 +1,101 @@
+# ============================================================
+# Cemini Financial Suite — Ruff configuration
+# Replaces: .flake8 + bandit (Step 34c)
+#
+# Migration notes: noisy rules are suppressed here and will be
+# addressed in dedicated cleanup PRs. The `select` list defines
+# the long-term target rule set; `ignore` shrinks over time.
+# ============================================================
+
+line-length = 120
+target-version = "py311"
+
+exclude = [
+    "venv",
+    ".venv",
+    "venv_new",
+    "__pycache__",
+    ".git",
+    "QuantOS/data/kaggle_import",
+    "Kalshi by Cemini/venv",
+    "Kalshi by Cemini/venv_new",
+    "Cemini-Suite",
+]
+
+[lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "B",      # flake8-bugbear (common Python bugs)
+    "S",      # flake8-bandit (security — replaces standalone bandit)
+    "ASYNC",  # async/await bugs (critical for trading code)
+    "UP",     # pyupgrade
+    "I",      # isort (import sorting)
+    "N",      # pep8-naming
+    "SIM",    # flake8-simplify
+]
+
+ignore = [
+    # ── Line length (formatter handles) ──────────────────────────────────
+    "E501",
+
+    # ── Blank lines / inline comment spacing (migration carry-forward) ───
+    "E302", "E303", "E305",
+    "E261", "E262", "E265",
+    "E231", "E225", "E203",
+
+    # ── Multiple statements on one line (migration carry-forward) ────────
+    "E701", "E702",
+
+    # ── Module import position (intentional deferred imports) ─────────────
+    "E402",
+
+    # ── Whitespace (formatter's responsibility, not linter's) ─────────────
+    "W191", "W291", "W292", "W293",
+
+    # ── Pyflakes noise (TODO: cleanup sprint) ─────────────────────────────
+    "F401",   # unused imports
+    "F841",   # local variable assigned but never used
+    "F541",   # f-string without placeholders
+
+    # ── Bare except (migration carry-forward) ─────────────────────────────
+    "E722",
+
+    # ── Security rules — Semgrep (Step 34e) covers critical cases; ────────
+    # remaining rules require separate review sprint.
+    "S101",   # assert — used in production guard code (not just tests)
+    "S104",   # hardcoded 0.0.0.0 — intentional inside Docker containers
+    "S105", "S106", "S107",   # hardcoded passwords — separate review
+    "S110",   # try-except-pass — common pattern in scrapers/harvesters
+    "S311",   # non-cryptographic random — intentional for signals/sim
+    "S602", "S603", "S605", "S606", "S607",  # subprocess — separate review
+    "S608",   # SQL string building — separate review
+    "S113",   # requests without timeout — separate review
+
+    # ── Naming conventions (migration carry-forward) ──────────────────────
+    "N801", "N802", "N803", "N806", "N812", "N818",
+
+    # ── Pyupgrade (address in a dedicated UP cleanup PR) ──────────────────
+    "UP006", "UP008", "UP015", "UP017", "UP022", "UP035", "UP042", "UP045",
+
+    # ── Import sorting (address in a dedicated isort cleanup PR) ──────────
+    "I001",
+
+    # ── Simplify rules (too opinionated for first-pass migration) ─────────
+    "SIM102", "SIM103", "SIM105", "SIM108", "SIM112", "SIM115", "SIM117", "SIM118",
+
+    # ── Async blocking calls (address in a dedicated ASYNC cleanup PR) ────
+    "ASYNC210", "ASYNC220", "ASYNC230", "ASYNC240", "ASYNC251",
+
+    # ── Bugbear minor style ───────────────────────────────────────────────
+    "B007",   # unused loop control variable (common _ pattern)
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]                    # assert is expected in test files
+"__init__.py" = ["F401"]               # re-exports in __init__ are intentional
+"QuantOS/interface/server.py" = ["B008"]  # FastAPI Body() is a framework pattern
+
+[format]
+quote-style = "double"

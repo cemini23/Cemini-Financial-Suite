@@ -37,6 +37,7 @@ import json
 import logging
 import os
 import time
+from beartype import beartype
 
 logger = logging.getLogger("intel_bus")
 
@@ -73,6 +74,7 @@ class IntelPublisher:
     """
 
     @staticmethod
+    @beartype
     def publish(key: str, value, source_system: str, confidence: float = 1.0) -> None:
         """Synchronous publish. Use from threads and sync scripts (analyzer.py, bq_signals.py)."""
         if not _REDIS_AVAILABLE:
@@ -91,6 +93,7 @@ class IntelPublisher:
             logger.debug(f"[IntelBus] publish failed ({key}): {e}")
 
     @staticmethod
+    @beartype
     async def publish_async(key: str, value, source_system: str, confidence: float = 1.0) -> None:
         """Async publish. Use from coroutines (all async analyzers)."""
         if not _REDIS_AVAILABLE:
@@ -120,6 +123,7 @@ class IntelReader:
     """
 
     @staticmethod
+    @beartype
     def read(key: str):
         """
         Synchronous read. Returns the full payload dict or None.
@@ -140,6 +144,7 @@ class IntelReader:
             return None
 
     @staticmethod
+    @beartype
     async def read_async(key: str):
         """
         Async read. Returns the full payload dict or None.

@@ -97,6 +97,8 @@ dagster>=1.6.0
 
 # --- Dev / Testing ---
 pytest>=8.0.0
+ruff>=0.4.0
+beartype>=0.18.0
 
 # --- Build ---
 pyinstaller>=6.5.0

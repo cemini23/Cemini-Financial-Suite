@@ -6,6 +6,7 @@ import base64
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from typing import Dict, Any
+from beartype import beartype
 from core.ems.base import BaseExecutionAdapter
 from core.schemas.trading_signals import TradingSignal
 
@@ -43,6 +44,7 @@ class KalshiRESTAdapter(BaseExecutionAdapter):
             "Content-Type": "application/json"
         }
 
+    @beartype
     async def get_buying_power(self) -> float:
         if not self.private_key: return 0.0
         path = "/portfolio/balance"
@@ -55,6 +57,7 @@ class KalshiRESTAdapter(BaseExecutionAdapter):
             print(f"❌ Kalshi REST: Balance Error: {e}")
         return 0.0
 
+    @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:
         if not self.private_key:
             return {"status": "error", "message": "Private key not loaded"}
