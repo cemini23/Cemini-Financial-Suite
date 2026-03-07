@@ -20,7 +20,7 @@ mechanics. This file gives you the intelligence to make cross-cutting architectu
 ## 1. System Overview
 
 Cemini is a private-use algorithmic trading platform running on a single Hetzner VPS
-(Ubuntu 24, Docker Compose, 20 active containers). It operates three cooperating engines:
+(Ubuntu 24, Docker Compose / Docker Swarm, 22 active containers + 1 one-shot). It operates three cooperating engines:
 a Root orchestrator (brain + analyzer + EMS) for equities/crypto, QuantOS (FastAPI :8001)
 for stock and crypto signals, and Kalshi by Cemini (FastAPI :8000) for prediction markets.
 All three share intelligence through a Redis pub/sub bus using the `intel:*` namespace.
@@ -56,6 +56,8 @@ The platform is designed for eventual IP sale to prop firms, fintech, or hedge f
 | `cloudflare_tunnel` | cloudflared | edge_net | — | Cloudflare Tunnel for remote access | — |
 | `playbook_runner` | playbook | app_net, data_net | — | Observation-only: regime classification, 6 signal detectors, risk engine, 5 min loop | playbook CLAUDE.md |
 | `cemini_mcp` | cemini_mcp | app_net, data_net | 127.0.0.1:8002 | FastMCP intelligence server — 10 read-only tools | mcp CLAUDE.md |
+| `portainer` | portainer | edge_net, app_net | 9000 (internal) | Portainer CE container management UI at /portainer/ | — |
+| `dbmate` | dbmate | data_net | — | One-shot migration runner; exits after `dbmate up`; restart_policy: none | — |
 
 **Disabled (profile-gated):** `signal_generator` — superseded by `brain`; use
 `docker compose --profile signal_generator up` only for testing.
@@ -551,8 +553,21 @@ docker compose up -d <service_key>
 - `playbook_runner` (container: playbook)
 
 ### CI pipeline (GitHub Actions)
-lint (flake8) → pip-audit → bandit → [TruffleHog + SSH deploy] ∥ [update-docs]
-All jobs must be green. bandit uses `-ll -ii`. Hosts bound to `0.0.0.0` need `# nosec B104`.
+lint (ruff) → pip-audit → [TruffleHog + SSH deploy] ∥ [update-docs] ∥ [trivy] ∥ [semgrep]
+Only lint and pip-audit are required gates. trivy and semgrep are informational.
+Ruff config: ruff.toml (line-length=120). Run locally: `ruff check . && ruff format --check .`
+
+### Security scanning (Step 34)
+- Trivy: `scripts/trivy-scan.sh` — server-side image scan (CI does FS scan only)
+- Semgrep: `.semgrep/` — 4 custom rules (float-money, rate-limit, redis-auth, hardcoded-creds)
+  + `p/trailofbits` baseline. Run: `semgrep --config .semgrep/ --config p/trailofbits .`
+
+### Schema migrations (Step 38)
+- Tool: dbmate 2.31.0 at `/usr/local/bin/dbmate`
+- Migrations: `db/migrations/` — apply with `dbmate up` before new DB features
+- Config: `.dbmate.yml` (migrations-dir, schema-file: db/schema.sql)
+- DATABASE_URL: `postgres://admin:<password>@172.19.0.3:5432/qdb?sslmode=disable` (container IP)
+- In Docker Compose: `dbmate` service auto-runs `--wait up` on startup (restart_policy: none)
 
 ### Environment files
 - Root services: environment configuration file at `/opt/cemini/` root (not committed to git)
@@ -561,5 +576,5 @@ All jobs must be green. bandit uses `-ll -ii`. Hosts bound to `0.0.0.0` need `# 
 
 ---
 
-*SKILL.md last updated: Step 30 (Logit Pricing) complete. 20 active services. 387 tests.*
+*SKILL.md last updated: Step 38 (Schema Migrations) complete. 22 active services (+ dbmate one-shot). 263 tests.*
 *Update this file when completing Steps 26, 31, or any step that adds services or channels.*

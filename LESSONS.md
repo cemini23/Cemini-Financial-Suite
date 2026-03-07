@@ -68,9 +68,11 @@ Do not create new tables to "fix" without a migration plan.
 
 ## CI/CD
 
-**flake8 config**
-E501 ignored, max-line-length=120. E999 and F821 enforced. E741 (ambiguous var names) enforced.
-Never add E501 enforcement. Rename l/O/I to ln/val/idx.
+**Linter: Ruff (replaces flake8 + bandit as of Step 34)**
+Run `ruff check .` — must exit 0 in CI. Config: ruff.toml (line-length=120).
+E741 (ambiguous var names l/O/I) enforced — rename to ln/val/idx.
+E221/E272 (aligned spacing) NOT ignored — avoid dict alignment formatting.
+Trivy (FS scan CI) and Semgrep (custom rules + p/trailofbits) run as informational jobs.
 
 **Auto-docs infinite loop**
 generate_docs.py commits trigger CI → triggers generate_docs.py.
@@ -108,3 +110,59 @@ Never commit password literals.
 **"sniper" strategy_mode → spy_trend "neutral" not "bearish"**
 Extreme fear (FGI=10, VIX=45) is contrarian signal → bullish, not bearish.
 intel:vix_level = 45.0 when FGI=10. intel:spy_trend = "bullish" in sniper mode.
+
+---
+
+## DevOps Hardening (Step 34 — Mar 7)
+
+**Ruff migration: 1911 violations → carry forward as ignores**
+Start with `ruff check . --select ALL` to count scope, then build migration-safe ignore list
+preserving old flake8 suppressions. Only fix genuine B-rule bugs (B006 mutable defaults,
+B904 exception chaining, B008 FastAPI Body calls). Unknown flake8 codes (E127, E128) don't
+exist in ruff — remove them.
+
+**Semgrep path patterns: v2 requires `**/ ` prefix**
+`tests/**` → `**/tests/**` in semgrepignore v2. Otherwise no files are excluded.
+Same applies to include paths in custom rules.
+
+**beartype: int is not a subtype of float**
+PEP 484 numeric tower is NOT enforced by beartype. `nav: float` rejects int literals.
+Use `nav: float | int` union for any parameter that could be an int.
+`@staticmethod` must come before `@beartype` in the decorator stack.
+
+**Docker Swarm: profiles not supported → deploy.replicas: 0**
+Swarm silently ignores `profiles:`. Keep `profiles:` for compose compatibility AND add
+`deploy.replicas: 0` as Swarm-native gate for optional services.
+
+**Network driver: remove explicit bridge for Swarm compatibility**
+Swarm requires overlay networks. Remove `driver: bridge` from compose network defs and add
+`attachable: true`. Compose defaults to bridge, Swarm defaults to overlay — both work.
+
+**Portainer: --base-url not --basepath**
+Portainer CE flag is `--base-url /portainer`, not `--basepath`. nginx location /portainer/
+must proxy_pass to portainer:9000/portainer/ (preserving the prefix).
+
+---
+
+## Schema Migrations (Step 38 — Mar 7)
+
+**dbmate: atomically rolls back on any error**
+If any statement in a migration fails, the whole migration is rolled back. `dbmate status`
+shows it as `[ ]` pending even if prior statements succeeded. Always verify after `dbmate up`.
+
+**dbmate dump requires pg_dump matching server version**
+pg_dump v14 rejects PG 16 server. Options: install postgresql-client-16 (if available in apt),
+or create a shell wrapper at `/usr/local/bin/pg_dump` that calls `docker exec postgres pg_dump`.
+
+**CREATE OR REPLACE VIEW cannot rename columns**
+If an existing view has different column names, `CREATE OR REPLACE VIEW` fails.
+Use `DROP VIEW IF EXISTS` + `CREATE VIEW` instead.
+
+**postgres container IP for CLI tools**
+Port 5432 is exposed within the Docker network only (not mapped to host).
+Use container IP (e.g. 172.19.0.3) for CLI tools like dbmate run outside containers.
+Find IP: `docker inspect postgres | grep '"IPAddress"'`
+
+**dbmate one-shot in docker-compose**
+Use `restart_policy: condition: none` for migration containers so they don't restart
+after completing. In compose mode the container exits; in Swarm it stops (desired state).

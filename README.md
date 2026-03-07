@@ -254,21 +254,22 @@ All market data flows through Polygon.io REST API → TimescaleDB. No WebSocket 
 Every push to `main` runs the full gate sequence. All gates must be green before deployment:
 
 ```
-lint (flake8) → pip-audit → bandit → TruffleHog → SSH deploy + auto-docs
-                                                         ↕ (parallel)
-                                                    update-docs job
+lint (ruff) → pip-audit → [TruffleHog + deploy] ↔ [update-docs]
+                             ↕ (parallel, informational)
+                         trivy (FS scan) + semgrep
 ```
 
 | Gate | Tool | What it checks |
 |------|------|----------------|
-| **lint** | flake8 (max-line-length=120) | Syntax errors (E999), undefined names (F821), ambiguous variable names (E741) |
+| **lint** | Ruff (ruff.toml, line-length=120) | Syntax errors (E999), undefined names (F821), ambiguous vars (E741), security S-rules, import order |
 | **pip-audit** | pip-audit | CVE vulnerabilities in all pinned dependencies |
-| **bandit** | bandit (SAST) | Security anti-patterns in Python source |
+| **trivy** | Trivy (filesystem scan) | Container/dependency vulnerabilities → GitHub Security tab (informational) |
+| **semgrep** | Semgrep + custom rules + p/trailofbits | Float-for-money, missing rate limits, unsafe Redis, hardcoded creds (informational) |
 | **TruffleHog** | trufflehog | Secrets and credentials accidentally committed |
 | **deploy** | SSH + docker compose | Pulls latest, rebuilds changed images, restarts services |
 | **update-docs** | generate_docs.py | Refreshes AUTO: markers in README files, commits `[skip ci]` |
 
-The `update-docs` job runs in parallel with `audit-and-deploy` — doc failures are informational only and never block deployment.
+The `update-docs`, `trivy`, and `semgrep` jobs run in parallel with `audit-and-deploy` — failures are informational only and never block deployment.
 
 ---
 
