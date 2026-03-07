@@ -74,7 +74,7 @@ Three cooperating systems that share intelligence but execute independently:
 ### Docker Services (docker-compose.yml)
 
 <!-- AUTO:SERVICES_TABLE -->
-**22 active containers** (1 disabled)
+**29 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -100,6 +100,13 @@ Three cooperating systems that share intelligence but execute independently:
 | `cemini_mcp` | cemini-mcp:latest | 127.0.0.1 | CEMINI MCP INTELLIGENCE SERVER (Step 27) |
 | `portainer` | portainer/portainer-ce:latest | 9000 | Port 9000 (HTTP) — nginx handles TLS termination upstream. |
 | `dbmate` | ghcr.io/amacneil/dbmate:2 | internal | In Swarm mode deploy.restart_policy condition: none prevents restart loops. |
+| `prometheus` | prom/prometheus:latest | 9090 | Prometheus (metrics collector + TSDB) |
+| `loki` | grafana/loki:latest | 3100 | Loki (log aggregation) |
+| `alloy` | grafana/alloy:latest | 4317, 4318, 12345 | Grafana Alloy (unified collector: logs → Loki, traces → Tempo) |
+| `tempo` | grafana/tempo:latest | 3200, 4317, 4318 | Grafana Tempo (distributed tracing backend) |
+| `redis_exporter` | oliver006/redis_exporter:latest | 9121 | Redis Exporter (Redis metrics → Prometheus) |
+| `postgres_exporter` | prometheuscommunity/postgres-exporter:latest | 9187 | Postgres Exporter (Postgres metrics → Prometheus) |
+| `node_exporter` | prom/node-exporter:latest | 9100 | Node Exporter (host CPU/RAM/disk/network → Prometheus) |
 
 **Disabled (profile-gated):** `signal_generator`
 <!-- /AUTO:SERVICES_TABLE -->
@@ -561,7 +568,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-07 16:50 UTC*
+*Auto-generated: 2026-03-07 22:12 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
