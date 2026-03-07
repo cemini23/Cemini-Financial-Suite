@@ -1,0 +1,74 @@
+// ============================================================
+// Cemini Financial Suite — Grafana Alloy Configuration (Step 35c)
+// Responsibilities:
+//   1. Discover and tail Docker container logs → Loki
+//   2. Receive OTLP traces → forward to Tempo
+// ============================================================
+
+// ── Docker container log discovery ───────────────────────────────────────────
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "docker_logs" {
+  targets = discovery.docker.containers.targets
+
+  // Use container name as job label
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "container"
+    regex         = "/(.*)"
+    replacement   = "$1"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "job"
+    regex         = "/(.*)"
+    replacement   = "docker/$1"
+  }
+
+  // Carry compose service label
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "docker_logs" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.docker_logs.output
+  forward_to = [loki.write.default.receiver]
+}
+
+// ── Loki write endpoint ───────────────────────────────────────────────────────
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// ── OTLP trace receiver → Tempo ──────────────────────────────────────────────
+
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
+  }
+}

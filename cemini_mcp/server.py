@@ -408,6 +408,27 @@ def get_contract_pricing(ticker: Optional[str] = None) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Prometheus /metrics endpoint (Step 35a)
+# Uses prometheus_client to expose process + custom metrics via custom_route.
+# ---------------------------------------------------------------------------
+try:
+    import prometheus_client
+    from starlette.requests import Request
+    from starlette.responses import Response as StarletteResponse
+
+    @mcp.custom_route("/metrics", methods=["GET"])
+    async def prometheus_metrics(request: Request) -> StarletteResponse:
+        """Expose Prometheus metrics for scraping."""
+        data = prometheus_client.generate_latest()
+        return StarletteResponse(
+            content=data,
+            media_type=prometheus_client.CONTENT_TYPE_LATEST,
+        )
+except ImportError:
+    logger.warning("prometheus_client not installed — /metrics endpoint unavailable")
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":

@@ -15,6 +15,14 @@ app = FastAPI(
     version="2.0.8"
 )
 
+# Prometheus metrics — /metrics endpoint (Step 35a)
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app)
+except ImportError:
+    pass  # observability packages optional in dev
+
+
 @app.on_event("startup")
 async def startup_event():
     try:

@@ -1,0 +1,18 @@
+# ============================================================
+# Cemini Observability Dashboards — provisioned by Step 35e
+# JSON files live at /var/lib/grafana/dashboards/cemini/
+# (mounted from monitoring/grafana/provisioning/dashboards/cemini/)
+# ============================================================
+
+apiVersion: 1
+
+providers:
+  - name: "Cemini Observability"
+    orgId: 1
+    folder: "Cemini"
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/cemini

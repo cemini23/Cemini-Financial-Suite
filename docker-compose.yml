@@ -481,6 +481,8 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - ./.grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/provisioning/dashboards/cemini:/var/lib/grafana/dashboards/cemini
     depends_on:
       - postgres
     networks:
@@ -655,12 +657,261 @@ services:
       restart_policy:
         condition: none
 
+  # ============================================================
+  # Step 35 — Observability Stack (LGTM)
+  # Start individually: docker compose up -d prometheus loki alloy tempo
+  #                                        redis-exporter postgres-exporter node-exporter
+  # Total RAM budget: ~600 MB for all 7 services.
+  # ============================================================
+
+  # --- Prometheus (metrics collector + TSDB) ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    expose:
+      - "9090"
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 150M
+      update_config:
+        order: start-first
+
+  # --- Loki (log aggregation) ---
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    expose:
+      - "3100"
+    networks:
+      - data_net
+    healthcheck:
+      # Loki uses a distroless image — no shell/wget; use the binary itself
+      test: ["CMD", "/usr/bin/loki", "-version"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 200M
+      update_config:
+        order: start-first
+
+  # --- Grafana Alloy (unified collector: logs → Loki, traces → Tempo) ---
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    restart: always
+    command:
+      - "run"
+      - "/etc/alloy/config.alloy"
+      - "--storage.path=/var/lib/alloy/data"
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+      - alloy_data:/var/lib/alloy/data
+    expose:
+      - "4317"
+      - "4318"
+      - "12345"
+    networks:
+      - app_net
+      - data_net
+    depends_on:
+      - loki
+      - tempo
+    healthcheck:
+      # Alloy has bash; use /dev/tcp to check the HTTP UI is responding
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/12345 && echo -e 'GET /-/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q '200' <&3"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 100M
+      update_config:
+        order: start-first
+
+  # --- Grafana Tempo (distributed tracing backend) ---
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    restart: always
+    command: -config.file=/etc/tempo/tempo-config.yml
+    volumes:
+      - ./monitoring/tempo/tempo-config.yml:/etc/tempo/tempo-config.yml:ro
+      - tempo_data:/var/tempo
+    expose:
+      - "3200"
+      - "4317"
+      - "4318"
+    networks:
+      - data_net
+    healthcheck:
+      # Tempo is distroless — use binary version check as liveness probe
+      test: ["CMD", "/tempo", "-version"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 150M
+      update_config:
+        order: start-first
+
+  # --- Redis Exporter (Redis metrics → Prometheus) ---
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis_exporter
+    restart: always
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+    expose:
+      - "9121"
+    depends_on:
+      - redis
+    networks:
+      - data_net
+    healthcheck:
+      # redis_exporter is distroless — use binary version check as liveness probe
+      test: ["CMD", "/redis_exporter", "--version"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 32M
+      update_config:
+        order: start-first
+
+  # --- Postgres Exporter (Postgres metrics → Prometheus) ---
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    restart: always
+    environment:
+      - DATA_SOURCE_NAME=postgresql://admin:${POSTGRES_PASSWORD:-quest}@postgres:5432/qdb?sslmode=disable
+    expose:
+      - "9187"
+    depends_on:
+      - postgres
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9187/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 32M
+      update_config:
+        order: start-first
+
+  # --- Node Exporter (host CPU/RAM/disk/network → Prometheus) ---
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: always
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+    expose:
+      - "9100"
+    networks:
+      - data_net
+    pid: host
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9100/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 32M
+      update_config:
+        order: start-first
+
 volumes:
   postgres_data:
   redis_data:
   deephaven_data:
   arcticdb_data:
   portainer_data:    # Step 34b
+  prometheus_data:   # Step 35a
+  loki_data:         # Step 35b
+  alloy_data:        # Step 35c
+  tempo_data:        # Step 35d
 
 networks:
   # No explicit driver — compose uses bridge, Swarm uses overlay (default).

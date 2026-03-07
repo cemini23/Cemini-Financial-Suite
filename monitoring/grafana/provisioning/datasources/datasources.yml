@@ -1,0 +1,54 @@
+# ============================================================
+# Cemini Financial Suite — Grafana Datasource Provisioning (Step 35e)
+# Auto-provisioned on Grafana startup.
+# ============================================================
+
+apiVersion: 1
+
+datasources:
+  # --- Prometheus (default) ---
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
+
+  # --- Loki ---
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: false
+    jsonData:
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: '"trace_id":"(\w+)"'
+          name: TraceID
+          url: "$${__value.raw}"
+
+  # --- Tempo ---
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    editable: false
+    uid: tempo
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      tracesToLogs:
+        datasourceUid: loki
+        filterByTraceID: true
+        filterBySpanID: false
+        mapTagNamesEnabled: false
+      tracesToMetrics:
+        datasourceUid: prometheus

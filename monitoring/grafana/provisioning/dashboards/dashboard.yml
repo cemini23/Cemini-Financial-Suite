@@ -1,0 +1,17 @@
+# ============================================================
+# Cemini Financial Suite — Grafana Dashboard Provisioning (Step 35e)
+# Auto-loads JSON dashboards from this directory on startup.
+# ============================================================
+
+apiVersion: 1
+
+providers:
+  - name: "Cemini Observability"
+    orgId: 1
+    folder: "Cemini"
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards/cemini

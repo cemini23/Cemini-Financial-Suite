@@ -1,0 +1,170 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}
+  ],
+  "annotations": {"list": []},
+  "description": "Cemini VPS capacity — CPU, RAM, disk, network (Node Exporter)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 90}
+            ]
+          },
+          "unit": "percent",
+          "max": 100,
+          "min": 0
+        }
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU %",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 90}
+            ]
+          },
+          "unit": "percent",
+          "max": 100,
+          "min": 0
+        }
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "id": 2,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "targets": [
+        {
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))",
+          "legendFormat": "RAM %",
+          "refId": "A"
+        }
+      ],
+      "title": "RAM Usage",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 85}
+            ]
+          },
+          "unit": "percent",
+          "max": 100,
+          "min": 0
+        }
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "id": 3,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "targets": [
+        {
+          "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100)",
+          "legendFormat": "Disk %",
+          "refId": "A"
+        }
+      ],
+      "title": "Disk Usage (/)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "Bps"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 4,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total{device!=\"lo\"}[5m])",
+          "legendFormat": "rx {{device}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m])",
+          "legendFormat": "tx {{device}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Network I/O",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "percent", "max": 100, "min": 0}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 5,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[1m])) * 100)",
+          "legendFormat": "CPU (1m avg)",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Over Time",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["cemini", "system", "node-exporter"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Cemini — System Overview",
+  "uid": "cemini-system-overview",
+  "version": 1
+}

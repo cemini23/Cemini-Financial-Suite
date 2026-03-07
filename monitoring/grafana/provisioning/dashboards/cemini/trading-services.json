@@ -1,0 +1,140 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}
+  ],
+  "annotations": {"list": []},
+  "description": "FastAPI request rate/latency/errors, Redis pub/sub, Postgres query duration",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "reqps"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "sum by(handler) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{handler}}",
+          "refId": "A"
+        }
+      ],
+      "title": "FastAPI — Request Rate (req/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "s"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by(le, handler) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{handler}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by(le, handler) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50 {{handler}}",
+          "refId": "B"
+        }
+      ],
+      "title": "FastAPI — Latency (p50/p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "reqps"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 3,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "sum by(status_code) (rate(http_requests_total{status_code=~\"4..|5..\"}[5m]))",
+          "legendFormat": "HTTP {{status_code}}",
+          "refId": "A"
+        }
+      ],
+      "title": "FastAPI — Error Rate (4xx/5xx)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "ops"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 4,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "rate(redis_commands_total[5m])",
+          "legendFormat": "Redis commands/s",
+          "refId": "A"
+        }
+      ],
+      "title": "Redis — Command Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "id": 5,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "redis_connected_clients",
+          "legendFormat": "Redis clients",
+          "refId": "A"
+        }
+      ],
+      "title": "Redis — Connected Clients",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "s"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "id": 6,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {
+          "expr": "pg_stat_activity_max_tx_duration{datname!~\"template.*\"}",
+          "legendFormat": "Max tx duration {{datname}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Postgres — Max Transaction Duration",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["cemini", "trading", "fastapi", "redis", "postgres"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Cemini — Trading Services",
+  "uid": "cemini-trading-services",
+  "version": 1
+}

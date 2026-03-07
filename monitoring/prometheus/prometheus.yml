@@ -1,0 +1,43 @@
+# ============================================================
+# Cemini Financial Suite — Prometheus Configuration (Step 35a)
+# Scrapes: FastAPI services, Redis, Postgres, Node (host)
+# ============================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: "cemini-prod"
+
+scrape_configs:
+  # --- FastAPI: Kalshi Autopilot (port 8000) ---
+  - job_name: "kalshi_autopilot"
+    static_configs:
+      - targets: ["kalshi_autopilot:8000"]
+    metrics_path: /metrics
+
+  # --- FastAPI: MCP Intelligence Server (port 8002) ---
+  - job_name: "cemini_mcp"
+    static_configs:
+      - targets: ["cemini_mcp:8002"]
+    metrics_path: /metrics
+
+  # --- Redis Exporter ---
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis_exporter:9121"]
+
+  # --- Postgres Exporter ---
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["postgres_exporter:9187"]
+
+  # --- Node Exporter (host metrics) ---
+  - job_name: "node"
+    static_configs:
+      - targets: ["node_exporter:9100"]
+
+  # --- Prometheus self-scrape ---
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
