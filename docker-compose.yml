@@ -658,6 +658,49 @@ services:
         condition: none
 
   # ============================================================
+  # Step 26.1 — Opportunity Discovery Engine (Phase 1)
+  # ============================================================
+  opportunity_screener:
+    build:
+      context: .
+      dockerfile: opportunity_screener/Dockerfile
+    image: cemini-opportunity-screener:latest
+    container_name: opportunity_screener
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quest}
+      - SCREENER_PORT=8003
+    expose:
+      - "8003"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+      - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          memory: 200M
+      update_config:
+        order: start-first
+
+  # ============================================================
   # Step 35 — Observability Stack (LGTM)
   # Start individually: docker compose up -d prometheus loki alloy tempo
   #                                        redis-exporter postgres-exporter node-exporter

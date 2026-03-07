@@ -1,11 +1,12 @@
 \restrict dbmate
 
 -- Dumped from database version 16.11
--- Dumped by pg_dump version 16.11
+-- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -73,6 +74,45 @@ CREATE TABLE public.ai_trade_logs (
     reasoning text,
     "timestamp" timestamp with time zone
 );
+
+
+--
+-- Name: discovery_audit_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.discovery_audit_log (
+    id bigint NOT NULL,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    ticker character varying(20) NOT NULL,
+    action character varying(20) NOT NULL,
+    conviction_before double precision,
+    conviction_after double precision,
+    source_channel character varying(100),
+    extraction_confidence double precision,
+    likelihood_ratio double precision,
+    multi_source_bonus boolean DEFAULT false,
+    payload jsonb,
+    watchlist_size integer
+);
+
+
+--
+-- Name: discovery_audit_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.discovery_audit_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: discovery_audit_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.discovery_audit_log_id_seq OWNED BY public.discovery_audit_log.id;
 
 
 --
@@ -284,6 +324,13 @@ CREATE VIEW public.v_correlation_metrics AS
 
 
 --
+-- Name: discovery_audit_log id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discovery_audit_log ALTER COLUMN id SET DEFAULT nextval('public.discovery_audit_log_id_seq'::regclass);
+
+
+--
 -- Name: geopolitical_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -337,6 +384,27 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: discovery_audit_log_timestamp_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX discovery_audit_log_timestamp_idx ON public.discovery_audit_log USING btree ("timestamp" DESC);
+
+
+--
+-- Name: idx_discovery_audit_action; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_discovery_audit_action ON public.discovery_audit_log USING btree (action, "timestamp" DESC);
+
+
+--
+-- Name: idx_discovery_audit_ticker; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_discovery_audit_ticker ON public.discovery_audit_log USING btree (ticker, "timestamp" DESC);
+
+
+--
 -- Name: idx_geo_logs_cameo; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -370,4 +438,5 @@ CREATE INDEX idx_geo_logs_risk ON public.geopolitical_logs USING btree (risk_sco
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260307000000'),
-    ('20260307000001');
+    ('20260307000001'),
+    ('20260307000003');

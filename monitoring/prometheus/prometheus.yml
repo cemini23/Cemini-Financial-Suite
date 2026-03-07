@@ -37,6 +37,12 @@ scrape_configs:
     static_configs:
       - targets: ["node_exporter:9100"]
 
+  # --- Opportunity Discovery Engine (Step 26.1) ---
+  - job_name: "opportunity_screener"
+    static_configs:
+      - targets: ["opportunity_screener:8003"]
+    metrics_path: /metrics
+
   # --- Prometheus self-scrape ---
   - job_name: "prometheus"
     static_configs:
