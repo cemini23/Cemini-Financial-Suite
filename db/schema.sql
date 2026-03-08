@@ -1,12 +1,11 @@
 \restrict dbmate
 
 -- Dumped from database version 16.11
--- Dumped by pg_dump version 18.2
+-- Dumped by pg_dump version 16.11
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -160,6 +159,43 @@ CREATE SEQUENCE public.geopolitical_logs_id_seq
 --
 
 ALTER SEQUENCE public.geopolitical_logs_id_seq OWNED BY public.geopolitical_logs.id;
+
+
+--
+-- Name: intel_embeddings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.intel_embeddings (
+    id bigint NOT NULL,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    source_type character varying(50) NOT NULL,
+    source_id character varying(255),
+    source_channel character varying(100),
+    content text NOT NULL,
+    embedding public.vector(384) NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    tickers character varying(20)[] DEFAULT '{}'::character varying[],
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: intel_embeddings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.intel_embeddings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: intel_embeddings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.intel_embeddings_id_seq OWNED BY public.intel_embeddings.id;
 
 
 --
@@ -338,6 +374,13 @@ ALTER TABLE ONLY public.geopolitical_logs ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: intel_embeddings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intel_embeddings ALTER COLUMN id SET DEFAULT nextval('public.intel_embeddings_id_seq'::regclass);
+
+
+--
 -- Name: playbook_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -426,6 +469,41 @@ CREATE INDEX idx_geo_logs_risk ON public.geopolitical_logs USING btree (risk_sco
 
 
 --
+-- Name: idx_intel_embeddings_channel; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_intel_embeddings_channel ON public.intel_embeddings USING btree (source_channel, "timestamp" DESC);
+
+
+--
+-- Name: idx_intel_embeddings_hnsw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_intel_embeddings_hnsw ON public.intel_embeddings USING hnsw (embedding public.vector_cosine_ops) WITH (m='16', ef_construction='200');
+
+
+--
+-- Name: idx_intel_embeddings_source; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_intel_embeddings_source ON public.intel_embeddings USING btree (source_type, "timestamp" DESC);
+
+
+--
+-- Name: idx_intel_embeddings_tickers; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_intel_embeddings_tickers ON public.intel_embeddings USING gin (tickers);
+
+
+--
+-- Name: intel_embeddings_timestamp_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX intel_embeddings_timestamp_idx ON public.intel_embeddings USING btree ("timestamp" DESC);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -439,4 +517,5 @@ CREATE INDEX idx_geo_logs_risk ON public.geopolitical_logs USING btree (risk_sco
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260307000000'),
     ('20260307000001'),
-    ('20260307000003');
+    ('20260307000003'),
+    ('20260308000000');
