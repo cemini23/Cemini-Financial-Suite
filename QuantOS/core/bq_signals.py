@@ -25,6 +25,8 @@ class CloudSignalEngine:
         self.project_id = os.getenv("BQ_PROJECT_ID")
         self.dataset = os.getenv("BQ_DATASET_ID")
         self.table = os.getenv("BQ_TABLE_ID", "market_ticks")
+        # D5: Log which table is in use so mis-alignment with DataHarvester is visible at startup.
+        logger.info("☁️  CLOUD ENGINE: BQ read source table = '%s'", self.table)
 
         if not self.project_id or not self.dataset:
             logger.error("❌ BigQuery configuration missing for CloudSignalEngine!")

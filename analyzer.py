@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 import psycopg2
 import redis
@@ -9,26 +11,62 @@ from core.intel_bus import IntelPublisher
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-def send_discord_report(win_rate, mode, total_trades):
-    if not DISCORD_WEBHOOK_URL: return
+def send_discord_report(win_rate: float, mode: str, total_trades: int) -> None:
+    if not DISCORD_WEBHOOK_URL:
+        return
     color = 3066993 if mode == "aggressive" else 15158332
-    payload = {"username": "Cemini Analyzer", "embeds": [{"title": "📊 Performance Report", "description": "The Coach has finished the hourly review.", "color": color, "fields": [{"name": "Current Mode", "value": mode.capitalize(), "inline": True}, {"name": "Win Rate", "value": f"{win_rate:.1%}", "inline": True}, {"name": "Total Trades", "value": str(total_trades), "inline": True}], "footer": {"text": "Cemini Financial Suite | Evolution v1.0"}}]}
-    try: requests.post(DISCORD_WEBHOOK_URL, json=payload)
-    except: pass
+    payload = {
+        "username": "Cemini Analyzer",
+        "embeds": [{
+            "title": "📊 Performance Report",
+            "description": "The Coach has finished the hourly review.",
+            "color": color,
+            "fields": [
+                {"name": "Current Mode", "value": mode.capitalize(), "inline": True},
+                {"name": "Win Rate", "value": f"{win_rate:.1%}", "inline": True},
+                {"name": "Total Trades", "value": str(total_trades), "inline": True},
+            ],
+            "footer": {"text": "Cemini Financial Suite | Evolution v1.0"},
+        }],
+    }
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+    except Exception:
+        pass
 
-def send_heatseeker_alert(symbol, spike_ratio):
-    if not DISCORD_WEBHOOK_URL: return
-    payload = {"username": "Cemini Heatseeker", "content": f"🔥 **HEATSEEKER ALERT**: ${symbol} mention density spiked **{spike_ratio:.1f}x** in the last 15m!\n🧠 Brain Status: Watching for SMA crossover to confirm entry."}
-    try: requests.post(DISCORD_WEBHOOK_URL, json=payload)
-    except: pass
+def send_heatseeker_alert(symbol: str, spike_ratio: float) -> None:
+    if not DISCORD_WEBHOOK_URL:
+        return
+    payload = {
+        "username": "Cemini Heatseeker",
+        "content": (
+            f"🔥 **HEATSEEKER ALERT**: ${symbol} mention density spiked "
+            f"**{spike_ratio:.1f}x** in the last 15m!\n"
+            "🧠 Brain Status: Watching for SMA crossover to confirm entry."
+        ),
+    }
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+    except Exception:
+        pass
 
-def send_decoupling_alert(pair, old_corr, new_corr):
-    if not DISCORD_WEBHOOK_URL: return
-    payload = {"username": "Cemini Matrix", "content": f"⚠️ **DECOUPLING ALERT**: {pair} correlation dropped from **{old_corr:.2f}** to **{new_corr:.2f}**!\n📉 Logic: Market regime shift detected. Risk parameters adjusted."}
-    try: requests.post(DISCORD_WEBHOOK_URL, json=payload)
-    except: pass
+def send_decoupling_alert(pair: str, old_corr: float, new_corr: float) -> None:
+    if not DISCORD_WEBHOOK_URL:
+        return
+    payload = {
+        "username": "Cemini Matrix",
+        "content": (
+            f"⚠️ **DECOUPLING ALERT**: {pair} correlation dropped from "
+            f"**{old_corr:.2f}** to **{new_corr:.2f}**!\n"
+            "📉 Logic: Market regime shift detected. Risk parameters adjusted."
+        ),
+    }
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+    except Exception:
+        pass
 
-def check_heatseeker_spikes(conn):
+def check_heatseeker_spikes(conn: psycopg2.extensions.connection) -> None:
     print("🔥 Analyzer: Checking for Heatseeker spikes...")
     try:
         query = """
@@ -45,7 +83,7 @@ def check_heatseeker_spikes(conn):
         print(f"⚠️ Heatseeker Query Error: {e}")
         conn.rollback()
 
-def improve_logic():
+def improve_logic() -> None:
     print("🧠 The Coach (Analyzer) Initialized...")
     while True:
         try:
@@ -58,7 +96,8 @@ def improve_logic():
             )
             r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, password=os.getenv('REDIS_PASSWORD', 'cemini_redis_2026'), decode_responses=True)
             break
-        except: time.sleep(5)
+        except Exception:
+            time.sleep(5)
 
     last_hourly_review = 0
     last_heat_check = 0
@@ -132,6 +171,19 @@ def improve_logic():
                     if DISCORD_WEBHOOK_URL:
                         requests.post(DISCORD_WEBHOOK_URL, json={"username": "Cemini Coach", "content": f"🎯 **SNIPER_MODE ACTIVE**: Market panic detected (FGI: {float(fgi):.1f})."})
 
+                # D7: Read macro regime from Intel Bus snapshot to constrain strategy_mode.
+                # RED regime → always conservative; YELLOW → cap at conservative/sniper;
+                # GREEN → allow win-rate-driven selection.
+                _snap_raw = r.get("intel:playbook_snapshot")
+                _regime = "GREEN"  # default to permissive when snapshot absent
+                if _snap_raw:
+                    try:
+                        _snap = json.loads(_snap_raw)
+                        _val = _snap.get("value", {})
+                        _regime = (_val.get("regime") or "GREEN").upper()
+                    except Exception:
+                        pass
+
                 mode = "neutral"
                 df = pd.read_sql("SELECT * FROM trade_history", conn)
                 conn.commit()
@@ -139,7 +191,21 @@ def improve_logic():
                     sells = df[df['action'] == 'SELL']
                     wins = len(sells[sells['reason'] != 'SL'])
                     win_rate = wins / len(sells) if len(sells) > 0 else 0.5
-                    mode = "conservative" if win_rate < 0.45 else "aggressive"
+
+                    # Win-rate baseline (unconstrained)
+                    win_mode = "conservative" if win_rate < 0.45 else "aggressive"
+
+                    # Regime override: RED → conservative, YELLOW → cap at conservative
+                    if _regime == "RED":
+                        mode = "conservative"
+                        print(f"⚠️ Coach: regime=RED → forcing strategy_mode=conservative (win_rate={win_rate:.2%})")
+                    elif _regime == "YELLOW" and win_mode == "aggressive":
+                        mode = "conservative"
+                        print(f"⚠️ Coach: regime=YELLOW → capping strategy_mode=conservative (win_rate={win_rate:.2%})")
+                    else:
+                        mode = win_mode
+                        print(f"📊 Coach: regime={_regime} → strategy_mode={mode} (win_rate={win_rate:.2%})")
+
                     r.set("strategy_mode", mode)
                     send_discord_report(win_rate, mode, len(sells))
 

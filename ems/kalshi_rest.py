@@ -10,6 +10,14 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
 class KalshiRESTv2:
+    """
+    D14: Raw Kalshi REST API v2 client used by the EMS signal listener.
+
+    This is the *client* layer — it owns the HTTP session and RSA signing.
+    It does NOT implement the BaseExecutionAdapter interface.
+    For the adapter-pattern wrapper (used by the FIX adapter and EMS router),
+    see core/ems/adapters/kalshi_rest.py → KalshiRESTAdapter.
+    """
     def __init__(self, key_id, private_key_path, environment="demo"):
         self.key_id = key_id
         self.base_url = "https://demo-api.kalshi.co/trade-api/v2" if environment == "demo" else "https://api.elections.kalshi.com/trade-api/v2"

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import time
 import requests
@@ -10,7 +11,22 @@ from beartype import beartype
 from core.ems.base import BaseExecutionAdapter
 from core.schemas.trading_signals import TradingSignal
 
+_logger = logging.getLogger("kalshi_rest_adapter")
+
+# D2: Fallback buying power when API is unreachable (graceful degradation).
+# Position sizing through this adapter should never divide by zero.
+_BUYING_POWER_FALLBACK = 1000.0
+
 class KalshiRESTAdapter(BaseExecutionAdapter):
+    """
+    D14: EMS adapter wrapper around the Kalshi REST API.
+
+    Implements BaseExecutionAdapter (get_buying_power / execute_order).
+    Used by KalshiFIXAdapter as its balance-query delegate and by any
+    EMS router that needs direct Kalshi REST execution.
+    For the standalone raw client (used in ems/main.py signal listener),
+    see ems/kalshi_rest.py → KalshiRESTv2.
+    """
     def __init__(self, key_id: str, private_key_path: str, environment: str = "demo"):
         self.key_id = key_id
         self.private_key_path = private_key_path
@@ -20,13 +36,13 @@ class KalshiRESTAdapter(BaseExecutionAdapter):
 
     def _load_private_key(self):
         if not os.path.exists(self.private_key_path):
-            print(f"⚠️ Kalshi REST: Key not found at {self.private_key_path}")
+            _logger.warning("Kalshi REST: Key not found at %s", self.private_key_path)
             return None
         try:
             with open(self.private_key_path, "rb") as key_file:
                 return serialization.load_pem_private_key(key_file.read(), password=None)
         except Exception as e:
-            print(f"❌ Kalshi REST: Key Load Error: {e}")
+            _logger.error("Kalshi REST: Key Load Error: %s", e)
             return None
 
     def _get_auth_headers(self, method: str, path: str, body: str = ""):
@@ -46,16 +62,31 @@ class KalshiRESTAdapter(BaseExecutionAdapter):
 
     @beartype
     async def get_buying_power(self) -> float:
-        if not self.private_key: return 0.0
+        """Query live Kalshi balance. Falls back to _BUYING_POWER_FALLBACK on any error."""
+        if not self.private_key:
+            _logger.warning(
+                "Kalshi REST: private key not loaded — returning fallback buying power $%.2f",
+                _BUYING_POWER_FALLBACK,
+            )
+            return _BUYING_POWER_FALLBACK
         path = "/portfolio/balance"
         headers = self._get_auth_headers("GET", path)
         try:
             resp = await asyncio.to_thread(requests.get, self.base_url + path, headers=headers)
             if resp.status_code == 200:
-                return float(resp.json().get('balance', 0) / 100.0)
+                return float(resp.json().get("balance", 0) / 100.0)
+            _logger.warning(
+                "Kalshi REST: Balance endpoint returned HTTP %s — falling back to $%.2f",
+                resp.status_code,
+                _BUYING_POWER_FALLBACK,
+            )
         except Exception as e:
-            print(f"❌ Kalshi REST: Balance Error: {e}")
-        return 0.0
+            _logger.warning(
+                "Kalshi REST: Balance API call failed (%s) — falling back to $%.2f",
+                e,
+                _BUYING_POWER_FALLBACK,
+            )
+        return _BUYING_POWER_FALLBACK
 
     @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:

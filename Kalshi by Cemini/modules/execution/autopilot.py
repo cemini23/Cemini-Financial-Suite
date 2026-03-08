@@ -69,13 +69,24 @@ class CeminiAutopilot:
         except Exception as e:
             print(f"⚠️ State restore failed: {e}")
 
+    # D6: TTL for dedup state — trades older than 7 days are irrelevant.
+    _STATE_TTL_SECONDS = 7 * 24 * 3600  # 604 800 s
+
     async def _save_state(self):
-        """Persist executed_trades and blacklist to Redis."""
+        """Persist executed_trades and blacklist to Redis with a 7-day TTL."""
         try:
             r = aioredis.from_url(self._redis_url, decode_responses=True)
             try:
-                await r.set('kalshi:executed_trades', json.dumps(self.executed_trades))
-                await r.set('kalshi:blacklist', json.dumps(self.blacklist))
+                await r.set(
+                    "kalshi:executed_trades",
+                    json.dumps(self.executed_trades),
+                    ex=self._STATE_TTL_SECONDS,
+                )
+                await r.set(
+                    "kalshi:blacklist",
+                    json.dumps(self.blacklist),
+                    ex=self._STATE_TTL_SECONDS,
+                )
             finally:
                 await r.aclose()
         except Exception as e:

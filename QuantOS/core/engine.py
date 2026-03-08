@@ -14,6 +14,17 @@ _repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')
 if _repo_root not in _sys.path:
     _sys.path.append(_repo_root)
 from core.intel_bus import IntelReader
+# D11: Use the repo-level version rather than a hardcoded string.
+try:
+    import sys as _ver_sys
+    import os as _ver_os
+    _ver_root = _ver_os.path.abspath(_ver_os.path.join(_ver_os.path.dirname(__file__), "..", ".."))
+    if _ver_root not in _ver_sys.path:
+        _ver_sys.path.insert(0, _ver_root)
+    from cemini_version import SERVICE_VERSIONS as _SVC_VER
+    _QUANTOS_VERSION = _SVC_VER.get("quantos", "13.1.0")
+except Exception:
+    _QUANTOS_VERSION = "13.1.0"
 
 # Core Imports
 from core import brain
@@ -38,7 +49,7 @@ logger = get_logger("engine")
 
 class TradingEngine:
     def __init__(self):
-        self.version = "13.1.0"
+        self.version = _QUANTOS_VERSION
         self.collector = None
         self.broker = None
         self.is_running = False

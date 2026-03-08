@@ -20,11 +20,18 @@ logger = get_logger("kalshi_adapter")
 class KalshiAdapter(BrokerInterface):
     def __init__(self):
         self.name = "kalshi"
-        # Resolve path from env var so this works in Docker and on any machine
-        self.base_path = os.getenv(
-            "KALSHI_SUITE_PATH",
-            os.path.join(os.path.dirname(__file__), "../../../../Kalshi by Cemini")
-        )
+        # D1: Resolve path from env var so this works in Docker and on any machine.
+        # Set KALSHI_CONFIG_DIR (or legacy KALSHI_SUITE_PATH) to the Kalshi suite root.
+        _env_path = os.getenv("KALSHI_CONFIG_DIR") or os.getenv("KALSHI_SUITE_PATH")
+        if _env_path:
+            self.base_path = _env_path
+        else:
+            self.base_path = os.path.join(os.path.dirname(__file__), "../../../../Kalshi by Cemini")
+            logger.warning(
+                "⚠️ KALSHI_CONFIG_DIR not set — using relative path '%s'. "
+                "Set KALSHI_CONFIG_DIR=/opt/cemini/Kalshi by Cemini in Docker env.",
+                self.base_path,
+            )
 
         # Load from Kalshi's .env specifically, fall back to environment
         try:

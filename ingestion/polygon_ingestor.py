@@ -1,6 +1,8 @@
 # CEMINI FINANCIAL SUITE™
 # Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 # All Rights Reserved.
+from __future__ import annotations
+
 import os
 import time
 import requests
@@ -38,7 +40,7 @@ RATE_LIMIT_SLEEP = 13
 POLL_INTERVAL = 60  # seconds between full cycles
 
 
-def get_db_connection():
+def get_db_connection() -> psycopg2.extensions.connection:
     return psycopg2.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -48,7 +50,7 @@ def get_db_connection():
     )
 
 
-def ensure_table(cursor):
+def ensure_table(cursor: psycopg2.extensions.cursor) -> None:
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS raw_market_ticks (
             id SERIAL PRIMARY KEY,
@@ -61,7 +63,13 @@ def ensure_table(cursor):
     """)
 
 
-def fetch_and_insert(cursor, ticker, display_symbol, from_dt, to_dt):
+def fetch_and_insert(
+    cursor: psycopg2.extensions.cursor,
+    ticker: str,
+    display_symbol: str,
+    from_dt: datetime,
+    to_dt: datetime,
+) -> None:
     """Fetch 1-minute bars from Polygon REST API and insert into DB."""
     from_str = from_dt.strftime("%Y-%m-%d")
     to_str = to_dt.strftime("%Y-%m-%d")
@@ -100,7 +108,7 @@ def fetch_and_insert(cursor, ticker, display_symbol, from_dt, to_dt):
         print(f"WARNING: Error fetching {display_symbol}: {e} — skipping")
 
 
-def _is_market_hours():
+def _is_market_hours() -> bool:
     """True if US equity markets are open (Mon-Fri 9:30-16:00 ET)."""
     now_et = datetime.now(tz=_ET)
     if now_et.weekday() >= 5:  # Saturday=5, Sunday=6
@@ -108,7 +116,7 @@ def _is_market_hours():
     return dt_time(9, 30) <= now_et.time() <= dt_time(16, 0)
 
 
-def run_poll_cycle(cursor, conn):
+def run_poll_cycle(cursor: psycopg2.extensions.cursor, conn: psycopg2.extensions.connection) -> None:
     now = datetime.now(tz=timezone.utc)
     yesterday = now - timedelta(days=1)
 

@@ -41,10 +41,16 @@ def get_db_engine():
 
 def connect_db():
     try:
-        conn = psycopg2.connect(host=DB_HOST, port=5432, database="qdb", user="admin", password="quest")
+        conn = psycopg2.connect(
+            host=DB_HOST, port=5432,
+            database=os.getenv("POSTGRES_DB", "qdb"),
+            user=os.getenv("POSTGRES_USER", "admin"),
+            password=os.getenv("POSTGRES_PASSWORD", "quest"),
+        )
         return conn
     except Exception as e:
-        print(f"❌ Brain DB Connection Failed: {e}"); return None
+        print(f"❌ Brain DB Connection Failed: {e}")
+        return None
 
 def connect_redis():
     try:

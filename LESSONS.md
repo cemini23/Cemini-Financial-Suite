@@ -22,9 +22,10 @@ Commit: fb8e1d6 (Mar 2).
 
 ## Financial Math
 
-**RSI calculation**
-QuantBrain uses SMA-RSI, not standard Wilder's SMMA-RSI. Known issue.
-Do NOT "fix" without explicit approval — downstream models may depend on current behavior.
+**RSI calculation (FIXED — Desloppify Mar 8)**
+QuantBrain.calculate_rsi() now uses Wilder's SMMA (industry standard).
+Seeds with SMA on first `period` deltas, then smooths: avg = (prev*(period-1)+current)/period.
+Matches pandas-ta, TradingView, Wilder 1978. No downstream tests depend on old SMA-RSI.
 
 **Logit-space precision**
 Enforce multiplication-before-division in pricing formulas.
@@ -38,9 +39,10 @@ Use Decimal type for intermediate calculations. Assert guards for NaN/Inf.
 Set to 1min on Postgres. Without this, leaked connections from crashed containers hold locks.
 Fixed Feb 28.
 
-**fresh_start_pending**
-Set True on every QuantOS restart, forces liquidation of all positions.
-By design in paper mode but WILL be dangerous in live trading (Step 10).
+**fresh_start_pending (RESOLVED — Desloppify Mar 8)**
+Now Redis-backed: quantos:fresh_start_requested key. Only fires when explicitly set to "true".
+Use QuantOS/scripts/trigger_fresh_start.py to request a liquidation.
+Normal restarts do NOT trigger liquidation.
 
 **Container filesystem**
 Containers cannot access host .env unless explicitly volume-mounted.
@@ -60,9 +62,9 @@ Always use REDIS_PASSWORD env var. Unauthenticated connections fail silently.
 **intel: namespace**
 All cross-system intelligence uses this prefix. Never publish to bare channel names.
 
-**BigQuery table mismatch**
-DataHarvester writes market_data, CloudSignalEngine reads market_ticks.
-Do not create new tables to "fix" without a migration plan.
+**BigQuery table mismatch (RESOLVED)**
+Both DataHarvester and CloudSignalEngine now use BQ_TABLE_ID env var defaulting to "market_ticks".
+Both log the table name at startup. LESSONS.md entry was outdated from an older version.
 
 ---
 
@@ -166,3 +168,53 @@ Find IP: `docker inspect postgres | grep '"IPAddress"'`
 **dbmate one-shot in docker-compose**
 Use `restart_policy: condition: none` for migration containers so they don't restart
 after completing. In compose mode the container exits; in Swarm it stops (desired state).
+
+---
+
+## Desloppify Pass (Mar 8, 2026)
+
+**D1: KALSHI_CONFIG_DIR env var**
+KalshiAdapter now logs WARNING if neither KALSHI_CONFIG_DIR nor KALSHI_SUITE_PATH is set.
+Both env vars accepted; KALSHI_CONFIG_DIR takes priority.
+
+**D2: KalshiRESTAdapter.get_buying_power() fallback**
+Returns _BUYING_POWER_FALLBACK ($1000) with WARNING log on API failure, not 0.0.
+Prevents $0 buying power from zeroing out position sizing during Kalshi downtime.
+
+**D6: Redis TTL for dedup state**
+autopilot.py _save_state() now sets ex=604800 (7 days) on kalshi:executed_trades and kalshi:blacklist.
+Prevents unbounded Redis growth. Keys expire after 7 days automatically.
+
+**D7: strategy_mode regime gate**
+analyzer.py now reads intel:playbook_snapshot before setting strategy_mode.
+RED regime → always "conservative". YELLOW regime → cap at "conservative" (never "aggressive").
+GREEN → win-rate-based as before. Logs the regime-aware decision.
+
+**D8: Wilder's SMMA RSI**
+QuantBrain.calculate_rsi() now uses correct Wilder smoothing. See Financial Math above.
+
+**D9: Semgrep triage**
+138 total findings. 4 fixed (hardcoded passwords). 7 suppressed with inline comments.
+127 accepted (88 float-for-money false positives + 39 credential defaults).
+See SECURITY_NOTES.md for full breakdown.
+
+**D11: cemini_version.py**
+Single source of truth at /opt/cemini/cemini_version.py.
+SERVICE_VERSIONS dict for per-service versions. TradingEngine imports from it.
+
+**D12: Duplicate import removed**
+ibkr.py submit_order_by_quantity() had `from ib_insync import Stock, MarketOrder, LimitOrder`
+inside method body duplicating the module-level import. Removed.
+
+**D14: KalshiREST class naming**
+Added docstrings distinguishing KalshiRESTv2 (raw client, ems/kalshi_rest.py)
+from KalshiRESTAdapter (BaseExecutionAdapter, core/ems/adapters/kalshi_rest.py).
+
+**Hardcoded passwords fixed**
+macro_harvester.py, social_scraper.py, signal_generator.py, scripts/archive_logs.py
+All now use os.getenv("POSTGRES_PASSWORD", "quest") pattern consistently.
+
+**Containers that need restart after this pass:**
+- `coach_analyzer` — analyzer.py changed (D7, D13, D10 type annotations)
+- `quantos_brain` (if running) — brain.py RSI fix (D8) requires image rebuild
+- No other services touched in ways that affect running behavior.

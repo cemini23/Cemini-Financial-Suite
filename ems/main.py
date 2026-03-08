@@ -1,6 +1,8 @@
 # CEMINI FINANCIAL SUITE™
 # Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 # All Rights Reserved.
+from __future__ import annotations
+
 import asyncio
 import os
 import json
@@ -24,7 +26,7 @@ kalshi_v2 = KalshiRESTv2(
     environment="demo"
 )
 
-def log_to_history(symbol, action, price, reason, rsi=0.0):
+def log_to_history(symbol: str, action: str, price: float, reason: str, rsi: float = 0.0) -> None:
     try:
         conn = psycopg2.connect(
             host=os.getenv('DB_HOST', 'postgres'),
@@ -42,7 +44,7 @@ def log_to_history(symbol, action, price, reason, rsi=0.0):
     except Exception as e:
         print(f"⚠️ EMS: Failed to log to trade_history: {e}")
 
-async def signal_listener():
+async def signal_listener() -> None:
     """Listens to the Redis 'trade_signals' channel and routes to EMS."""
     redis_host = os.getenv("REDIS_HOST", "localhost")
     r = redis.from_url(f"redis://:{os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')}@{redis_host}:6379")
@@ -90,7 +92,7 @@ async def signal_listener():
             except Exception as e:
                 print(f"❌ EMS: Error processing signal: {e}")
 
-async def emergency_listener():
+async def emergency_listener() -> None:
     """Listens for 'emergency_stop' signals."""
     redis_host = os.getenv("REDIS_HOST", "localhost")
     r = redis.from_url(f"redis://:{os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')}@{redis_host}:6379")

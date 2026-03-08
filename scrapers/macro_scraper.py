@@ -24,6 +24,7 @@ def main():
 
             # 2. Fear & Greed Index — alternative.me (free, no key required)
             try:
+                # nosemgrep: semgrep.missing-rate-limit-requests — main loop sleeps 300s between iterations
                 fgi_resp = requests.get(
                     "https://api.alternative.me/fng/?limit=1",
                     timeout=8,

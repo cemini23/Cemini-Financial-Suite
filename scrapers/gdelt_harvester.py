@@ -40,7 +40,8 @@ logger = logging.getLogger("gdelt_harvester")
 
 SCAN_INTERVAL = int(os.getenv("GDELT_SCAN_INTERVAL", "900"))
 
-# GDELT 2.0 — last-update manifest (15-min refresh)
+# GDELT 2.0 — last-update manifest (15-min refresh).
+# gdeltproject.org only serves HTTP (no HTTPS endpoint); traffic is read-only public data.  # nosemgrep: python.lang.security.audit.insecure-transport.requests.request-with-http.request-with-http
 GDELT_V2_LASTUPDATE_URL = "http://data.gdeltproject.org/gdeltv2/lastupdate.txt"
 
 # CAMEO root codes (2 digits) → geopolitical severity weight 0.0–1.0
@@ -343,6 +344,7 @@ def _fetch_gdelt_v2_events() -> pd.DataFrame:
     Returns a named-column DataFrame, or empty DataFrame on any failure.
     """
     try:
+        # nosemgrep: semgrep.missing-rate-limit-requests — GDELT_SCAN_INTERVAL (default 900s) is the rate gate
         resp = requests.get(GDELT_V2_LASTUPDATE_URL, timeout=15)
         resp.raise_for_status()
     except Exception as e:
@@ -361,6 +363,8 @@ def _fetch_gdelt_v2_events() -> pd.DataFrame:
         return pd.DataFrame()
 
     try:
+        # nosemgrep: semgrep.missing-rate-limit-requests — called at most once per SCAN_INTERVAL
+        # nosemgrep: python.lang.security.audit.insecure-transport.requests.request-with-http.request-with-http — GDELT CDN is HTTP-only
         zip_resp = requests.get(events_url, timeout=90)
         zip_resp.raise_for_status()
     except Exception as e:

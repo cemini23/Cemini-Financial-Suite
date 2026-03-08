@@ -107,8 +107,8 @@ class IBKRAdapter(BrokerInterface):
             return {"error": str(e)}
 
     def submit_order_by_quantity(self, symbol: str, qty: float, side: str, order_type: str = "market", limit_price: float = None) -> dict:
+        # D12: Stock/MarketOrder/LimitOrder already imported at module level.
         try:
-            from ib_insync import Stock, MarketOrder, LimitOrder
             contract = Stock(symbol, 'SMART', 'USD')
             self.ib.qualifyContracts(contract)
             

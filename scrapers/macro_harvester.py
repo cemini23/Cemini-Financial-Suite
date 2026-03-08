@@ -18,7 +18,7 @@ def main():
     # Connect to Postgres
     while True:
         try:
-            conn = psycopg2.connect(host=DB_HOST, port=5432, user="admin", password="quest", database="qdb")
+            conn = psycopg2.connect(host=DB_HOST, port=5432, user=os.getenv("POSTGRES_USER", "admin"), password=os.getenv("POSTGRES_PASSWORD", "quest"), database=os.getenv("POSTGRES_DB", "qdb"))
             conn.autocommit = True
             cursor = conn.cursor()
             break
@@ -46,6 +46,7 @@ def main():
 
             # 2. Fear & Greed Index — alternative.me (free, no key required)
             try:
+                # nosemgrep: semgrep.missing-rate-limit-requests — main loop sleeps 300s between iterations
                 fgi_resp = requests.get(
                     "https://api.alternative.me/fng/?limit=1",
                     timeout=8,

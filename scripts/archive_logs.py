@@ -14,7 +14,12 @@ def archive():
         return
 
     try:
-        conn = psycopg2.connect(host=DB_HOST, database='qdb', user='admin', password='quest')
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            database=os.getenv("POSTGRES_DB", "qdb"),
+            user=os.getenv("POSTGRES_USER", "admin"),
+            password=os.getenv("POSTGRES_PASSWORD", "quest"),
+        )
         
         # 1. Archive trade_history
         query = "SELECT * FROM trade_history WHERE timestamp < NOW() - INTERVAL '7 days'"

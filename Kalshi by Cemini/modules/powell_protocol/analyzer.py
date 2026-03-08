@@ -14,6 +14,12 @@ class PowellAnalyzer:
     Module 4: The Powell Protocol (Institutional Upgrade).
     Integrates Live Treasury Yields and Intel Bus sentiment for macro-arbitrage.
     QuantOSBridge HTTP calls replaced with direct IntelReader reads (faster, Docker-native).
+
+    D16: Data-source status:
+      - Treasury yields: LIVE via yfinance (^IRX, ^TNX).
+      - Intel Bus signals: LIVE from Redis (set by analyzer.py + macro_harvester).
+      - Kalshi market prices: LIVE via Kalshi REST API.
+      - No simulated/fake data paths. Graceful degradation returns NO_SIGNAL status.
     """
     def __init__(self):
         self.baseline_probabilities = {
@@ -97,10 +103,11 @@ class PowellAnalyzer:
             "macro_indicators": {
                 "yield_curve": "NORMAL" if yields['inversion'] <= 0 else "INVERTED",
                 "spread_13w_10y": yields['inversion'],
-                "quantos_sentiment": q_sentiment.get('bias', 'NEUTRAL')
+                "quantos_sentiment": q_sentiment.get('bias', 'NEUTRAL'),
             },
             "adjusted_consensus": probs,
             "opportunities": [],
+            "simulated": False,  # D16: real yields + real Intel Bus data
         }
         try:
             async with httpx.AsyncClient() as client:
@@ -152,9 +159,10 @@ class PowellAnalyzer:
             "macro_indicators": {
                 "yield_curve": "INVERTED" if yields['inversion'] > 0 else "NORMAL",
                 "spread_13w_10y": yields['inversion'],
-                "quantos_sentiment": q_sentiment.get('bias', 'NEUTRAL')
+                "quantos_sentiment": q_sentiment.get('bias', 'NEUTRAL'),
             },
             "adjusted_consensus": probs,
             "opportunities": opportunities,
-            "status": "LIVE_SYNC"
+            "status": "LIVE_SYNC",
+            "simulated": False,  # D16: live yfinance + Kalshi data
         }

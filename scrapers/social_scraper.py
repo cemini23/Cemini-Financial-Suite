@@ -239,7 +239,10 @@ def main():
     )
 
     conn = psycopg2.connect(
-        host=DB_HOST, port=5432, user="admin", password="quest", database="qdb"
+        host=DB_HOST, port=5432,
+        user=os.getenv("POSTGRES_USER", "admin"),
+        password=os.getenv("POSTGRES_PASSWORD", "quest"),
+        database=os.getenv("POSTGRES_DB", "qdb"),
     )
     conn.autocommit = True
     cursor = conn.cursor()

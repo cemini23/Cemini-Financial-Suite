@@ -587,6 +587,11 @@ async def publish_signal_to_bus(state: TradingState):
         finally:
             await r.aclose()
 
+    # D15: HOLD/PASS decisions intentionally do not publish to Redis.
+    # The orchestrator only forwards EXECUTE verdicts.  If you are seeing
+    # NO_ACTION_TAKEN unexpectedly, check cio_debate_node thresholds (0.7/0.3).
+    # The LLM-backed debate and Step-7 RL loop are the pending upgrade path.
+    # TODO(step-7): Wire cio_debate_node to real LLM calls + RL policy weighting.
     return {"execution_status": "NO_ACTION_TAKEN"}
 
 

@@ -12,7 +12,7 @@ def run_command(command, description):
         # Run command and capture output
         result = subprocess.run(
             command,
-            shell=True,  # nosec B602
+            shell=True,  # nosec B602  # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true — deployment-only script; commands are hardcoded literals, not user input
             check=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

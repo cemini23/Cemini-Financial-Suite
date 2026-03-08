@@ -23,6 +23,8 @@ class DataHarvester:
         self.project_id = os.getenv("BQ_PROJECT_ID")
         self.dataset_id = os.getenv("BQ_DATASET_ID")
         self.table_id = os.getenv("BQ_TABLE_ID", "market_ticks")
+        # D5: Log which table is in use so mis-alignment with CloudSignalEngine is visible at startup.
+        logger.info("🚜 HARVESTER: BQ write target table = '%s'", self.table_id)
 
         # Service Account Path (if set, Google Client finds it automatically from GOOGLE_APPLICATION_CREDENTIALS)
         self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")

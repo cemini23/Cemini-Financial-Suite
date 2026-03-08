@@ -12,9 +12,19 @@ class GeoPulseMonitor:
     Module 6: Geo-Pulse Intelligence.
     Monitors geopolitical and election volatility from high-fidelity sources.
     Targets: @DeItaone, @AP_Politics
+
+    D16: Data-source status:
+      - X API path (bearer_token present): LIVE — real tweets from monitored accounts.
+      - GDELT Redis fallback: LIVE — real geopolitical events from gdelt_harvester.
+      - NO_SIGNAL path: genuine absence of data, NOT simulated. No fake data is generated.
     """
     def __init__(self):
         self.bearer_token = settings.X_BEARER_TOKEN
+        # D16: Log data-source status at startup so operators know which path is active.
+        if self.bearer_token:
+            print("[INFO] Geo-Pulse: X API bearer token present — live X data path active.")
+        else:
+            print("[WARNING] Geo-Pulse: X_BEARER_TOKEN not set — using GDELT Redis fallback only.")
         self.base_url = "https://api.twitter.com/2"
         self.headers = {"Authorization": f"Bearer {self.bearer_token}"}
         # @DeItaone: 14094191, @AP_Politics: 426742246
@@ -32,13 +42,15 @@ class GeoPulseMonitor:
             print("[WARNING] Geo-Pulse: X_BEARER_TOKEN not configured. Trying GDELT Redis fallback.")
             gdelt_result = self._read_gdelt_fallback()
             if gdelt_result:
+                gdelt_result["simulated"] = False  # D16: GDELT data is real, not simulated
                 return gdelt_result
             return {
                 "module": "GEO-PULSE",
                 "signals": [],
                 "aggregate_impact_score": 0,
                 "status": "NO_SIGNAL",
-                "msg": "X_BEARER_TOKEN not configured and GDELT fallback unavailable"
+                "simulated": False,  # D16: absence of data, not fake data
+                "msg": "X_BEARER_TOKEN not configured and GDELT fallback unavailable",
             }
 
         # Cost tracking
@@ -74,13 +86,15 @@ class GeoPulseMonitor:
             print("[WARNING] Geo-Pulse: No tweets fetched from X API. Trying GDELT Redis fallback.")
             gdelt_result = self._read_gdelt_fallback()
             if gdelt_result:
+                gdelt_result["simulated"] = False  # D16: GDELT data is real
                 return gdelt_result
             return {
                 "module": "GEO-PULSE",
                 "signals": [],
                 "aggregate_impact_score": 0,
                 "status": "NO_SIGNAL",
-                "msg": "X API returned no data and GDELT fallback unavailable"
+                "simulated": False,  # D16: absence of data, not fake data
+                "msg": "X API returned no data and GDELT fallback unavailable",
             }
 
         total_score = 0
@@ -122,7 +136,8 @@ class GeoPulseMonitor:
             "module": "GEO-PULSE",
             "signals": signals,
             "aggregate_impact_score": round(avg_impact, 2),
-            "status": "ACTIVE"
+            "status": "ACTIVE",
+            "simulated": False,  # D16: live X API data
         }
 
     def _read_gdelt_fallback(self):
