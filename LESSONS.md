@@ -218,3 +218,25 @@ All now use os.getenv("POSTGRES_PASSWORD", "quest") pattern consistently.
 - `coach_analyzer` — analyzer.py changed (D7, D13, D10 type annotations)
 - `quantos_brain` (if running) — brain.py RSI fix (D8) requires image rebuild
 - No other services touched in ways that affect running behavior.
+
+---
+
+## FRED API (Step 39)
+
+**FRED sentinel value**
+FRED returns the string `"."` (a literal dot) for missing or unreported observations — NOT Python None or JSON null.
+Always call `_parse_fred_value()` which converts `"."` → `None`. Storing None as NULL in Postgres is correct.
+Files: scrapers/fred_monitor.py
+
+**FRED rate limit**
+Free tier allows 120 requests/minute. With 12 series per poll cycle, use 0.6s sleep between calls to stay conservative.
+Do NOT batch all 12 calls without sleeping — FRED will return 429s.
+
+**FRED monthly series are not stale**
+UNRATE, PAYEMS, PCEPI, CPILFESL, UMCSENT update monthly. Do not raise staleness alerts for these series.
+Weekly series: ICSA, WALCL. Daily: T10Y2Y, T10Y3M, DFF, BAMLH0A0HYM2, VIXCLS.
+
+**FRED TTL must be >= 2× poll interval**
+fred_monitor polls every 900s. Redis TTL must be >= 1800s.
+IntelPublisher.publish() hardcodes TTL=300 — use Redis SET directly with ex=FRED_TTL for fred_monitor.
+This follows the same LESSONS.md Redis TTL mismatch pattern (see: analyzer.py fix, commit fb8e1d6).

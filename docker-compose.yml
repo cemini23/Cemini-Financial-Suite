@@ -322,6 +322,41 @@ services:
       update_config:
         order: start-first
 
+  # --- FRED MACRO DATA MONITOR (Step 39) ---
+  fred_monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    image: cemini-scraper:latest
+    container_name: fred_monitor
+    restart: always
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quest}
+    volumes:
+      - .:/app
+      - ./archives:/mnt/archive
+    command: ["python", "scrapers/fred_monitor.py"]
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+      - data_net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
+
   # --- KALSHI AUTOPILOT (Prediction Market Brain) ---
   kalshi_autopilot:
     build:
