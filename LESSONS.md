@@ -240,3 +240,33 @@ Weekly series: ICSA, WALCL. Daily: T10Y2Y, T10Y3M, DFF, BAMLH0A0HYM2, VIXCLS.
 fred_monitor polls every 900s. Redis TTL must be >= 1800s.
 IntelPublisher.publish() hardcodes TTL=300 — use Redis SET directly with ex=FRED_TTL for fred_monitor.
 This follows the same LESSONS.md Redis TTL mismatch pattern (see: analyzer.py fix, commit fb8e1d6).
+
+---
+
+## Advanced Testing (Step 42)
+
+**Hypothesis with Pydantic v2 — use st.builds() or explicit st.floats()**
+st.builds(MyModel) works but requires all fields to have defaults or explicit strategies.
+Safer: provide explicit strategies via @given(field=st.floats(...)) and construct manually.
+Avoid NaN/Inf in Hypothesis floats — use allow_nan=False, allow_infinity=False.
+
+**Hypothesis HealthCheck.too_slow**
+Suppress with @settings(suppress_health_check=[HealthCheck.too_slow]) for tests
+that build DataFrames or run signal detectors. Otherwise Hypothesis aborts after ~0.2s setup.
+
+**mutmut: target specific files, not full codebase**
+Full-codebase mutation runs take hours. Use --paths-to-mutate for surgical targeting.
+See mutmut_config.py pre_mutation() hook for the allow-list.
+
+**VCR.py: record_mode='none' in CI**
+Never commit cassettes with real API keys. _scrub_request() in conftest.py strips
+api_key= query params before saving. Set VCR_RECORD_MODE=new_episodes locally to record.
+
+**pytest-xdist: -n auto requires stateless tests**
+Tests run in separate worker processes — no shared mutable module state.
+If a test fails with -n auto but passes serially, check for global state mutation
+or file path conflicts. Use tmp_path fixture for temp files.
+
+**pytest --timeout requires pytest-timeout**
+Add pytest-timeout to requirements. CI install: pip install pytest-timeout.
+Without it, --timeout flag causes "unrecognized arguments" error.

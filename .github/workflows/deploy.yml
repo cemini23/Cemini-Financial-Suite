@@ -120,10 +120,31 @@ jobs:
           sarif_file: semgrep.sarif
           category: semgrep-custom
 
-  audit-and-deploy:
-    # Core quality gates: lint + dep audit must pass before secrets scan + deploy.
-    # trivy + semgrep run in parallel but are informational (non-blocking on deploy).
+  test:
+    # Step 42: Run pure test suite (no network/Redis/Postgres needed).
+    # Parallel execution via pytest-xdist (-n auto). Fuzz tests excluded.
     needs: [lint, pip-audit]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: pip install pytest pytest-xdist hypothesis vcrpy numpy pandas scipy pydantic beartype psycopg2-binary redis requests
+
+      - name: Run test suite (parallel, exclude fuzz)
+        run: python3 -m pytest tests/ -n auto -m "not fuzz" -q --timeout=60
+
+  audit-and-deploy:
+    # Core quality gates: lint + dep audit + tests must pass before secrets scan + deploy.
+    # trivy + semgrep run in parallel but are informational (non-blocking on deploy).
+    needs: [lint, pip-audit, test]
     runs-on: ubuntu-latest
 
     steps:

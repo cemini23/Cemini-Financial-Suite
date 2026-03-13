@@ -113,6 +113,12 @@ opentelemetry-instrumentation-psycopg2>=0.45b0
 pytest>=8.0.0
 ruff>=0.4.0
 beartype>=0.18.0
+# Step 42 — Advanced Test Suite
+hypothesis>=6.100.0
+schemathesis>=4.12.0
+vcrpy>=6.0.0
+pytest-xdist>=3.5.0
+mutmut>=3.0.0
 
 # --- Build ---
 pyinstaller>=6.5.0
