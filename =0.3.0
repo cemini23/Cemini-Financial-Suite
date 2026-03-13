@@ -1,0 +1,4 @@
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+semgrep 1.154.0 requires click~=8.1.8, but you have click 8.3.1 which is incompatible.
+fastmcp 3.1.0 requires mcp<2.0,>=1.24.0, but you have mcp 1.23.3 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv

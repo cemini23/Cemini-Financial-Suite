@@ -52,3 +52,14 @@ datasources:
         mapTagNamesEnabled: false
       tracesToMetrics:
         datasourceUid: prometheus
+
+  # --- Alertmanager ---
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    isDefault: false
+    editable: false
+    uid: alertmanager
+    jsonData:
+      implementation: prometheus

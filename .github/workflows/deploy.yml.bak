@@ -1,0 +1,105 @@
+name: Secure PII Audit & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8
+        id: flake8
+        continue-on-error: false
+        run: |
+          flake8 . \
+            --exclude="venv,.venv,venv_new,__pycache__,.git,QuantOS/data/kaggle_import,Kalshi by Cemini/venv,Kalshi by Cemini/venv_new,Cemini-Suite" \
+            --config=.flake8
+
+  audit-and-deploy:
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures TruffleHog can scan the entire history for secrets
+
+      # 1. PII & SECRET AUDIT (The Gatekeeper)
+      # This scans for hardcoded API keys, passwords, and PII
+
+      # For pull requests: scan the diff between PR base and head
+      - name: TruffleHog Secret Scan (pull_request)
+        id: security-pr
+        continue-on-error: false
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified --results=verified,unknown
+        if: github.event_name == 'pull_request'
+
+      # For direct pushes to main: scan only the commits in this push
+      - name: TruffleHog Secret Scan (push)
+        id: security
+        continue-on-error: false
+        uses: trufflesecurity/trufflehog@main
+        with:
+          base: ${{ github.event.before }}
+          head: ${{ github.event.after }}
+          extra_args: --only-verified
+        if: github.event_name == 'push'
+
+      # 2. SECURE DEPLOYMENT VIA SSH
+      # Requires a GitHub secret: DEPLOY_SSH_KEY (private key for root@5.161.53.103)
+      # To set up: Settings → Secrets → Actions → New repository secret
+      #   Name: DEPLOY_SSH_KEY
+      #   Value: contents of your private key (~/.ssh/id_ed25519 or similar)
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '[:space:]' | base64 -d > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 5.161.53.103 >> ~/.ssh/known_hosts
+
+      - name: Update Bot on Server
+        id: deploy
+        continue-on-error: false
+        run: |
+          echo "Deploying Cemini Suite to 5.161.53.103..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes root@5.161.53.103 "
+            set -e &&
+            cd /opt/cemini &&
+            git pull origin main &&
+            [ -f .env ] || { echo 'ERROR: .env missing on server — aborting docker deploy'; exit 1; } &&
+            docker compose down &&
+            docker compose up --build -d &&
+            sleep 10 &&
+            docker compose ps
+          "
+
+      # 3. CI SUMMARY — always runs so you can see results at a glance
+      - name: CI Summary
+        if: always()
+        run: |
+          echo "=== CI RESULTS ==="
+          echo "Security Scan: ${{ steps.security.outcome }}"
+          echo "Deploy:        ${{ steps.deploy.outcome }}"
+          echo ""
+          if [ "${{ steps.deploy.outcome }}" = "failure" ]; then
+            echo "⚠️  Deploy failed — SSH or docker compose error on server"
+          fi
+          if [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            echo "✅ Deployed successfully to root@5.161.53.103:/opt/cemini"
+          fi

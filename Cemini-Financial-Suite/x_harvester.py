@@ -173,6 +173,7 @@ SEED_ACCOUNTS = [
     "shawmakesmagic",    # ai16z, autonomous agent frameworks
     "_kaitoai",          # AI ecosystem adoption metrics
     "cookiedotfun",      # Agent swarm data, inter-agent schemas
+    "tom_doerr",         # AI agents, skills, tools, open-source projects
 ]
 
 

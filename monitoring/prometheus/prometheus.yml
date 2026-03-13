@@ -1,6 +1,7 @@
 # ============================================================
 # Cemini Financial Suite — Prometheus Configuration (Step 35a)
 # Scrapes: FastAPI services, Redis, Postgres, Node (host)
+# Updated Step 35: added alertmanager + alert rules
 # ============================================================
 
 global:
@@ -8,6 +9,14 @@ global:
   evaluation_interval: 15s
   external_labels:
     environment: "cemini-prod"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - "/etc/prometheus/alert_rules.yml"
 
 scrape_configs:
   # --- FastAPI: Kalshi Autopilot (port 8000) ---

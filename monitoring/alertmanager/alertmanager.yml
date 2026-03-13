@@ -1,0 +1,43 @@
+# ============================================================
+# Cemini Financial Suite — Alertmanager Configuration (Step 35)
+# Routes: critical → webhook (brain) + warning → log only
+# ============================================================
+
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'brain_webhook'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'brain_webhook'
+      repeat_interval: 30m
+    - match:
+        severity: warning
+      receiver: 'log_only'
+      repeat_interval: 2h
+
+receivers:
+  - name: 'brain_webhook'
+    webhook_configs:
+      - url: 'http://brain:8080/webhook/alert'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+        max_alerts: 10
+
+  - name: 'log_only'
+    # Warnings are collected but not forwarded — visible in Alertmanager UI only
+
+inhibit_rules:
+  # If a service is down (critical), suppress its error-rate warnings
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['job']

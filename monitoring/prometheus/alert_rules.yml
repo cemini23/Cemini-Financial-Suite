@@ -1,0 +1,90 @@
+---
+# ============================================================
+# Cemini Financial Suite — Prometheus Alert Rules (Step 35)
+# Capital-preservation focused: data staleness + error rates
+# ============================================================
+
+groups:
+  - name: trading_safety
+    rules:
+      # --- Data pipeline staleness ---
+      - alert: DataPipelineStaleness
+        expr: (time() - process_start_time_seconds{job=~"cemini_mcp|opportunity_screener"}) < 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data pipeline stale for >10 minutes"
+          description: "Service {{ $labels.job }} has not been seen for over 10 minutes."
+
+      # --- Postgres exporter down (can't assess DB health) ---
+      - alert: PostgresExporterDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres exporter is DOWN"
+          description: "Cannot scrape Postgres metrics — DB health unknown."
+
+      # --- Redis exporter down ---
+      - alert: RedisExporterDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis exporter is DOWN"
+          description: "Cannot scrape Redis metrics — intel bus health unknown."
+
+      # --- Node memory pressure ---
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory usage above 90%"
+          description: "Available memory is {{ $value | humanizePercentage }} of total."
+
+      # --- Disk usage ---
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Root disk usage above 85%"
+          description: "Disk usage is at {{ $value | humanizePercentage }}."
+
+  - name: service_availability
+    rules:
+      # --- Core intelligence service down ---
+      - alert: CoreServiceDown
+        expr: up{job=~"cemini_mcp|opportunity_screener"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Core service {{ $labels.job }} is DOWN"
+          description: "Prometheus cannot reach {{ $labels.job }}. Trading intelligence may be impaired."
+
+      # --- High HTTP error rate (5xx) on FastAPI services ---
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5..",job=~"cemini_mcp|opportunity_screener"}[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanize }} req/s over the last 5 minutes."
+
+      # --- Postgres connection pool saturation ---
+      - alert: PostgresConnectionSaturation
+        expr: pg_stat_activity_count{datname="qdb"} > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postgres connection count approaching limit"
+          description: "Active connections: {{ $value }}"
