@@ -74,7 +74,7 @@ Three cooperating systems that share intelligence but execute independently:
 ### Docker Services (docker-compose.yml)
 
 <!-- AUTO:SERVICES_TABLE -->
-**30 active containers** (1 disabled)
+**32 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -88,6 +88,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `social_scraper` | cemini-scraper:latest | internal | SCRAPERS (Intelligence) |
 | `macro_scraper` | cemini-scraper:latest | internal |  |
 | `gdelt_harvester` | cemini-scraper:latest | internal | GDELT GEOPOLITICAL HARVESTER |
+| `fred_monitor` | cemini-scraper:latest | internal | FRED MACRO DATA MONITOR (Step 39) |
 | `kalshi_autopilot` | cemini-autopilot:latest | internal | KALSHI AUTOPILOT (Prediction Market Brain) |
 | `rover_scanner` | cemini-autopilot:latest | internal | ROVER SCANNER (Real-time Kalshi WebSocket Market Intelligence) |
 | `ems_executor` | cemini-ems:latest | internal | NODE 5: THE SWORD (Execution) |
@@ -102,6 +103,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `dbmate` | ghcr.io/amacneil/dbmate:2 | internal | In Swarm mode deploy.restart_policy condition: none prevents restart loops. |
 | `opportunity_screener` | cemini-opportunity-screener:latest | 8003 | ============================================================ |
 | `prometheus` | prom/prometheus:latest | 9090 | Prometheus (metrics collector + TSDB) |
+| `alertmanager` | prom/alertmanager:v0.27.0 | 9093 | Alertmanager (alert routing: Prometheus → brain webhook) |
 | `loki` | grafana/loki:latest | 3100 | Loki (log aggregation) |
 | `alloy` | grafana/alloy:latest | 4317, 4318, 12345 | Grafana Alloy (unified collector: logs → Loki, traces → Tempo) |
 | `tempo` | grafana/tempo:latest | 3200, 4317, 4318 | Grafana Tempo (distributed tracing backend) |
@@ -582,7 +584,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-08 23:53 UTC*
+*Auto-generated: 2026-03-13 19:43 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*
