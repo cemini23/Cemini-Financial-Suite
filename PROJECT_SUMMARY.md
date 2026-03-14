@@ -74,7 +74,7 @@ Three cooperating systems that share intelligence but execute independently:
 ### Docker Services (docker-compose.yml)
 
 <!-- AUTO:SERVICES_TABLE -->
-**32 active containers** (1 disabled)
+**33 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -89,6 +89,7 @@ Three cooperating systems that share intelligence but execute independently:
 | `macro_scraper` | cemini-scraper:latest | internal |  |
 | `gdelt_harvester` | cemini-scraper:latest | internal | GDELT GEOPOLITICAL HARVESTER |
 | `fred_monitor` | cemini-scraper:latest | internal | FRED MACRO DATA MONITOR (Step 39) |
+| `edgar_pipeline` | cemini-edgar:latest | internal | EDGAR PIPELINE (SEC EDGAR Direct — Step 40) |
 | `kalshi_autopilot` | cemini-autopilot:latest | internal | KALSHI AUTOPILOT (Prediction Market Brain) |
 | `rover_scanner` | cemini-autopilot:latest | internal | ROVER SCANNER (Real-time Kalshi WebSocket Market Intelligence) |
 | `ems_executor` | cemini-ems:latest | internal | NODE 5: THE SWORD (Execution) |
@@ -584,7 +585,7 @@ Redis is now password-protected via `--requirepass "${REDIS_PASSWORD:-cemini_red
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-14 01:53 UTC*
+*Auto-generated: 2026-03-14 02:18 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 *End of PROJECT_SUMMARY.md*

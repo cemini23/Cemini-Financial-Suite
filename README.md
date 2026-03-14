@@ -276,7 +276,7 @@ The `update-docs`, `trivy`, and `semgrep` jobs run in parallel with `audit-and-d
 ## 🛠️ Components & Ports
 
 <!-- AUTO:SERVICES_TABLE -->
-**32 active containers** (1 disabled)
+**33 active containers** (1 disabled)
 
 | Container | Image/Build | Ports | Notes |
 |-----------|-------------|-------|-------|
@@ -291,6 +291,7 @@ The `update-docs`, `trivy`, and `semgrep` jobs run in parallel with `audit-and-d
 | `macro_scraper` | cemini-scraper:latest | internal |  |
 | `gdelt_harvester` | cemini-scraper:latest | internal | GDELT GEOPOLITICAL HARVESTER |
 | `fred_monitor` | cemini-scraper:latest | internal | FRED MACRO DATA MONITOR (Step 39) |
+| `edgar_pipeline` | cemini-edgar:latest | internal | EDGAR PIPELINE (SEC EDGAR Direct — Step 40) |
 | `kalshi_autopilot` | cemini-autopilot:latest | internal | KALSHI AUTOPILOT (Prediction Market Brain) |
 | `rover_scanner` | cemini-autopilot:latest | internal | ROVER SCANNER (Real-time Kalshi WebSocket Market Intelligence) |
 | `ems_executor` | cemini-ems:latest | internal | NODE 5: THE SWORD (Execution) |
@@ -396,7 +397,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ## 🔬 Test & Security Status
 
 <!-- AUTO:TEST_SUMMARY -->
-**Tests:** 277 passing
+**Tests:** 315 passing
 **pip-audit:** not available locally (check CI)
 **bandit (SAST):** see CI
 **CI gates:** lint → pip-audit → bandit → TruffleHog → deploy (all required)
@@ -405,7 +406,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-14 01:53 UTC*
+*Auto-generated: 2026-03-14 02:18 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**
