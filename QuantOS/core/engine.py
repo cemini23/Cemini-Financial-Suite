@@ -3,6 +3,7 @@ QuantOS™ v13.0.8 - Trading Engine Core
 Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 """
 import asyncio
+import json
 import os
 import sys as _sys
 import threading
@@ -47,6 +48,32 @@ from config.settings_manager import settings_manager
 
 logger = get_logger("engine")
 
+
+# ---------------------------------------------------------------------------
+# A6: Redis-backed executed_trades helpers
+# ---------------------------------------------------------------------------
+
+def _load_executed_trades_from_redis(r) -> dict:
+    """Hydrate executed_trades from Redis on startup."""
+    try:
+        data = r.get("quantos:executed_trades")
+        if data:
+            return json.loads(data)
+    except Exception as exc:
+        logger.warning("Could not load executed_trades from Redis: %s", exc)
+    return {}
+
+
+def _save_trade_to_redis(r, trade_id: str, trade_data: dict, ttl: int = 86400) -> None:
+    """Persist a single trade to Redis (24h TTL)."""
+    try:
+        all_trades = _load_executed_trades_from_redis(r)
+        all_trades[trade_id] = trade_data
+        r.set("quantos:executed_trades", json.dumps(all_trades), ex=ttl)
+    except Exception as exc:
+        logger.warning("Could not persist trade to Redis: %s", exc)
+
+
 class TradingEngine:
     def __init__(self):
         self.version = _QUANTOS_VERSION
@@ -56,6 +83,9 @@ class TradingEngine:
         self.history_cache = {}
         self.last_history_sync = 0
         self.report_sent_today = False
+        # A6: executed_trades is hydrated from Redis on initialize(); empty until then.
+        self.executed_trades: dict = {}
+        self.redis_client = None  # sync redis client set in initialize()
         # fresh_start is triggered via Redis key 'quantos:fresh_start_requested'
         # Run: python QuantOS/scripts/trigger_fresh_start.py to request a liquidation
 
@@ -133,16 +163,19 @@ class TradingEngine:
         logger.info(f"🚀 Trading Engine v{self.version} Initialized")
 
         # Publish current positions to Redis so other services (e.g. Kalshi bridge) can read them
+        # A6: Also initialize the shared sync Redis client and hydrate executed_trades.
         try:
-            import json as _json
             import redis as _sync_redis
             _rh = os.getenv('REDIS_HOST', 'redis')
             _rp = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
             _r = _sync_redis.Redis(host=_rh, port=6379, password=_rp, decode_responses=True)
+            self.redis_client = _r
             positions = ledger.get_open_positions()
-            _r.set('quantos:active_positions', _json.dumps(positions))
-            _r.close()
+            _r.set('quantos:active_positions', json.dumps(positions))
             logger.info(f"📡 Published {len(positions)} active positions to Redis.")
+            # A6: Hydrate executed_trades from Redis so history survives restarts.
+            self.executed_trades = _load_executed_trades_from_redis(_r)
+            logger.info("📦 Hydrated %d executed trades from Redis.", len(self.executed_trades))
         except Exception as _e:
             logger.warning(f"⚠️ Could not publish positions to Redis on startup: {_e}")
 
@@ -276,7 +309,16 @@ class TradingEngine:
 
                     # Execution
                     if not ledger.has_position(ticker):
-                        await execution_engine.execute_buy(ticker, score, indicators, settings_manager.settings)
+                        _bought = await execution_engine.execute_buy(ticker, score, indicators, settings_manager.settings)
+                        if _bought and self.redis_client:
+                            import time as _time
+                            _trade_id = f"{ticker}_{int(_time.time())}"
+                            _save_trade_to_redis(
+                                self.redis_client,
+                                _trade_id,
+                                {"ticker": ticker, "score": score, "ts": _time.time()},
+                            )
+                            self.executed_trades[_trade_id] = _time.time()
                         await asyncio.sleep(1.0) # Rate limit safety
 
                 except Exception as e:

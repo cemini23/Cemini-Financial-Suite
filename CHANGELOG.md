@@ -4,6 +4,33 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 14, 2026] — Known Issue Resolution: C1, C3, L3, L4, A4, A6, S5 + CVaR Test
+
+### Fixed
+- **C1 — Orchestrator Publish Path**: Added `ENABLE_BRAIN_PUBLISH` env var guard to
+  `publish_signal_to_bus()`. Default: disabled (safe). When enabled, EXECUTE verdicts
+  publish to `trade_signals` Redis channel. Returns `PUBLISH_DISABLED` or `SIGNAL_PUBLISHED`.
+- **C3 — Mac-Only Path**: Replaced hardcoded `/Users/claudiobarone/Desktop/QuantOS` in
+  `QuantOS/scripts/verify_install.py` with `os.getenv("QUANTOS_ROOT", <__file__-relative>)`.
+- **L3 — Exposure Check Gate**: `QuantOS/core/execution.py` now checks `HARD_BLOCK_EXPOSURE`
+  env var before blocking. Default: observation mode (log + proceed). Set `=true` to hard-block.
+- **L4 — Regime-Based strategy_mode**: `analyzer.py` now uses `_get_current_regime_from_redis()`
+  + `_regime_to_strategy_mode()` helpers. Regime is primary signal; win-rate for Discord only.
+- **A4 — BQ_TABLE_ID Consistency**: Confirmed both `harvester.py` and `bq_signals.py` already
+  default to `"market_ticks"`. No code change needed.
+- **A6 — Redis-Backed executed_trades**: `QuantOS/core/engine.py` now hydrates `self.executed_trades`
+  from Redis on `initialize()` and persists new trades via `_save_trade_to_redis()` (24h TTL).
+- **S5 — Duplicate ib_insync Imports**: Not applicable — no duplicate imports exist in `router.py`.
+  Only one ib_insync import in codebase (`ibkr.py` line 5, module level).
+- **CVaR Property Test**: Fixed `test_cvar_never_positive` to filter degenerate all-positive
+  return distributions using `assume(any(r < 0 for r in returns))`.
+
+### Stats
+- Tests: 845 → **846 passing** (CVaR test now passes, was 1 failure)
+- VDR tech debt: 7 new resolved entries + 1 test fix; 9 open remaining
+
+---
+
 ## [Mar 14, 2026] — Step 50: Polars Feature Engineering
 
 ### Added

@@ -12,7 +12,7 @@ import json
 import numpy as np
 import pandas as pd
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from trading_playbook.macro_regime import RegimeState, regime_from_prices
@@ -120,7 +120,15 @@ class TestCVaRProperties:
     )
     @settings(max_examples=150, suppress_health_check=[HealthCheck.too_slow])
     def test_cvar_never_positive(self, returns):
-        """CVaR at 99th percentile cannot be a gain — it measures expected tail loss."""
+        """CVaR at 99th percentile cannot be a gain — it measures expected tail loss.
+
+        CVaR is the expected *loss* in the worst tail: it is only meaningful
+        when at least one return is negative.  An all-positive distribution has
+        no loss tail, so CVaR = 0 (min of positive numbers) is trivially correct
+        but not the scenario this invariant tests.  We filter degenerate inputs.
+        """
+        # CVaR measures tail *losses*; skip degenerate all-gains distributions.
+        assume(any(r < 0 for r in returns))
         calc = CVaRCalculator(confidence=0.99)
         cvar = calc.calculate(np.array(returns, dtype=float))
         assert cvar <= 1e-9, f"CVaR={cvar} is positive for returns={returns[:5]}…"

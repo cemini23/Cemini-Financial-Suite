@@ -35,6 +35,13 @@ Trading Playbook — observation-only regime/signal/risk layer
 - C4: Postgres password reads from `POSTGRES_PASSWORD` env var (never hardcode)
 - C5: `SOCIAL_ALPHA_LIVE=true` required for live social signals (default: gated/neutral)
 - C7: `WEATHER_ALPHA_LIVE=true` required for live weather signals (default: gated/neutral)
+- C1 RESOLVED (Mar 14): `ENABLE_BRAIN_PUBLISH=true` activates orchestrator → Redis publish
+- C3 RESOLVED (Mar 14): Mac path in verify_install.py → `QUANTOS_ROOT` env var + `__file__` fallback
+- L3 RESOLVED (Mar 14): `HARD_BLOCK_EXPOSURE=true` env var hard-blocks on exposure breach (default: observe)
+- L4 RESOLVED (Mar 14): strategy_mode now regime-driven from `intel:playbook_snapshot`
+- A4 RESOLVED (Mar 14): BQ_TABLE_ID defaults both `market_ticks` (already consistent)
+- A6 RESOLVED (Mar 14): QuantOS `executed_trades` Redis-backed (24h TTL, hydrate on startup)
+- S5 RESOLVED (Mar 14): No duplicate ib_insync imports found in router.py
 
 ## Networks
 

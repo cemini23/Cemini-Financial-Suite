@@ -3,6 +3,9 @@ from __future__ import annotations
 import pandas as pd
 import psycopg2
 import redis
+import redis as _redis_lib
+import json as _json
+import os as _os
 import time
 import os
 import json
@@ -10,6 +13,39 @@ import requests
 from core.intel_bus import IntelPublisher
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
+
+# ---------------------------------------------------------------------------
+# L4: Regime-based strategy mode helpers
+# ---------------------------------------------------------------------------
+
+def _get_current_regime_from_redis() -> str:
+    """Read regime from intel:playbook_snapshot. Returns 'GREEN', 'YELLOW', 'RED', or 'UNKNOWN'."""
+    try:
+        r = _redis_lib.Redis(
+            host=_os.getenv("REDIS_HOST", "redis"),
+            port=6379,
+            password=_os.getenv("REDIS_PASSWORD", "cemini_redis_2026"),
+            decode_responses=True,
+            socket_connect_timeout=2,
+        )
+        snapshot = r.get("intel:playbook_snapshot")
+        if snapshot:
+            data = _json.loads(snapshot)
+            val = data.get("value", {})
+            regime = (val.get("regime") or "UNKNOWN").upper()
+            return regime
+    except Exception:
+        pass
+    return "UNKNOWN"
+
+
+def _regime_to_strategy_mode(regime: str) -> str:
+    return {
+        "GREEN": "aggressive",
+        "YELLOW": "sniper",
+        "RED": "conservative",
+    }.get(regime, "conservative")
 
 def send_discord_report(win_rate: float, mode: str, total_trades: int) -> None:
     if not DISCORD_WEBHOOK_URL:
@@ -184,30 +220,27 @@ def improve_logic() -> None:
                     except Exception:
                         pass
 
-                mode = "neutral"
+                # L4: strategy_mode is now regime-driven from intel:playbook_snapshot.
+                # The win-rate is still computed for Discord reports but no longer
+                # determines mode — regime is the authoritative signal.
+                regime_key = _get_current_regime_from_redis()
+                # Fall back to the locally-read _regime if Redis helper returns UNKNOWN
+                effective_regime = regime_key if regime_key != "UNKNOWN" else _regime
+                mode = _regime_to_strategy_mode(effective_regime)
+                print(f"📊 Coach: strategy mode set to '{mode}' (regime: {effective_regime})")
+
                 df = pd.read_sql("SELECT * FROM trade_history", conn)
                 conn.commit()
+                win_rate = 0.5
+                total_sells = 0
                 if len(df) > 5:
                     sells = df[df['action'] == 'SELL']
                     wins = len(sells[sells['reason'] != 'SL'])
                     win_rate = wins / len(sells) if len(sells) > 0 else 0.5
+                    total_sells = len(sells)
 
-                    # Win-rate baseline (unconstrained)
-                    win_mode = "conservative" if win_rate < 0.45 else "aggressive"
-
-                    # Regime override: RED → conservative, YELLOW → cap at conservative
-                    if _regime == "RED":
-                        mode = "conservative"
-                        print(f"⚠️ Coach: regime=RED → forcing strategy_mode=conservative (win_rate={win_rate:.2%})")
-                    elif _regime == "YELLOW" and win_mode == "aggressive":
-                        mode = "conservative"
-                        print(f"⚠️ Coach: regime=YELLOW → capping strategy_mode=conservative (win_rate={win_rate:.2%})")
-                    else:
-                        mode = win_mode
-                        print(f"📊 Coach: regime={_regime} → strategy_mode={mode} (win_rate={win_rate:.2%})")
-
-                    r.set("strategy_mode", mode)
-                    send_discord_report(win_rate, mode, len(sells))
+                r.set("strategy_mode", mode)
+                send_discord_report(win_rate, mode, total_sells)
 
                 last_hourly_review = now
             except Exception as e:

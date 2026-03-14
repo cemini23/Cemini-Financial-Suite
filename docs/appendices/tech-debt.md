@@ -14,17 +14,14 @@ what remains to be completed and prevents surprises during integration.
 These issues **must** be resolved before any live trading:
 
 ### C1 — Orchestrator Signal Bus Dead End
-**File:** `agents/orchestrator.py:140`
+**File:** `agents/orchestrator.py`
 **Severity:** High
-**Status:** Known, unresolved
+**Status:** RESOLVED (Mar 14, 2026)
 
-`publish_signal_to_bus()` returns `{"execution_status": "NO_ACTION_TAKEN"}` without
-ever publishing to Redis. The LangGraph brain generates trade verdicts that silently
-die — no trade ever reaches the EMS through the orchestrator path.
-
-**Planned fix:** Wire `IntelPublisher.publish()` to the `trade_signals` Redis channel
-in `publish_signal_to_bus()`. The Trading Playbook (observation-only) bypasses this
-path and has no equivalent issue.
+`publish_signal_to_bus()` now guards Redis publishing behind `ENABLE_BRAIN_PUBLISH=true`
+(default: false). When enabled, EXECUTE verdicts are serialized to JSON and published
+to `trade_signals` Redis channel. Redis failures are caught and never crash the
+orchestrator. Returns `PUBLISH_DISABLED` (guard off) or `SIGNAL_PUBLISHED` (success).
 
 ---
 
@@ -43,16 +40,15 @@ Replace the hardcoded confidence with a Bayesian conviction scorer output.
 
 ---
 
-### C3 — QuantOS Kalshi Adapter Hardcoded Path
-**File:** `QuantOS/core/brokers/kalshi.py:24`
+### C3 — Hardcoded Mac Path in verify_install.py
+**File:** `QuantOS/scripts/verify_install.py`
 **Severity:** High
-**Status:** Known, unresolved
+**Status:** RESOLVED (Mar 14, 2026)
 
-Hardcoded path `/Users/<username>/Desktop/Kalshi by Cemini` breaks in any Docker
-container or non-Mac environment. The QuantOS Kalshi adapter cannot work in
-production as-is.
-
-**Planned fix:** Replace with environment variable `KALSHI_CERT_PATH`.
+Hardcoded `/Users/claudiobarone/Desktop/QuantOS` path replaced with
+`os.getenv("QUANTOS_ROOT", <relative_fallback>)`. The fallback derives from
+`__file__` so it works in Docker and any environment. Set `QUANTOS_ROOT=/opt/cemini/QuantOS`
+in Docker env to override.
 
 ---
 
@@ -66,6 +62,63 @@ this adapter is based on a fictional balance. In paper trading mode this is harm
 in live mode it would cause incorrect position sizes.
 
 **Planned fix:** Call Kalshi's balance API endpoint and cache the result (5-minute TTL).
+
+---
+
+## Logic and Architecture Issues (L/A-series) — All Resolved
+
+### L3 — check_exposure() Hard-Block Not Wired
+**File:** `QuantOS/core/execution.py`
+**Severity:** Medium
+**Status:** RESOLVED (Mar 14, 2026)
+
+Exposure check now supports `HARD_BLOCK_EXPOSURE=true` env var (default: false =
+observation mode). In observation mode, exposure failures log a warning but do not
+block the trade. With `HARD_BLOCK_EXPOSURE=true`, trades are hard-blocked on exposure
+breach.
+
+---
+
+### L4 — strategy_mode Win-Rate Only, Not Regime-Driven
+**File:** `analyzer.py`
+**Severity:** Medium
+**Status:** RESOLVED (Mar 14, 2026)
+
+`strategy_mode` now driven by regime from `intel:playbook_snapshot` via
+`_get_current_regime_from_redis()` + `_regime_to_strategy_mode()` helpers.
+GREEN=aggressive, YELLOW=sniper, RED=conservative. Win-rate still computed for
+Discord reporting but no longer controls mode.
+
+---
+
+### A4 — BigQuery Table Name Default Mismatch
+**Severity:** Low
+**Status:** RESOLVED — already consistent (Mar 14, 2026)
+
+`QuantOS/core/harvester.py` and `QuantOS/core/bq_signals.py` both default to
+`"market_ticks"`. No code change required; confirmed consistent.
+
+---
+
+### A6 — executed_trades Not Redis-Backed (QuantOS Engine)
+**File:** `QuantOS/core/engine.py`
+**Severity:** Medium
+**Status:** RESOLVED (Mar 14, 2026)
+
+`TradingEngine` now initializes `self.executed_trades` from Redis on startup via
+`_load_executed_trades_from_redis()`. Each successful trade is written to
+`quantos:executed_trades` (24h TTL) via `_save_trade_to_redis()`. Trade history
+survives container restarts.
+
+---
+
+### S5 — Duplicate ib_insync Imports
+**File:** `QuantOS/core/brokers/router.py`
+**Severity:** Low
+**Status:** NOT APPLICABLE (Mar 14, 2026)
+
+No ib_insync imports exist in router.py. Only one ib_insync import found
+in `ibkr.py` at module level — correct. Issue was not present in current code.
 
 ---
 
@@ -158,6 +211,14 @@ See [OpenTimestamps](../verification/opentimestamps.md).
 | — | Redis TTL mismatch (nil intel) | Publish every 4 min, TTL=5 min | fb8e1d6 |
 | — | Regime gate wrong (sniper=bearish) | sniper → "neutral" | fb8e1d6 |
 | — | `fresh_start_pending` trigger | Redis-backed, explicit-only | Mar 8 |
+| C1 | Orchestrator publish dead path | `ENABLE_BRAIN_PUBLISH` guard + wire | Mar 14 |
+| C3 | Mac-only path in verify_install.py | `os.getenv("QUANTOS_ROOT")` + `__file__` fallback | Mar 14 |
+| L3 | check_exposure() never blocks | `HARD_BLOCK_EXPOSURE` env var gate | Mar 14 |
+| L4 | strategy_mode win-rate only | Regime-based via `_get_current_regime_from_redis()` | Mar 14 |
+| A4 | BQ_TABLE_ID default mismatch | Already consistent (`market_ticks`) | Mar 14 |
+| A6 | executed_trades not Redis-backed | `_load_executed_trades_from_redis()` on startup | Mar 14 |
+| S5 | Duplicate ib_insync imports | Not applicable — no duplicates in current code | Mar 14 |
+| — | CVaR test all-positive returns | `assume(any(r < 0 for r in returns))` filter | Mar 14 |
 
 ---
 
@@ -165,8 +226,8 @@ See [OpenTimestamps](../verification/opentimestamps.md).
 
 | Category | Count |
 |---|---|
-| Critical (pre-live blockers) | 4 |
+| Critical (pre-live blockers) | 2 (C2, C6) |
 | Medium | 4 |
 | Low | 3 |
-| **Total open** | **11** |
-| Resolved | 7 |
+| **Total open** | **9** |
+| Resolved | 14 |

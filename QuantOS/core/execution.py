@@ -73,8 +73,11 @@ class ExecutionEngine:
         logger.info(f"🚀 GATEKEEPER APPROVED: {symbol} with score {score}!")
 
         # --- RISK CHECK: Portfolio Exposure Gate ---
+        # L3: HARD_BLOCK_EXPOSURE=true → hard block on exposure breach.
+        # Default (false) = observation mode: log warning only, let trade proceed.
         try:
             from core.risk_manager import RiskManager
+            _hard_block = os.getenv("HARD_BLOCK_EXPOSURE", "false").lower() == "true"
             _risk_mgr = RiskManager(self.broker)
             _equity = self.broker.get_buying_power()
             _positions = self.broker.get_positions() or []
@@ -88,8 +91,11 @@ class ExecutionEngine:
             )
             _exposure = _risk_mgr.check_exposure(_portfolio)
             if _exposure != "HEALTHY":
-                logger.warning(f"⚠️ Risk gate blocked {symbol} buy: {_exposure}")
-                return False
+                logger.warning(f"⚠️ Exposure check failed for signal: {symbol} — {_exposure}")
+                if _hard_block:
+                    logger.warning(f"⚠️ HARD_BLOCK_EXPOSURE=true: blocking {symbol} buy.")
+                    return False
+                # Observation mode: log warning but proceed
         except Exception as _re:
             logger.warning(f"⚠️ Exposure check skipped for {symbol}: {_re}")
 

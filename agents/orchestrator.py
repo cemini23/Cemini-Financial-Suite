@@ -477,7 +477,16 @@ async def publish_signal_to_bus(state: TradingState):
     """
     Publishes the validated trade signal to Redis 'trade_signals'.
     Payload now includes price and rsi so EMS/logger can record real values.
+
+    Guarded by ENABLE_BRAIN_PUBLISH env var (default: false).
+    Set ENABLE_BRAIN_PUBLISH=true to activate live publishing.
     """
+    # C1: Safety guard — disabled by default so paper-trading brain never
+    # accidentally fires into the EMS without explicit operator intent.
+    if os.getenv("ENABLE_BRAIN_PUBLISH", "false").lower() != "true":
+        print("🔒 Brain publish disabled (ENABLE_BRAIN_PUBLISH != true). Signal not forwarded.")
+        return {"execution_status": "PUBLISH_DISABLED"}
+
     decision = state.get("final_decision")
 
     if decision and decision.get("verdict") == "EXECUTE":

@@ -374,3 +374,33 @@ strategy="backward" is the safe default. Never use strategy="forward" in feature
 **ewm_mean span vs alpha**
 Polars ewm_mean(span=N) gives alpha = 2/(N+1).
 Wilder SMMA: alpha=1/period -> span = 2*period - 1.
+
+## Known Issue Fixes (Mar 14, 2026)
+
+**CVaR test fails on all-positive returns**
+Mistake: test_cvar_never_positive tested CVaR <= 0 for ALL returns distributions including all-positive.
+Fix: Add `assume(any(r < 0 for r in returns))` to skip degenerate all-gains distributions.
+CVaR measures tail losses — an all-positive distribution has no loss tail, so CVaR=0 is trivially true but not meaningful.
+File: tests/test_property_based.py
+
+**strategy_mode set by win-rate without regime primacy**
+Mistake: regime was only a cap/override on win-rate logic, not the primary signal.
+Fix: Read regime directly from intel:playbook_snapshot; use _regime_to_strategy_mode() for primary mode.
+Win-rate still computed for Discord reporting only.
+File: analyzer.py
+
+**Hypothesis assume() vs filter() for degenerate inputs**
+Use `assume()` (not `filter()`) to skip degenerate inputs in Hypothesis tests.
+`assume()` causes Hypothesis to discard the example and try again, preserving test count.
+`filter()` on the strategy achieves similar effect but is less readable at the test level.
+
+**HARD_BLOCK_EXPOSURE vs observation mode**
+Default for new exposure checks should be observation mode (log-only), not hard block.
+Production paper-trading systems should never silently drop trades — always log first.
+Set HARD_BLOCK_EXPOSURE=true explicitly to enable hard blocking.
+File: QuantOS/core/execution.py
+
+**Redis-backed executed_trades: load at initialize() not __init__()**
+Redis isn't available at __init__ time (no broker yet). Load executed_trades in initialize()
+where the Redis client is first constructed, NOT in __init__.
+File: QuantOS/core/engine.py

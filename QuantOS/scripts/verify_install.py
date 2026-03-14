@@ -2,8 +2,10 @@ import os
 import sys
 import json
 
-# Force Absolute Project Root
-PROJECT_ROOT = "/Users/claudiobarone/Desktop/QuantOS"
+# C3: Use env var or derive from file location — no hardcoded Mac path.
+# Set QUANTOS_ROOT to override (e.g. QUANTOS_ROOT=/opt/cemini/QuantOS in Docker).
+_default_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+PROJECT_ROOT = os.getenv("QUANTOS_ROOT", _default_root)
 os.chdir(PROJECT_ROOT)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)

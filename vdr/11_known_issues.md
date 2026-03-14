@@ -3,7 +3,7 @@
 This register is maintained transparently so buyers can assess remaining work.
 Issues are classified by severity: **Low**, **Medium**, **High**.
 
-Last updated: March 2026
+Last updated: March 14, 2026 — 7 issues resolved (C1, C3, L3, L4, A4, A6, S5)
 
 ---
 
@@ -12,15 +12,14 @@ Last updated: March 2026
 ### C1: Dead Orchestrator Publish Path
 
 **Severity:** Low
-**Status:** Open
+**Status:** RESOLVED (Mar 14, 2026)
 **Affects:** Paper trading — no functional impact
 
-The orchestrator has a signal publish code path that routes to a dead subscriber.
-The EMS receives signals via a different channel (working correctly). The dead path
-is a holdover from an earlier architecture iteration.
-
-**Fix:** Remove the dead publish call in `agents/brain.py`. No trading logic changes
-required.
+`publish_signal_to_bus()` in `agents/orchestrator.py` now guards Redis publishing
+behind `ENABLE_BRAIN_PUBLISH=true` (default: false). When enabled, signals are
+serialized to JSON and published to the `trade_signals` Redis channel. Redis
+failures are caught and do not crash the orchestrator. Returns `PUBLISH_DISABLED`
+when guard is off, `SIGNAL_PUBLISHED` on success.
 
 ---
 
@@ -37,17 +36,15 @@ with a PPO-trained policy that adapts to market conditions.
 
 ---
 
-### C3: macOS-only Kalshi Certificate Path
+### C3: macOS-only Path
 
 **Severity:** Medium
-**Status:** Open
+**Status:** RESOLVED (Mar 14, 2026)
 
-`Kalshi by Cemini/kalshi.py` contains a hardcoded macOS path for the TLS
-certificate (`/Users/.../kalshi.pem`). On Linux/server, this requires a manual
-edit.
-
-**Fix:** Replace with `os.environ.get("KALSHI_CERT_PATH", "kalshi.pem")`. One-line
-change, no logic impact.
+`QuantOS/scripts/verify_install.py` contained a hardcoded `/Users/claudiobarone/Desktop/QuantOS`
+path. Replaced with `os.getenv("QUANTOS_ROOT", <relative_fallback>)` where the
+fallback derives from `__file__` so it works in Docker and any environment.
+Set `QUANTOS_ROOT=/opt/cemini/QuantOS` in Docker env to override.
 
 ---
 
@@ -63,6 +60,71 @@ accidental live orders above $1,000).
 **Fix:** Add `LIVE_TRADING=true` environment variable check. When set, query
 Alpaca `/account` endpoint for real buying power. When unset (default), return
 configured paper trading limit.
+
+---
+
+## Logic Issues (L-series)
+
+### L3: check_exposure() Never Blocks
+
+**Severity:** Medium
+**Status:** RESOLVED (Mar 14, 2026)
+
+`QuantOS/core/execution.py` `execute_buy()` exposure check now supports
+`HARD_BLOCK_EXPOSURE=true` env var. Default is observation mode (log warning,
+let trade proceed). Set `HARD_BLOCK_EXPOSURE=true` to hard-block on exposure
+breach. Previously always returned False on breach with no env override path.
+
+---
+
+### L4: strategy_mode Not Regime-Driven
+
+**Severity:** Medium
+**Status:** RESOLVED (Mar 14, 2026)
+
+`analyzer.py` `strategy_mode` was set by win-rate threshold with regime as a
+cap/override. Now regime is the primary driver via `_get_current_regime_from_redis()`
+and `_regime_to_strategy_mode()` helpers. GREEN=aggressive, YELLOW=sniper,
+RED=conservative. Win-rate still computed for Discord reporting.
+
+---
+
+## Architecture Issues (A-series)
+
+### A4: BigQuery Table Name Defaults
+
+**Severity:** Low
+**Status:** RESOLVED — already consistent (Mar 14, 2026)
+
+`QuantOS/core/harvester.py` and `QuantOS/core/bq_signals.py` both default to
+`"market_ticks"` when `BQ_TABLE_ID` is not set. No code change required; both
+were already aligned. Verified by `tests/test_desloppify.py::TestD5BQTableConsistency`.
+
+---
+
+### A6: executed_trades Not Redis-Backed (QuantOS Engine)
+
+**Severity:** Medium
+**Status:** RESOLVED (Mar 14, 2026)
+
+`QuantOS/core/engine.py` `TradingEngine` now initializes `self.executed_trades`
+from Redis on startup via `_load_executed_trades_from_redis()`. Each successful
+trade is written to `quantos:executed_trades` (24h TTL) via `_save_trade_to_redis()`.
+Trade history now survives container restarts.
+
+---
+
+## Service Issues (S-series)
+
+### S5: Duplicate ib_insync Imports
+
+**Severity:** Low
+**Status:** NOT APPLICABLE (Mar 14, 2026)
+
+`QuantOS/core/brokers/router.py` has no `ib_insync` imports. The only ib_insync
+import exists in `QuantOS/core/brokers/ibkr.py` at module level (line 5) — correct.
+No duplicates found anywhere in the codebase. Issue was already resolved or
+was never present in current code.
 
 ---
 

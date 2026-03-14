@@ -1,32 +1,48 @@
 {
-  "total_commits": 106,
-  "human_commits": 77,
-  "bot_commits": 29,
+  "total_commits": 108,
+  "human_commits": 78,
+  "bot_commits": 30,
   "date_range": {
     "oldest": "2026-03-14",
     "newest": "2026-03-14"
   },
   "author_breakdown": {
-    "Cemini23": 75,
-    "github-actions[bot]": 29,
+    "Cemini23": 76,
+    "github-actions[bot]": 30,
     "cemini23": 1,
     "Cemini Dev": 1
   },
   "human_author_breakdown": {
-    "Cemini23": 75,
+    "Cemini23": 76,
     "cemini23": 1,
     "Cemini Dev": 1
   },
   "primary_author": "Cemini23",
   "commits_by_week": {
-    "2026-W11": 77
+    "2026-W11": 78
   },
   "all_commits": [
+    {
+      "hash": "78779dbd99528917a40425577e9f4212c63ee1a6",
+      "author_name": "Cemini23",
+      "author_email": "261469054+cemini23@users.noreply.github.com",
+      "datetime": "2026-03-14T20:25:01.882476+00:00",
+      "subject": "Step 50: Polars Feature Engineering + CVE Fix",
+      "is_bot": false
+    },
+    {
+      "hash": "44f5cc3075947e8ff69ef4deeba8672142c56077",
+      "author_name": "github-actions[bot]",
+      "author_email": "github-actions[bot]@users.noreply.github.com",
+      "datetime": "2026-03-14T20:25:01.882520+00:00",
+      "subject": "docs: auto-update READMEs [skip ci]",
+      "is_bot": true
+    },
     {
       "hash": "c97891e9802ca44ce1e72282b395d8beade158d4",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912039+00:00",
+      "datetime": "2026-03-14T20:25:01.882527+00:00",
       "subject": "Step 51: License Compliance & Virtual Data Room",
       "is_bot": false
     },
@@ -34,7 +50,7 @@
       "hash": "71132f80036f9a1f70102a5cf9f3aac4bd6984c2",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912083+00:00",
+      "datetime": "2026-03-14T20:25:01.882532+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -42,7 +58,7 @@
       "hash": "e89a4c9ff49672c393b958eebd44cf77973cecfe",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912092+00:00",
+      "datetime": "2026-03-14T20:25:01.882537+00:00",
       "subject": "Step 41: IP Sale Documentation Site (MkDocs-Material)",
       "is_bot": false
     },
@@ -50,7 +66,7 @@
       "hash": "6bada02f05af943f5d4dc476ef45b0accb3bb454",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912097+00:00",
+      "datetime": "2026-03-14T20:25:01.882541+00:00",
       "subject": "Step 40 housekeeping: fix tests, install OTS, docs sweep",
       "is_bot": false
     },
@@ -58,7 +74,7 @@
       "hash": "187abb096d4781a1f1e6d5e3677f9e428fcb4add",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912101+00:00",
+      "datetime": "2026-03-14T20:25:01.882545+00:00",
       "subject": "Step 43: Cryptographic Trade Audit Trail",
       "is_bot": false
     },
@@ -66,7 +82,7 @@
       "hash": "012e1f63034098ccb602005615bd772eedcf5156",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912104+00:00",
+      "datetime": "2026-03-14T20:25:01.882548+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -74,7 +90,7 @@
       "hash": "4e2fbab61c0a5fb476885f9119a77a9fb04c6c4d",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912110+00:00",
+      "datetime": "2026-03-14T20:25:01.882554+00:00",
       "subject": "Step 40: SEC EDGAR Direct Pipeline \u2014 free EDGAR API harvester, Form 4 insider tracking, filing alerts, XBRL fundamentals, ticker-to-CIK mapping, resilience patterns, eliminates sec-api.io dependency",
       "is_bot": false
     },
@@ -82,7 +98,7 @@
       "hash": "0d20483e6aa306a3fbd133cd3197111c324dd00e",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912114+00:00",
+      "datetime": "2026-03-14T20:25:01.882558+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -90,7 +106,7 @@
       "hash": "07fd26d4ecff53b2ae68a07862877bde4abc3811",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912121+00:00",
+      "datetime": "2026-03-14T20:25:01.882564+00:00",
       "subject": "Step 48: Data Pipeline Resilience \u2014 Hishel caching, Aiobreaker circuit breakers, Tenacity retries, APScheduler deterministic scheduling, dead-letter queue, resilience metrics",
       "is_bot": false
     },
@@ -98,7 +114,7 @@
       "hash": "0f3a2635066260443bbf0624915281438af01ad0",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912125+00:00",
+      "datetime": "2026-03-14T20:25:01.882571+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -106,7 +122,7 @@
       "hash": "19c14e4f7be2283280ace72bfa8077a7b0502cb0",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912128+00:00",
+      "datetime": "2026-03-14T20:25:01.882575+00:00",
       "subject": "Step 42: Advanced Test Suite",
       "is_bot": false
     },
@@ -114,7 +130,7 @@
       "hash": "83636e1824d301045b15f6a90e6b6bb496140bfd",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912136+00:00",
+      "datetime": "2026-03-14T20:25:01.882594+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -122,7 +138,7 @@
       "hash": "0c82a312a5087abb32638ff1df570f5c2d0e6b0b",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912139+00:00",
+      "datetime": "2026-03-14T20:25:01.882598+00:00",
       "subject": "Step 39: FRED Macro Data Integration",
       "is_bot": false
     },
@@ -130,7 +146,7 @@
       "hash": "df1062fd5eba5df740ebce03ba934e4a53a522d2",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912143+00:00",
+      "datetime": "2026-03-14T20:25:01.882602+00:00",
       "subject": "Step 35: LGTM observability stack + TimescaleDB CAGG fix + Redis AOF persistence",
       "is_bot": false
     },
@@ -138,7 +154,7 @@
       "hash": "ec144211b00206a575569b00d5e54914c56e6a5c",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912147+00:00",
+      "datetime": "2026-03-14T20:25:01.882605+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -146,7 +162,7 @@
       "hash": "cf1937f85760c0371dea2d51bd1aac89def1e521",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912151+00:00",
+      "datetime": "2026-03-14T20:25:01.882609+00:00",
       "subject": "feat: Step 29 \u2014 Vector DB Intelligence Layer (pgvector)",
       "is_bot": false
     },
@@ -154,7 +170,7 @@
       "hash": "796bba7c81b60f16df981750e5b3b9ce346c8f36",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912154+00:00",
+      "datetime": "2026-03-14T20:25:01.882612+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -162,7 +178,7 @@
       "hash": "a412afa56d93a92decb9da929c5b6caa8d073f6a",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912158+00:00",
+      "datetime": "2026-03-14T20:25:01.882616+00:00",
       "subject": "fix: add beartype to coach_analyzer image (Dockerfile.analyzer)",
       "is_bot": false
     },
@@ -170,7 +186,7 @@
       "hash": "88ae6adf86ca10fcb329d41cd2e2f2d9d77e2d7b",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912161+00:00",
+      "datetime": "2026-03-14T20:25:01.882620+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -178,7 +194,7 @@
       "hash": "61a6430ec706fc42e72e4b762968dea52451b9a8",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912165+00:00",
+      "datetime": "2026-03-14T20:25:01.882624+00:00",
       "subject": "Desloppify Pass \u2014 D1-D18 bug fixes, security triage, style cleanup (Mar 8)",
       "is_bot": false
     },
@@ -186,7 +202,7 @@
       "hash": "fc99a5d0121d4ebb154c259a1210d0d8701bad00",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912168+00:00",
+      "datetime": "2026-03-14T20:25:01.882629+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -194,7 +210,7 @@
       "hash": "9ff12ff153f11e0b7c09fa383e8802b6f98dfc4d",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912172+00:00",
+      "datetime": "2026-03-14T20:25:01.882637+00:00",
       "subject": "Step 26.1: Opportunity Discovery Engine \u2014 Bayesian conviction screener",
       "is_bot": false
     },
@@ -202,7 +218,7 @@
       "hash": "2a5115334b639a49803ee9b38a2cba1dab88224a",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912175+00:00",
+      "datetime": "2026-03-14T20:25:01.882642+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -210,7 +226,7 @@
       "hash": "bc021186e4b03d827f1b2c2da12d8dfffcb05a57",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912181+00:00",
+      "datetime": "2026-03-14T20:25:01.882648+00:00",
       "subject": "feat: Step 35 \u2014 LGTM observability stack (Prometheus + Loki + Alloy + Tempo)",
       "is_bot": false
     },
@@ -218,7 +234,7 @@
       "hash": "9f5a127949eccbf23d02ab1d96d975a85c152583",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912188+00:00",
+      "datetime": "2026-03-14T20:25:01.882652+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -226,7 +242,7 @@
       "hash": "1374ec41115cab087a43d799b78f5ba09e6dbe2d",
       "author_name": "cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912193+00:00",
+      "datetime": "2026-03-14T20:25:01.882656+00:00",
       "subject": "Update licensing contact email in LICENSE file",
       "is_bot": false
     },
@@ -234,7 +250,7 @@
       "hash": "18c380465322eda51c00bdbd6e886d7ad0255284",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912196+00:00",
+      "datetime": "2026-03-14T20:25:01.882659+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -242,7 +258,7 @@
       "hash": "9fe1b9ab397fc0843fcb34967f78254f60c13976",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912200+00:00",
+      "datetime": "2026-03-14T20:25:01.882663+00:00",
       "subject": "Step 4: Kalshi Rewards System \u2014 incentive program tracker + intel:kalshi_rewards",
       "is_bot": false
     },
@@ -250,7 +266,7 @@
       "hash": "b5a125e8e4302a2e541bd02daf7836f10de0948e",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912203+00:00",
+      "datetime": "2026-03-14T20:25:01.882666+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -258,7 +274,7 @@
       "hash": "eb466373bff8cc9b15f12a277c9e73f9750dcbc8",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912207+00:00",
+      "datetime": "2026-03-14T20:25:01.882669+00:00",
       "subject": "docs: Post-Step 34+38 documentation sweep",
       "is_bot": false
     },
@@ -266,7 +282,7 @@
       "hash": "12697f06aff7f6ad6fd53e682f73c40a23e05209",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912211+00:00",
+      "datetime": "2026-03-14T20:25:01.882673+00:00",
       "subject": "Step 38: Schema migration framework \u2014 dbmate baseline + pgvector extension",
       "is_bot": false
     },
@@ -274,7 +290,7 @@
       "hash": "7e2546b8f02eb8e76c50ecd7d35fad31c2531305",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912214+00:00",
+      "datetime": "2026-03-14T20:25:01.882677+00:00",
       "subject": "index on main: 5cd585e docs: auto-update READMEs [skip ci]",
       "is_bot": false
     },
@@ -282,7 +298,7 @@
       "hash": "bef82a4c523661bdc7fdc90edc9e971191c0d310",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912217+00:00",
+      "datetime": "2026-03-14T20:25:01.882680+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -290,7 +306,7 @@
       "hash": "92e18a206d879601c8cea9aa89e0254b382e8a64",
       "author_name": "Cemini Dev",
       "author_email": "dev@cemini.ai",
-      "datetime": "2026-03-14T20:04:19.912221+00:00",
+      "datetime": "2026-03-14T20:25:01.882684+00:00",
       "subject": "Step 34: DevOps Hardening \u2014 Swarm + Portainer + Ruff + Trivy + Semgrep + beartype",
       "is_bot": false
     },
@@ -298,7 +314,7 @@
       "hash": "5cd585e5db86559d87ac02c13e739784fb2d1376",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912224+00:00",
+      "datetime": "2026-03-14T20:25:01.882689+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -306,7 +322,7 @@
       "hash": "998d81697975d54583ffbe747631f96deaded574",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912228+00:00",
+      "datetime": "2026-03-14T20:25:01.882695+00:00",
       "subject": "feat: Step 3 \u2014 Paper Trade Performance Dashboard + brain/ems Dockerfile fixes",
       "is_bot": false
     },
@@ -314,7 +330,7 @@
       "hash": "eb94f4a12eb73ace46ce1463767a725346fd1e57",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912235+00:00",
+      "datetime": "2026-03-14T20:25:01.882698+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -322,7 +338,7 @@
       "hash": "ec09390890bf7f1637fb237836f67746ec5bc572",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912241+00:00",
+      "datetime": "2026-03-14T20:25:01.882702+00:00",
       "subject": "feat: Step 21 \u2014 Custom Cemini SKILL.md (Transferable Architecture Package)",
       "is_bot": false
     },
@@ -330,7 +346,7 @@
       "hash": "13138a93c9b78965663b97ba6c5664ca9e4f26f6",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912244+00:00",
+      "datetime": "2026-03-14T20:25:01.882705+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -338,7 +354,7 @@
       "hash": "d8867b041a6f6b9f7a85e475eda150d837c31f37",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912247+00:00",
+      "datetime": "2026-03-14T20:25:01.882709+00:00",
       "subject": "feat: Step 30 \u2014 Logit Jump-Diffusion contract pricing (Shaw & Dalen 2025)",
       "is_bot": false
     },
@@ -346,7 +362,7 @@
       "hash": "f5b4d67c44eacfc432b8bb4e9409d5c7dcf10e7c",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912251+00:00",
+      "datetime": "2026-03-14T20:25:01.882712+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -354,7 +370,7 @@
       "hash": "428bb9a847d5180593a9db845bae24c012770ddc",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912254+00:00",
+      "datetime": "2026-03-14T20:25:01.882716+00:00",
       "subject": "fix: add nosec B104 to MCP_HOST default \u2014 intentional Docker binding",
       "is_bot": false
     },
@@ -362,7 +378,7 @@
       "hash": "61629a2ac7d04d216dbd1cc92d4b72f08c8b243d",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912258+00:00",
+      "datetime": "2026-03-14T20:25:01.882719+00:00",
       "subject": "feat: Step 27 \u2014 MCP Intelligence Server (cemini_mcp)",
       "is_bot": false
     },
@@ -370,7 +386,7 @@
       "hash": "a8e50cd88b2b10b8be6330503e6b71b448d01799",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912261+00:00",
+      "datetime": "2026-03-14T20:25:01.882723+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -378,7 +394,7 @@
       "hash": "43b3efea556755c63a448b64001d62bf10b1b514",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912264+00:00",
+      "datetime": "2026-03-14T20:25:01.882727+00:00",
       "subject": "Step 28: wire safe_validate/safe_dump at cross-service boundaries",
       "is_bot": false
     },
@@ -386,7 +402,7 @@
       "hash": "1eeba063b5e68fb0df313fd079dac58cd8b1ed0e",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912267+00:00",
+      "datetime": "2026-03-14T20:25:01.882732+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -394,7 +410,7 @@
       "hash": "03bfed6edd7927cde9530034a7d4fcf691ec4aed",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912271+00:00",
+      "datetime": "2026-03-14T20:25:01.882738+00:00",
       "subject": "Step 28: Pydantic v2 data contracts \u2014 cemini_contracts package",
       "is_bot": false
     },
@@ -402,7 +418,7 @@
       "hash": "193caf86718ebe709cc11873a74b735423161c24",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912274+00:00",
+      "datetime": "2026-03-14T20:25:01.882742+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -410,7 +426,7 @@
       "hash": "0ad8c1eed7ff8d4471f29c42ea4c2d74414b7409",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912281+00:00",
+      "datetime": "2026-03-14T20:25:01.882745+00:00",
       "subject": "feat: add 11 seed accounts to x_harvester.py (Step 32)",
       "is_bot": false
     },
@@ -418,7 +434,7 @@
       "hash": "da3106de6af64b706bc0b3849cf79c4aebdf6f63",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912285+00:00",
+      "datetime": "2026-03-14T20:25:01.882751+00:00",
       "subject": "docs+fix: per-service CLAUDE.md + LESSONS.md + safety guards C5/C7 (Step 32+33)",
       "is_bot": false
     },
@@ -426,7 +442,7 @@
       "hash": "fb8e1d613746a54de1d4f0b409b6435cc9748880",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912288+00:00",
+      "datetime": "2026-03-14T20:25:01.882755+00:00",
       "subject": "fix: unlock regime gate \u2014 fix VIX TTL bug and recalibrate RED/YELLOW thresholds",
       "is_bot": false
     },
@@ -434,7 +450,7 @@
       "hash": "e7254208217d8b09c2c3d4298599d65a4dfff7f1",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912293+00:00",
+      "datetime": "2026-03-14T20:25:01.882758+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -442,7 +458,7 @@
       "hash": "15be257779cf1fc5e7911a41aebfe7c0d3e5c6a2",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912297+00:00",
+      "datetime": "2026-03-14T20:25:01.882762+00:00",
       "subject": "fix: remove aligned spacing that failed E221/E272 flake8 checks",
       "is_bot": false
     },
@@ -450,7 +466,7 @@
       "hash": "7cbd72d73738da2fdab74f35a69fda82e88c2427",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912300+00:00",
+      "datetime": "2026-03-14T20:25:01.882765+00:00",
       "subject": "fix+feat: ZeroDivisionError guard and agricultural degree-day metrics",
       "is_bot": false
     },
@@ -458,7 +474,7 @@
       "hash": "f64d3877ceb158cabefeb0def2c5f40261d4d765",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912303+00:00",
+      "datetime": "2026-03-14T20:25:01.882769+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -466,7 +482,7 @@
       "hash": "b649c880beec7a190cc9418772be23f8b316f780",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912307+00:00",
+      "datetime": "2026-03-14T20:25:01.882772+00:00",
       "subject": "feat: add Visual Crossing as 5th weather source (weather_alpha)",
       "is_bot": false
     },
@@ -474,7 +490,7 @@
       "hash": "234b0af09c10ac97fa122eb12bfff93d2876e3d6",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912310+00:00",
+      "datetime": "2026-03-14T20:25:01.882775+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -482,7 +498,7 @@
       "hash": "a584fc8cd455b8a729577cb489cb4120d247372a",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912313+00:00",
+      "datetime": "2026-03-14T20:25:01.882779+00:00",
       "subject": "fix: websockets v14+ compat and eliminate duplicate trade writes",
       "is_bot": false
     },
@@ -490,7 +506,7 @@
       "hash": "95b29f427741e86fdb9bdb57d7f4ebc8d7cb75ea",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912316+00:00",
+      "datetime": "2026-03-14T20:25:01.882784+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -498,7 +514,7 @@
       "hash": "0f634c6d4d7095ad2c318133d54c19a298e71f50",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912320+00:00",
+      "datetime": "2026-03-14T20:25:01.882788+00:00",
       "subject": "Step 16: Kalshi WebSocket Migration \u2014 real-time order book, OI tracking, liquidity detection",
       "is_bot": false
     },
@@ -506,7 +522,7 @@
       "hash": "d0660154c455acad74ee79a9563f7f5a59a7128c",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912325+00:00",
+      "datetime": "2026-03-14T20:25:01.882792+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -514,7 +530,7 @@
       "hash": "5e3169fe462930dcb6ea49082446cc932c05bd78",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912329+00:00",
+      "datetime": "2026-03-14T20:25:01.882796+00:00",
       "subject": "Step 20: Agent Skill Vetting Protocol \u2014 security framework for SKILL.md ecosystem",
       "is_bot": false
     },
@@ -522,7 +538,7 @@
       "hash": "872777396f7041c1a3309407f836c6ee389a75be",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912332+00:00",
+      "datetime": "2026-03-14T20:25:01.882801+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -530,7 +546,7 @@
       "hash": "f129993e5576339dd59d2b1e38aa3ffa8147c364",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912335+00:00",
+      "datetime": "2026-03-14T20:25:01.882805+00:00",
       "subject": "feat: dynamic regime threshold replaces binary trade blocking",
       "is_bot": false
     },
@@ -538,7 +554,7 @@
       "hash": "e91866a4d4733ef72ba84a7d8221ad235533b342",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912351+00:00",
+      "datetime": "2026-03-14T20:25:01.882808+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -546,7 +562,7 @@
       "hash": "e05bbd8236206e009e84b9caf78ec30044f003e7",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912354+00:00",
+      "datetime": "2026-03-14T20:25:01.882812+00:00",
       "subject": "docs: comprehensive README update reflecting current architecture",
       "is_bot": false
     },
@@ -554,7 +570,7 @@
       "hash": "030acf697276169da9df675c6281f39b0c19592b",
       "author_name": "github-actions[bot]",
       "author_email": "github-actions[bot]@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912358+00:00",
+      "datetime": "2026-03-14T20:25:01.882816+00:00",
       "subject": "docs: auto-update READMEs [skip ci]",
       "is_bot": true
     },
@@ -562,7 +578,7 @@
       "hash": "17f5c585fa7c02258fa7cbec6cdee466f9c17a21",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912361+00:00",
+      "datetime": "2026-03-14T20:25:01.882819+00:00",
       "subject": "fix: rename ambiguous variable 'l' in generate_docs.py (E741)",
       "is_bot": false
     },
@@ -570,7 +586,7 @@
       "hash": "65c3183b61f22f11e89e985f8f98cb57ec4614e0",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912364+00:00",
+      "datetime": "2026-03-14T20:25:01.882822+00:00",
       "subject": "docs: refresh auto-generated README timestamps",
       "is_bot": false
     },
@@ -578,7 +594,7 @@
       "hash": "52978cce5cea1750c52776f6a32c00c3a0e44045",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912368+00:00",
+      "datetime": "2026-03-14T20:25:01.882826+00:00",
       "subject": "feat: Step 15 \u2014 auto-documentation GitHub Action",
       "is_bot": false
     },
@@ -586,7 +602,7 @@
       "hash": "309ac970782be43bbb8b98b09677c0b28b4f48ca",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912371+00:00",
+      "datetime": "2026-03-14T20:25:01.882832+00:00",
       "subject": "fix: correct gdelt package name in Dockerfile.scraper",
       "is_bot": false
     },
@@ -594,7 +610,7 @@
       "hash": "526c71c7a457a1062a17afad05d662ddac14eba9",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912374+00:00",
+      "datetime": "2026-03-14T20:25:01.882837+00:00",
       "subject": "fix: correct gdelt package name in requirements.txt",
       "is_bot": false
     },
@@ -602,7 +618,7 @@
       "hash": "ce5e9db28acbe2933c277009e6c10f96c77ef66e",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912380+00:00",
+      "datetime": "2026-03-14T20:25:01.882841+00:00",
       "subject": "feat: Step 14 \u2014 GDELT geopolitical intelligence harvester",
       "is_bot": false
     },
@@ -610,7 +626,7 @@
       "hash": "2022bbeba26dd78569c3bcf355024b8ac08843f3",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912385+00:00",
+      "datetime": "2026-03-14T20:25:01.882844+00:00",
       "subject": "security: segment Docker network into edge/app/data tiers (Step 2)",
       "is_bot": false
     },
@@ -618,7 +634,7 @@
       "hash": "8d75a90042b835bbc83360ca48710a8820161b24",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912389+00:00",
+      "datetime": "2026-03-14T20:25:01.882848+00:00",
       "subject": "docs: sync all documentation with current system state",
       "is_bot": false
     },
@@ -626,7 +642,7 @@
       "hash": "077d9925a011d5854738a92ab099ff1f1dd14841",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912392+00:00",
+      "datetime": "2026-03-14T20:25:01.882854+00:00",
       "subject": "ci: suppress remaining bandit false positives for Python 3.11 CI",
       "is_bot": false
     },
@@ -634,7 +650,7 @@
       "hash": "612989f9493d75ae04d5419d6bc46aa77f85563e",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912396+00:00",
+      "datetime": "2026-03-14T20:25:01.882857+00:00",
       "subject": "ci: add pip-audit and bandit security scanning to pipeline",
       "is_bot": false
     },
@@ -642,7 +658,7 @@
       "hash": "23f955377b00e7fa450db61f308062e5bda3f41c",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912401+00:00",
+      "datetime": "2026-03-14T20:25:01.882868+00:00",
       "subject": "fix: add conn.commit() after pd.read_sql() to prevent idle-in-transaction leaks",
       "is_bot": false
     },
@@ -650,7 +666,7 @@
       "hash": "61ce9a0cf952a25d1d4de07e77a8b0e1750e8df5",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912404+00:00",
+      "datetime": "2026-03-14T20:25:01.882871+00:00",
       "subject": "fix: use created_at for raw_market_ticks freshness queries",
       "is_bot": false
     },
@@ -658,7 +674,7 @@
       "hash": "3c33c5e6e15c171576e5376929b0d074934bd1e5",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912408+00:00",
+      "datetime": "2026-03-14T20:25:01.882875+00:00",
       "subject": "fix: regime gate blocks BUY in YELLOW/RED, disable mock_social by default",
       "is_bot": false
     },
@@ -666,7 +682,7 @@
       "hash": "8505626f7809e312a96923adf2f1fc175ab9fd38",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912411+00:00",
+      "datetime": "2026-03-14T20:25:01.882879+00:00",
       "subject": "fix: playbook_runner ModuleNotFoundError \u2014 use python -m invocation",
       "is_bot": false
     },
@@ -674,7 +690,7 @@
       "hash": "0d9c1b3a1d8a01306600ae618704f07e1cf88a76",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912415+00:00",
+      "datetime": "2026-03-14T20:25:01.882882+00:00",
       "subject": "feat: add trading_playbook layer \u2014 regime classifier, signal catalog, risk engine, kill switch, RL logger",
       "is_bot": false
     },
@@ -682,7 +698,7 @@
       "hash": "14d32f421e8fb8b962b73bfc0f536b451897919c",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912418+00:00",
+      "datetime": "2026-03-14T20:25:01.882886+00:00",
       "subject": "disable signal_generator: redundant with brain service",
       "is_bot": false
     },
@@ -690,7 +706,7 @@
       "hash": "6c2ff8823eea5ac9bfbde0d769e2cf11952cc0bb",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912421+00:00",
+      "datetime": "2026-03-14T20:25:01.882889+00:00",
       "subject": "fix: wire brain analysts to real data, fix signal payload, fix crypto polling",
       "is_bot": false
     },
@@ -698,7 +714,7 @@
       "hash": "b693e47d6b6976ed6deede1c33555b2f9bb3330e",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912424+00:00",
+      "datetime": "2026-03-14T20:25:01.882893+00:00",
       "subject": "feat: deploy Kalshi autopilot, weather alpha, and rover scanner",
       "is_bot": false
     },
@@ -706,7 +722,7 @@
       "hash": "195cbc6e50b5b0cf9a51f023c12e8bb5d270ffb0",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912427+00:00",
+      "datetime": "2026-03-14T20:25:01.882899+00:00",
       "subject": "fix: polygon REST polling, Kalshi PEM, macro feeds, logger overflow",
       "is_bot": false
     },
@@ -714,7 +730,7 @@
       "hash": "bdcf8c93fd12542960b1cf7719c026d83e75b2b9",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912431+00:00",
+      "datetime": "2026-03-14T20:25:01.882902+00:00",
       "subject": "feat: X API tiered account monitoring with budget-aware polling",
       "is_bot": false
     },
@@ -722,7 +738,7 @@
       "hash": "16d154794be58a92777f4ee7d018a7b5376e1890",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912434+00:00",
+      "datetime": "2026-03-14T20:25:01.882905+00:00",
       "subject": "fix: social scraper interval, X API budget $25 cap, env-driven config",
       "is_bot": false
     },
@@ -730,7 +746,7 @@
       "hash": "f1707e7017033ae36abee98b20645dacf99ae10d",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912439+00:00",
+      "datetime": "2026-03-14T20:25:01.882911+00:00",
       "subject": "fix: signal_generator rollback, EMS paper mode, expand watchlist, scraper mock loop",
       "is_bot": false
     },
@@ -738,7 +754,7 @@
       "hash": "be818c63edecb54aa50cac8f3a7841995458e014",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912443+00:00",
+      "datetime": "2026-03-14T20:25:01.882915+00:00",
       "subject": "fix: remove fake data fallbacks, expand Kalshi market scanner, fix lint",
       "is_bot": false
     },
@@ -746,7 +762,7 @@
       "hash": "2f1371975aa3fa07a70e743ce57ea6e5080f53f7",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912448+00:00",
+      "datetime": "2026-03-14T20:25:01.882918+00:00",
       "subject": "fix: remove fake data fallbacks, expand Kalshi market scanner",
       "is_bot": false
     },
@@ -754,7 +770,7 @@
       "hash": "2d274eaba9f7bd216e91eae4b45cdfded7e207b3",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912451+00:00",
+      "datetime": "2026-03-14T20:25:01.882927+00:00",
       "subject": "chore: remove deprecated version field from docker-compose.yml",
       "is_bot": false
     },
@@ -762,7 +778,7 @@
       "hash": "407f3a80177b4aeb9741f13a5f3e55a64f9571aa",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912455+00:00",
+      "datetime": "2026-03-14T20:25:01.882930+00:00",
       "subject": "fix: default mode to 'neutral' before trade_history threshold check",
       "is_bot": false
     },
@@ -770,7 +786,7 @@
       "hash": "586663290408cc36e76ab542ed8714a6d5a29cf3",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912459+00:00",
+      "datetime": "2026-03-14T20:25:01.882934+00:00",
       "subject": "docs: add setup.bat for Windows, revamp README install section",
       "is_bot": false
     },
@@ -778,7 +794,7 @@
       "hash": "6e76a2ec677c51fd07a850528fcc5271b2b61aa4",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912464+00:00",
+      "datetime": "2026-03-14T20:25:01.882937+00:00",
       "subject": "ci: strip whitespace before base64 decode to handle pasted secret formatting",
       "is_bot": false
     },
@@ -786,7 +802,7 @@
       "hash": "bbb10d09b72f5c62b8b0f522b7c359af51b06fe3",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912467+00:00",
+      "datetime": "2026-03-14T20:25:01.882941+00:00",
       "subject": "ci: store SSH key as base64 to survive GitHub secret encoding",
       "is_bot": false
     },
@@ -794,7 +810,7 @@
       "hash": "a6e55f185fdc5b899957dbf506da3bfbe0cf5697",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912470+00:00",
+      "datetime": "2026-03-14T20:25:01.882944+00:00",
       "subject": "ci: fix SSH key write using printf to preserve newlines",
       "is_bot": false
     },
@@ -802,7 +818,7 @@
       "hash": "27278713d92bb5ae4cc3f9df423e3dc6cf7e3095",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912474+00:00",
+      "datetime": "2026-03-14T20:25:01.882948+00:00",
       "subject": "ci: replace GCP deploy with direct SSH to Hetzner server",
       "is_bot": false
     },
@@ -810,7 +826,7 @@
       "hash": "8f64ff5ea4f8800389c0d6059cd369a934089bec",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912477+00:00",
+      "datetime": "2026-03-14T20:25:01.882951+00:00",
       "subject": "fix: resolve dependency conflicts, add setup script, ensure paper mode",
       "is_bot": false
     },
@@ -818,7 +834,7 @@
       "hash": "2437615ac939adc4b6e32e2c439ce85a2d8147ca",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912480+00:00",
+      "datetime": "2026-03-14T20:25:01.882957+00:00",
       "subject": "fix: Redis auth, intel bus, CI hardening, WIF repo name",
       "is_bot": false
     },
@@ -826,7 +842,7 @@
       "hash": "7c53b1dc2685d653ba2e1c12485f77d5c766e7c3",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912484+00:00",
+      "datetime": "2026-03-14T20:25:01.882961+00:00",
       "subject": "Add Intel Bus, paper mode kill switch, and CI/CD deploy fix",
       "is_bot": false
     },
@@ -834,7 +850,7 @@
       "hash": "cae32ffa5dba47d6d05206fadfb248f1f967ecc3",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912487+00:00",
+      "datetime": "2026-03-14T20:25:01.882964+00:00",
       "subject": "Security, portability, and production-stability hardening",
       "is_bot": false
     },
@@ -842,7 +858,7 @@
       "hash": "3dbe84b4ee2904cd01e56599a22b093c11430368",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912492+00:00",
+      "datetime": "2026-03-14T20:25:01.882970+00:00",
       "subject": "Fix flake8 errors: F821 missing import, E999 syntax, E741 ambiguous var",
       "is_bot": false
     },
@@ -850,7 +866,7 @@
       "hash": "1eafb1105be6525fd750975d6861c86d876a524e",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912503+00:00",
+      "datetime": "2026-03-14T20:25:01.882973+00:00",
       "subject": "Add requirements.txt, root .env.example, and expand README install guide",
       "is_bot": false
     },
@@ -858,7 +874,7 @@
       "hash": "179324e6652878c1ada99f2223bd0d57effe0c51",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912509+00:00",
+      "datetime": "2026-03-14T20:25:01.882977+00:00",
       "subject": "Security: install pre-commit with detect-secrets gate",
       "is_bot": false
     },
@@ -866,7 +882,7 @@
       "hash": "549629e01937d735240cf0df1b57c8ec0a72401e",
       "author_name": "Cemini23",
       "author_email": "261469054+cemini23@users.noreply.github.com",
-      "datetime": "2026-03-14T20:04:19.912512+00:00",
+      "datetime": "2026-03-14T20:25:01.882980+00:00",
       "subject": "Initial clean commit \u2014 credential-free history",
       "is_bot": false
     }
