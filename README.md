@@ -358,7 +358,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ## 🗺️ Development Roadmap
 
 <!-- AUTO:ROADMAP_STATUS -->
-**Progress: 27/34 steps complete (79%)**
+**Progress: 26/33 steps complete (78%)**
 
 | Step | Name | Status |
 |------|------|--------|
@@ -403,16 +403,16 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ## 🔬 Test & Security Status
 
 <!-- AUTO:TEST_SUMMARY -->
-**Tests:** 778 passing
+**Tests:** 339 passing
 **pip-audit:** not available locally (check CI)
-**Ruff (SAST):** ruff check . exits 0
-**CI gates:** lint(ruff) → pip-audit → [trivy + semgrep + deploy] (parallel)
+**bandit (SAST):** see CI
+**CI gates:** lint → pip-audit → bandit → TruffleHog → deploy (all required)
 <!-- /AUTO:TEST_SUMMARY -->
 
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-14 02:18 UTC*
+*Auto-generated: 2026-03-14 19:23 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**

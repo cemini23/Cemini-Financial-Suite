@@ -1,7 +1,7 @@
 # Kalshi by Cemini — Prediction Market Engine
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-14 02:18 UTC*
+*Auto-generated: 2026-03-14 19:23 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 ## Overview
