@@ -133,3 +133,15 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
 ## Token Efficiency
 Always use RTK (installed globally) to compress verbose CLI output before sending to context.
 RTK reduces directory trees, error logs, git diffs, and JSON payloads by 60-90%.
+
+## Roadmap Auto-Update Rule
+
+**MANDATORY on every step commit:** Update `docs/ROADMAP.md` to reflect:
+1. Step status change (READY → ✓ DONE with date and commit hash)
+2. New test count and failure count in header Progress line
+3. Any new Known Issues resolved or discovered
+4. Maintenance Log entry: date, step name, commit hash, test count delta
+5. Update "Progress" line in header (X of 51 steps, N tests, N failures)
+
+`docs/ROADMAP.md` is the canonical roadmap. The Google Doc is deprecated.
+Do NOT skip this update — it is part of the Definition of Done for every step.

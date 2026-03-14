@@ -404,3 +404,11 @@ File: QuantOS/core/execution.py
 Redis isn't available at __init__ time (no broker yet). Load executed_trades in initialize()
 where the Redis client is first constructed, NOT in __init__.
 File: QuantOS/core/engine.py
+
+---
+
+## Roadmap Location
+
+The canonical roadmap moved to `docs/ROADMAP.md` on March 14, 2026.
+Update it on every step commit per the rule in CLAUDE.md.
+Google Doc is deprecated — do not maintain it going forward.

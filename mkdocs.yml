@@ -51,6 +51,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Roadmap: ROADMAP.md
   - Architecture:
     - System Overview: architecture/overview.md
     - Docker Services: architecture/services.md
