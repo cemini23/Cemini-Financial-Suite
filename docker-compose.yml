@@ -357,6 +357,39 @@ services:
       update_config:
         order: start-first
 
+  # --- EDGAR PIPELINE (SEC EDGAR Direct — Step 40) ---
+  edgar_pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.edgar
+    image: cemini-edgar:latest
+    container_name: edgar_pipeline
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-cemini_redis_2026}
+      - DB_HOST=postgres
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=quest
+      - POSTGRES_DB=qdb
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+      - data_net
+    command: ["python3", "scrapers/edgar/edgar_harvester.py"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        order: start-first
+
   # --- KALSHI AUTOPILOT (Prediction Market Brain) ---
   kalshi_autopilot:
     build:

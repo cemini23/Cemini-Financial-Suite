@@ -101,6 +101,36 @@ CREATE VIEW _timescaledb_internal._direct_view_6 AS
 
 
 --
+-- Name: discovery_audit_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.discovery_audit_log (
+    id bigint NOT NULL,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    ticker character varying(20) NOT NULL,
+    action character varying(20) NOT NULL,
+    conviction_before double precision,
+    conviction_after double precision,
+    source_channel character varying(100),
+    extraction_confidence double precision,
+    likelihood_ratio double precision,
+    multi_source_bonus boolean DEFAULT false,
+    payload jsonb,
+    watchlist_size integer
+);
+
+
+--
+-- Name: _hyper_1_185_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal._hyper_1_185_chunk (
+    CONSTRAINT constraint_174 CHECK ((("timestamp" >= '2026-03-12 00:00:00+00'::timestamp with time zone) AND ("timestamp" < '2026-03-19 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (public.discovery_audit_log);
+
+
+--
 -- Name: intel_embeddings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2227,26 +2257,6 @@ CREATE TABLE public.ai_trade_logs (
 
 
 --
--- Name: discovery_audit_log; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.discovery_audit_log (
-    id bigint NOT NULL,
-    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
-    ticker character varying(20) NOT NULL,
-    action character varying(20) NOT NULL,
-    conviction_before double precision,
-    conviction_after double precision,
-    source_channel character varying(100),
-    extraction_confidence double precision,
-    likelihood_ratio double precision,
-    multi_source_bonus boolean DEFAULT false,
-    payload jsonb,
-    watchlist_size integer
-);
-
-
---
 -- Name: discovery_audit_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2263,6 +2273,78 @@ CREATE SEQUENCE public.discovery_audit_log_id_seq
 --
 
 ALTER SEQUENCE public.discovery_audit_log_id_seq OWNED BY public.discovery_audit_log.id;
+
+
+--
+-- Name: edgar_filings_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.edgar_filings_log (
+    id bigint NOT NULL,
+    ticker text NOT NULL,
+    cik text NOT NULL,
+    form_type text NOT NULL,
+    accession_number text NOT NULL,
+    filed_at timestamp with time zone,
+    filing_url text,
+    processed_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: edgar_filings_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.edgar_filings_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: edgar_filings_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.edgar_filings_log_id_seq OWNED BY public.edgar_filings_log.id;
+
+
+--
+-- Name: edgar_fundamentals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.edgar_fundamentals (
+    id bigint NOT NULL,
+    ticker text NOT NULL,
+    cik text NOT NULL,
+    period text NOT NULL,
+    revenue numeric,
+    net_income numeric,
+    eps numeric,
+    total_assets numeric,
+    total_liabilities numeric,
+    fetched_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: edgar_fundamentals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.edgar_fundamentals_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: edgar_fundamentals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.edgar_fundamentals_id_seq OWNED BY public.edgar_fundamentals.id;
 
 
 --
@@ -2558,6 +2640,27 @@ CREATE VIEW public.v_correlation_metrics AS
     round((coefficient)::numeric, 4) AS coefficient,
     data_points
    FROM corr_calc;
+
+
+--
+-- Name: _hyper_1_185_chunk id; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_185_chunk ALTER COLUMN id SET DEFAULT nextval('public.discovery_audit_log_id_seq'::regclass);
+
+
+--
+-- Name: _hyper_1_185_chunk timestamp; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_185_chunk ALTER COLUMN "timestamp" SET DEFAULT now();
+
+
+--
+-- Name: _hyper_1_185_chunk multi_source_bonus; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_185_chunk ALTER COLUMN multi_source_bonus SET DEFAULT false;
 
 
 --
@@ -8189,6 +8292,20 @@ ALTER TABLE ONLY public.discovery_audit_log ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: edgar_filings_log id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_filings_log ALTER COLUMN id SET DEFAULT nextval('public.edgar_filings_log_id_seq'::regclass);
+
+
+--
+-- Name: edgar_fundamentals id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_fundamentals ALTER COLUMN id SET DEFAULT nextval('public.edgar_fundamentals_id_seq'::regclass);
+
+
+--
 -- Name: fred_observations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8228,6 +8345,38 @@ ALTER TABLE ONLY public.playbook_logs ALTER COLUMN id SET DEFAULT nextval('publi
 --
 
 ALTER TABLE ONLY public.raw_market_ticks ALTER COLUMN id SET DEFAULT nextval('public.raw_market_ticks_id_seq'::regclass);
+
+
+--
+-- Name: edgar_filings_log edgar_filings_log_accession_number_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_filings_log
+    ADD CONSTRAINT edgar_filings_log_accession_number_key UNIQUE (accession_number);
+
+
+--
+-- Name: edgar_filings_log edgar_filings_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_filings_log
+    ADD CONSTRAINT edgar_filings_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: edgar_fundamentals edgar_fundamentals_cik_period_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_fundamentals
+    ADD CONSTRAINT edgar_fundamentals_cik_period_key UNIQUE (cik, period);
+
+
+--
+-- Name: edgar_fundamentals edgar_fundamentals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_fundamentals
+    ADD CONSTRAINT edgar_fundamentals_pkey PRIMARY KEY (id);
 
 
 --
@@ -8276,6 +8425,27 @@ ALTER TABLE ONLY public.playbook_logs
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: _hyper_1_185_chunk_discovery_audit_log_timestamp_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_1_185_chunk_discovery_audit_log_timestamp_idx ON _timescaledb_internal._hyper_1_185_chunk USING btree ("timestamp" DESC);
+
+
+--
+-- Name: _hyper_1_185_chunk_idx_discovery_audit_action; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_1_185_chunk_idx_discovery_audit_action ON _timescaledb_internal._hyper_1_185_chunk USING btree (action, "timestamp" DESC);
+
+
+--
+-- Name: _hyper_1_185_chunk_idx_discovery_audit_ticker; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_1_185_chunk_idx_discovery_audit_ticker ON _timescaledb_internal._hyper_1_185_chunk USING btree (ticker, "timestamp" DESC);
 
 
 --
@@ -14040,6 +14210,41 @@ CREATE INDEX idx_discovery_audit_ticker ON public.discovery_audit_log USING btre
 
 
 --
+-- Name: idx_edgar_filings_filed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_filings_filed ON public.edgar_filings_log USING btree (filed_at);
+
+
+--
+-- Name: idx_edgar_filings_form; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_filings_form ON public.edgar_filings_log USING btree (form_type);
+
+
+--
+-- Name: idx_edgar_filings_ticker; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_filings_ticker ON public.edgar_filings_log USING btree (ticker);
+
+
+--
+-- Name: idx_edgar_fundamentals_period; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_fundamentals_period ON public.edgar_fundamentals USING btree (period);
+
+
+--
+-- Name: idx_edgar_fundamentals_ticker; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_fundamentals_ticker ON public.edgar_fundamentals USING btree (ticker);
+
+
+--
 -- Name: idx_fred_obs_series_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -14134,4 +14339,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260308000000'),
     ('20260313000000'),
     ('20260313000001'),
-    ('20260314000000');
+    ('20260314000000'),
+    ('20260314130000');
