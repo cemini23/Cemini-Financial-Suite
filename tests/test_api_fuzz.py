@@ -33,7 +33,7 @@ def _try_load_schema(url: str):
     if not HAS_SCHEMATHESIS:
         return None
     try:
-        return schemathesis.from_url(url, validate_schema=False)
+        return schemathesis.openapi.from_url(url, validate_schema=False)
     except Exception:
         return None
 
@@ -112,7 +112,7 @@ def test_schemathesis_version_supports_from_url():
     """Schemathesis must expose from_url() for URL-based schema loading."""
     if not HAS_SCHEMATHESIS:
         pytest.skip("schemathesis not installed")
-    assert hasattr(schemathesis, "from_url"), (
-        f"schemathesis {_SCHEMATHESIS_VERSION} missing from_url() — "
+    assert hasattr(schemathesis.openapi, "from_url"), (
+        f"schemathesis {_SCHEMATHESIS_VERSION} missing openapi.from_url() — "
         "upgrade to schemathesis>=4.0"
     )

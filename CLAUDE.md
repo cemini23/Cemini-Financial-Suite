@@ -46,11 +46,13 @@ Trading Playbook — observation-only regime/signal/risk layer
 
 ## Completed Steps
 
-Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 6 (Equity Ticks),
-14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 20 (Skill Vetting), 21 (SKILL.md),
-24 (Visual Crossing Weather), 27 (MCP Server), 28 (Pydantic Contracts), 30 (Logit Pricing),
-32 (CLAUDE.md), 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 38 (Schema Migrations),
-43 (Cryptographic Audit Trail).
+Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewards),
+6 (Equity Ticks), 14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 20 (Skill Vetting),
+21 (SKILL.md), 24 (Visual Crossing Weather), 26 (Opportunity Discovery), 27 (MCP Server),
+28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
+33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
+38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 42 (Advanced Testing),
+43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience).
 
 ## Step 43: Cryptographic Audit Trail
 
@@ -75,7 +77,7 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 6 (Equity Ticks
 
 - All tests in `/opt/cemini/tests/` — pure, no network/Redis/Postgres
 - Run: `pytest tests/ -v && ruff check .`
-- Current count: 752 tests passing (66 new in test_audit_trail.py), ruff clean
+- Current count: 754 tests passing (66 new in test_audit_trail.py + 2 bug fixes), ruff clean
 
 ## Token Efficiency
 Always use RTK (installed globally) to compress verbose CLI output before sending to context.

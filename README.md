@@ -3,7 +3,7 @@
 ![Multi-Architecture Ready](https://img.shields.io/badge/Multi--Architecture-amd64%20%7C%20arm64-blue)
 ![Cross-Platform](https://img.shields.io/badge/Cross--Platform-Windows%20%7C%20Linux%20%7C%20macOS-green)
 
-The **Cemini Financial Suite** is a private-use algorithmic trading platform built on a modular, Dockerized architecture. It integrates real-time market data ingestion, AI-driven signal generation, multi-broker execution, and a risk-gated trading playbook into a single deployable stack.
+The **Cemini Financial Suite** is a private-use algorithmic trading platform built on a modular, Dockerized architecture. It integrates real-time market data ingestion, AI-driven signal generation, multi-broker execution, a risk-gated trading playbook, and a cryptographic audit trail into a single deployable stack on a single Hetzner VPS.
 
 **Current phase:** Data accumulation / paper mode. No live equity or crypto orders are placed. Kalshi prediction market activity is active. All broker adapters default to paper mode.
 
@@ -357,7 +357,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ## 🗺️ Development Roadmap
 
 <!-- AUTO:ROADMAP_STATUS -->
-**Progress: 20/27 steps complete (74%)**
+**Progress: 27/34 steps complete (79%)**
 
 | Step | Name | Status |
 |------|------|--------|
@@ -383,12 +383,18 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 | 26 | Opportunity Discovery Engine | ✅ Complete (Mar 7, 2026) |
 | 27 | MCP Intelligence Server | ✅ Complete (Mar 6, 2026) |
 | 28 | Pydantic Data Contracts | ✅ Complete (Mar 6, 2026) |
+| 29 | Vector DB Intelligence Layer | ✅ Complete (Mar 8, 2026) |
 | 30 | Logit Jump-Diffusion Pricing | ✅ Complete (Mar 6, 2026) |
 | 32 | Per-service CLAUDE.md + LESSONS.md | ✅ Complete (Mar 6, 2026) |
 | 33 | Safety Guards (C4+C5+C7) | ✅ Complete (Mar 6, 2026) |
 | 34 | DevOps Hardening | ✅ Complete (Mar 7, 2026) |
-| 35 | Observability Stack (LGTM) | ✅ Complete (Mar 7, 2026) |
+| 35 | Observability Stack (LGTM) | ✅ Complete (Mar 13, 2026) |
 | 38 | Schema Migrations (dbmate) | ✅ Complete (Mar 7, 2026) |
+| 39 | FRED Macro Data Monitor | ✅ Complete (Mar 13, 2026) |
+| 40 | SEC EDGAR Direct Pipeline | ✅ Complete (Mar 14, 2026) |
+| 42 | Advanced Testing (Hypothesis/VCR) | ✅ Complete (Mar 14, 2026) |
+| 43 | Cryptographic Audit Trail | ✅ Complete (Mar 14, 2026) |
+| 48 | Data Pipeline Resilience | ✅ Complete (Mar 14, 2026) |
 <!-- /AUTO:ROADMAP_STATUS -->
 
 ---
@@ -396,10 +402,10 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ## 🔬 Test & Security Status
 
 <!-- AUTO:TEST_SUMMARY -->
-**Tests:** 277 passing
+**Tests:** 752 passing
 **pip-audit:** not available locally (check CI)
-**bandit (SAST):** see CI
-**CI gates:** lint → pip-audit → bandit → TruffleHog → deploy (all required)
+**Ruff (SAST):** ruff check . exits 0
+**CI gates:** lint(ruff) → pip-audit → [trivy + semgrep + deploy] (parallel)
 <!-- /AUTO:TEST_SUMMARY -->
 
 ---

@@ -92,7 +92,7 @@ class FractionalKelly:
         full_kelly = win_rate - (1.0 - win_rate) / reward_ratio
         full_kelly = max(0.0, min(1.0, full_kelly))
 
-        result = round(full_kelly * self.fraction, 6)
+        result = min(self.fraction, round(full_kelly * self.fraction, 6))
         logger.debug(
             "[FractionalKelly] win=%.3f R=%.3f → full=%.4f → frac(%.2f)=%.4f",
             win_rate, reward_ratio, full_kelly, self.fraction, result,

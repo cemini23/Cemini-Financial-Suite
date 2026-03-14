@@ -73,12 +73,18 @@ ROADMAP_STEPS = [
     {"num": 26, "name": "Opportunity Discovery Engine",       "status": "COMPLETE", "date": "Mar 7, 2026"},
     {"num": 27, "name": "MCP Intelligence Server",            "status": "COMPLETE", "date": "Mar 6, 2026"},
     {"num": 28, "name": "Pydantic Data Contracts",            "status": "COMPLETE", "date": "Mar 6, 2026"},
+    {"num": 29, "name": "Vector DB Intelligence Layer",       "status": "COMPLETE", "date": "Mar 8, 2026"},
     {"num": 30, "name": "Logit Jump-Diffusion Pricing",       "status": "COMPLETE", "date": "Mar 6, 2026"},
     {"num": 32, "name": "Per-service CLAUDE.md + LESSONS.md", "status": "COMPLETE", "date": "Mar 6, 2026"},
     {"num": 33, "name": "Safety Guards (C4+C5+C7)",           "status": "COMPLETE", "date": "Mar 6, 2026"},
     {"num": 34, "name": "DevOps Hardening",                   "status": "COMPLETE", "date": "Mar 7, 2026"},
-    {"num": 35, "name": "Observability Stack (LGTM)",         "status": "COMPLETE", "date": "Mar 7, 2026"},
+    {"num": 35, "name": "Observability Stack (LGTM)",         "status": "COMPLETE", "date": "Mar 13, 2026"},
     {"num": 38, "name": "Schema Migrations (dbmate)",         "status": "COMPLETE", "date": "Mar 7, 2026"},
+    {"num": 39, "name": "FRED Macro Data Monitor",            "status": "COMPLETE", "date": "Mar 13, 2026"},
+    {"num": 40, "name": "SEC EDGAR Direct Pipeline",          "status": "COMPLETE", "date": "Mar 14, 2026"},
+    {"num": 42, "name": "Advanced Testing (Hypothesis/VCR)",  "status": "COMPLETE", "date": "Mar 14, 2026"},
+    {"num": 43, "name": "Cryptographic Audit Trail",          "status": "COMPLETE", "date": "Mar 14, 2026"},
+    {"num": 48, "name": "Data Pipeline Resilience",           "status": "COMPLETE", "date": "Mar 14, 2026"},
 ]
 
 # Broker adapter inventory (static — updated manually when adapters change)
