@@ -358,3 +358,19 @@ library use. This is a nuance worth noting in any legal review.
 github-actions[bot] commits appear in git log --all. Filter with `is_bot()` function
 checking for "[bot]" in author name before computing Section 1235 stats.
 76 human commits (Cemini23), 28 bot commits, 104 total as of Mar 14, 2026.
+
+## Polars (Step 50)
+
+**map_elements vs native expressions**
+Polars map_elements() is slow for row-wise operations. Prefer native expressions (.clip(), .diff(), .ewm_mean()).
+Used map_elements() for lambda guards (zero-division) — acceptable for small series.
+
+**group_by_dynamic requires sorted input**
+Always .sort("timestamp") before group_by_dynamic(). Silent wrong results if unsorted.
+
+**join_asof no future leak**
+strategy="backward" is the safe default. Never use strategy="forward" in feature engineering.
+
+**ewm_mean span vs alpha**
+Polars ewm_mean(span=N) gives alpha = 2/(N+1).
+Wilder SMMA: alpha=1/period -> span = 2*period - 1.

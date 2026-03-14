@@ -1,8 +1,8 @@
 # Software Bill of Materials (SBOM)
 
 **Scan date:** 2026-03-14  
-**Total dependencies:** 297  
-**Green (permissive):** 273  
+**Total dependencies:** 303  
+**Green (permissive):** 279  
 **Yellow (LGPL):** 13  
 **Red (GPL/Copyleft):** 11  
 
@@ -61,6 +61,7 @@
 | constantly | 15.1.0 | MIT License | [link](https://github.com/twisted/constantly) | Green |
 | coverage | 7.13.4 | Apache-2.0 | [link](https://github.com/coveragepy/coveragepy) | Green |
 | cryptography | 3.4.8 | Apache Software License; BSD License | [link](https://github.com/pyca/cryptography) | Green |
+| cryptography | 46.0.5 | Apache-2.0 OR BSD-3-Clause | [link](https://github.com/pyca/cryptography) | Green |
 | cuda-bindings | 12.9.4 | LicenseRef-NVIDIA-SOFTWARE-LICENSE | [link](https://github.com/NVIDIA/cuda-python) | Green |
 | cuda-pathfinder | 1.4.1 | Apache-2.0 | [link](https://github.com/NVIDIA/cuda-python) | Green |
 | curl_cffi | 0.13.0 | MIT License | [link](https://github.com/lexiforest/curl_cffi) | Green |
@@ -78,6 +79,7 @@
 | exceptiongroup | 1.2.2 | MIT License | [link](https://github.com/agronholm/exceptiongroup/blob/main/CHANGES.rst) | Green |
 | execnet | 2.1.2 | MIT | [link](https://execnet.readthedocs.io/en/latest/) | Green |
 | face | 26.0.0 | BSD-3-Clause | [link](https://github.com/mahmoud/face) | Green |
+| fastapi | 0.135.1 | MIT | [link](https://github.com/fastapi/fastapi) | Green |
 | fastmcp | 3.1.0 | Apache-2.0 | [link](https://gofastmcp.com) | Green |
 | filelock | 3.24.3 | MIT | [link](https://github.com/tox-dev/py-filelock) | Green |
 | flake8 | 7.3.0 | MIT License | [link](https://github.com/pycqa/flake8) | Green |
@@ -102,6 +104,7 @@
 | hypothesis | 6.151.9 | MPL-2.0 | [link](https://hypothesis.works) | Green |
 | hypothesis-graphql | 0.12.0 | MIT | [link](https://github.com/Stranger6667/hypothesis-graphql/blob/master/CHANGELOG.md) | Green |
 | hypothesis-jsonschema | 0.23.1 | Mozilla Public License 2.0 (MPL 2.0) | [link](https://github.com/Zac-HD/hypothesis-jsonschema) | Green |
+| idna | 3.11 | BSD-3-Clause | [link](https://github.com/kjd/idna) | Green |
 | idna | 3.3 | BSD License | [link](https://github.com/kjd/idna) | Green |
 | importlib-metadata | 4.6.4 | Apache Software License | [link](https://github.com/python/importlib_metadata) | Green |
 | importlib_metadata | 8.7.1 | Apache-2.0 | [link](https://github.com/python/importlib_metadata) | Green |
@@ -183,6 +186,7 @@
 | opentelemetry-util-http | 0.58b0 | Apache-2.0 | [link](https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/util/opentelemetry-util-http) | Green |
 | opentimestamps | 0.4.5 | GNU Lesser General Public License v3 or later (LGPLv3+) | [link](https://github.com/opentimestamps/python-opentimestamps) | Yellow |
 | opentimestamps-client | 0.7.2 | GNU Lesser General Public License v3 or later (LGPLv3+) | [link](https://github.com/opentimestamps/opentimestamps-client) | Yellow |
+| orjson | 3.11.7 | MPL-2.0 AND (Apache-2.0 OR MIT) | [link](https://github.com/ijl/orjson) | Green |
 | packageurl-python | 0.17.6 | MIT License | [link](https://github.com/package-url/packageurl-python) | Green |
 | packaging | 21.3 | Apache Software License; BSD License | [link](https://github.com/pypa/packaging) | Green |
 | packaging | 26.0 | Apache-2.0 OR BSD-2-Clause | [link](https://github.com/pypa/packaging) | Green |
@@ -198,6 +202,8 @@
 | pip_audit | 2.10.0 | Apache Software License | [link](https://pypi.org/project/pip-audit/) | Green |
 | platformdirs | 4.9.2 | MIT | [link](https://github.com/tox-dev/platformdirs) | Green |
 | pluggy | 1.6.0 | MIT License | — | Green |
+| polars | 1.39.0 | MIT License | [link](https://www.pola.rs/) | Green |
+| polars-runtime-32 | 1.39.0 | MIT License | [link](https://www.pola.rs/) | Green |
 | protobuf | 6.33.5 | 3-Clause BSD License | [link](https://developers.google.com/protocol-buffers/) | Green |
 | psycopg2-binary | 2.9.11 | GNU Library or Lesser General Public License (LGPL) | [link](https://psycopg.org/) | Yellow |
 | ptyprocess | 0.7.0 | ISC License (ISCL) | [link](https://github.com/pexpect/ptyprocess) | Green |
@@ -215,7 +221,7 @@
 | Pygments | 2.19.2 | BSD License | [link](https://pygments.org) | Green |
 | PyGObject | 3.42.1 | GNU Lesser General Public License v2 or later (LGPLv2+) | [link](https://pygobject.readthedocs.io) | Yellow |
 | PyHamcrest | 2.0.2 | BSD License | [link](https://github.com/hamcrest/PyHamcrest) | Green |
-| PyJWT | 2.11.0 | MIT | [link](https://github.com/jpadilla/pyjwt) | Green |
+| PyJWT | 2.12.1 | MIT | [link](https://github.com/jpadilla/pyjwt) | Green |
 | PyJWT | 2.3.0 | MIT License | [link](https://github.com/jpadilla/pyjwt) | Green |
 | pymdown-extensions | 10.21 | MIT | [link](https://github.com/facelessuser/pymdown-extensions) | Green |
 | pymerkle | 6.1.0 | GNU General Public License v3 or later (GPLv3+) | [link](https://github.com/fmerg/pymerkle) | Red |

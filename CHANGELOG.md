@@ -4,6 +4,28 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 14, 2026] — Step 50: Polars Feature Engineering
+
+### Added
+- `shared/feature_engine/` — Polars-native RL observation space builder (7 modules)
+  - `config.py` — FeatureDef, NormMethod, ALL_FEATURES (18 features), TIMEFRAMES
+  - `data_loader.py` — connectorx → adbc → psycopg2 fallback loader
+  - `indicators.py` — RSI (Wilder SMMA), MACD, Bollinger Bands, ATR, MFI, log returns, volume Z-score
+  - `normalizer.py` — LOG_RETURN / MINMAX / ZSCORE_CLIP / PASSTHROUGH / ONEHOT normalization
+  - `multi_timeframe.py` — group_by_dynamic + join_asof (1m/5m/15m/1h), no future leak
+  - `feature_matrix.py` — assembles (N, 18) normalized matrix; to_numpy() for TorchRL
+  - `orjson_response.py` — FastAPI ORJSONResponse drop-in (2-3x faster serialization)
+- `tests/test_feature_engine.py` — 37 pure tests (indicators, normalization, MTF, feature matrix, orjson)
+
+### Changed
+- `cryptography` upgraded from 3.4.8 → 46.0.5 (resolves all cryptography CVEs)
+- `idna` upgraded from 3.3 → 3.11 (resolves ReDoS CVE)
+- `pyjwt` upgraded from 2.11.0 → 2.12.1 (resolves algorithm confusion CVE)
+- VDR reports regenerated (polars/orjson now in SBOM; 292 packages scanned)
+- CLAUDE.md updated with Step 50 section; LESSONS.md updated with Polars gotchas
+
+---
+
 ## [Mar 14, 2026] — Step 51: License Compliance & Virtual Data Room
 
 ### Added

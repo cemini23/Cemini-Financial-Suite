@@ -53,7 +53,7 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
 38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 41 (IP Sale Docs),
 42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience),
-51 (License Compliance & Virtual Data Room).
+50 (Polars Feature Engineering), 51 (License Compliance & Virtual Data Room).
 
 ## Step 41: IP Sale Documentation Site
 
@@ -107,11 +107,21 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
   - `mkdocs build --strict` passes with 0 warnings
 - **Tests**: `tests/test_vdr.py` — 26 pure filesystem tests
 
+## Step 50: Polars Feature Engineering
+
+- Package: `shared/feature_engine/` — 7 modules
+- FEATURE_VECTOR_DIM = 18 features (momentum + volatility + participation + sentiment + macro + regime + price)
+- RSI: Wilder SMMA (alpha=1/period, span=2*period-1) — NOT SMA
+- DB fallback: connectorx → adbc → psycopg2
+- No Pandas in feature_engine — pure Polars only
+- orjson_response.py: FastAPI drop-in, do NOT retrofit existing endpoints
+- Tests: tests/test_feature_engine.py
+
 ## Testing
 
 - All tests in `/opt/cemini/tests/` — pure, no network/Redis/Postgres
 - Run: `pytest tests/ -v && ruff check .`
-- Current count: 804 tests passing (26 new in test_vdr.py for Step 51), ruff clean
+- Current count: 845 tests passing (37 new in test_feature_engine.py for Step 50), ruff clean
 
 ## Token Efficiency
 Always use RTK (installed globally) to compress verbose CLI output before sending to context.
