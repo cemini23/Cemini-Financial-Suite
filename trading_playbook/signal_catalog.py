@@ -34,6 +34,13 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+# ----- audit trail: pre-evaluation intent logging (Step 43) ----------------- #
+try:
+    from shared.audit_trail.intent_logger import log_intent as _log_intent
+    _INTENT_LOG_AVAILABLE = True
+except ImportError:
+    _INTENT_LOG_AVAILABLE = False
+
 logger = logging.getLogger("playbook.signal_catalog")
 
 # ----- required columns ----------------------------------------------------- #
@@ -517,6 +524,16 @@ def scan_symbol(df: pd.DataFrame, symbol: str) -> list:
     """
     signals = []
     for detector in SIGNAL_REGISTRY:
+        # Log intent BEFORE detection — proves no cherry-picking (Step 43)
+        if _INTENT_LOG_AVAILABLE:
+            try:
+                _log_intent(
+                    signal_source="playbook",
+                    signal_type=detector.name,
+                    ticker=symbol,
+                )
+            except Exception:
+                pass
         try:
             result = detector.detect(df, symbol)
             if result is not None:

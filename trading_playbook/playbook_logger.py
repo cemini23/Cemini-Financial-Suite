@@ -49,6 +49,13 @@ try:
 except ImportError:
     _REDIS_AVAILABLE = False
 
+# ----- audit trail (Step 43) ------------------------------------------------ #
+try:
+    from shared.audit_trail.chain_writer import write_audit_entry
+    _AUDIT_AVAILABLE = True
+except ImportError:
+    _AUDIT_AVAILABLE = False
+
 # ----- constants ------------------------------------------------------------ #
 ARCHIVE_ROOT = os.getenv("PLAYBOOK_ARCHIVE_DIR", "/mnt/archive/playbook")
 INTEL_KEY = "intel:playbook_snapshot"
@@ -222,6 +229,17 @@ class PlaybookLogger:
         }
         self._pg_write(log_type, regime, payload)
         self._disk_write(record)
+        # Layer 1: audit chain (Step 43 — fail-silent)
+        if _AUDIT_AVAILABLE:
+            try:
+                audit_payload = {"log_type": log_type, "regime": regime, "payload": payload}
+                write_audit_entry(
+                    source_table="playbook_logs",
+                    source_id=f"{log_type}:{record['timestamp']}",
+                    payload=audit_payload,
+                )
+            except Exception as _audit_exc:
+                logger.debug("[PlaybookLogger] audit chain write failed: %s", _audit_exc)
 
     def log_regime(self, regime_state) -> None:
         """

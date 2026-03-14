@@ -49,13 +49,33 @@ Trading Playbook — observation-only regime/signal/risk layer
 Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 6 (Equity Ticks),
 14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 20 (Skill Vetting), 21 (SKILL.md),
 24 (Visual Crossing Weather), 27 (MCP Server), 28 (Pydantic Contracts), 30 (Logit Pricing),
-32 (CLAUDE.md), 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 38 (Schema Migrations).
+32 (CLAUDE.md), 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 38 (Schema Migrations),
+43 (Cryptographic Audit Trail).
+
+## Step 43: Cryptographic Audit Trail
+
+- **Layer 1**: SHA-256 hash chain — `shared/audit_trail/` package + PL/pgSQL BEFORE INSERT trigger
+  - Tables: `audit_hash_chain`, `audit_batch_commitments`, `audit_intent_log`
+  - Migration: `db/migrations/20260314200000_create_audit_hash_chain.sql`
+  - JSONL mirror: `/mnt/archive/audit/chains/YYYY-MM-DD.jsonl`
+- **Layer 2**: pymerkle daily Merkle tree at 23:55 UTC (APScheduler cron)
+  - Batch output: `/mnt/archive/audit/batches/YYYY-MM-DD/batches.json`
+- **Layer 3**: OpenTimestamps best-effort (`ots` binary not installed on server — skips gracefully)
+- **VCP Silver Tier** naming conventions: `entry_id`, `commitment_id`, `chain_hash`, `merkle_root`
+- **UUIDv7** monotonic IDs (uuid-utils package) on all audit entries
+- **Intent logging**: `signal_catalog.py:scan_symbol()` logs pre-evaluation intent BEFORE detect()
+- **Offline verifier**: `scripts/verify.py --archive-root /mnt/archive/audit/`
+- **Intel Bus**: `intel:audit_chain_entry` (TTL 300s), `intel:audit_batch_complete` (TTL 86400s)
+- **Fail-silent**: all audit writes are non-blocking, never crash the caller
+- **JSON canon**: `json.dumps(sort_keys=True, separators=(',',':'))` everywhere
+- **Archive README**: `/mnt/archive/audit/README.md` — buyer verification instructions
+- **Env var**: `AUDIT_ARCHIVE_DIR` (default `/mnt/archive/audit`) — read at call time (not import time)
 
 ## Testing
 
 - All tests in `/opt/cemini/tests/` — pure, no network/Redis/Postgres
 - Run: `pytest tests/ -v && ruff check .`
-- Current count: 263+ tests passing, ruff clean
+- Current count: 752 tests passing (66 new in test_audit_trail.py), ruff clean
 
 ## Token Efficiency
 Always use RTK (installed globally) to compress verbose CLI output before sending to context.

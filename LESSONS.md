@@ -270,3 +270,41 @@ or file path conflicts. Use tmp_path fixture for temp files.
 **pytest --timeout requires pytest-timeout**
 Add pytest-timeout to requirements. CI install: pip install pytest-timeout.
 Without it, --timeout flag causes "unrecognized arguments" error.
+
+---
+
+## Cryptographic Audit Trail (Step 43)
+
+**Module-level env var constants break test patching**
+Mistake: `ARCHIVE_ROOT = os.getenv("AUDIT_ARCHIVE_DIR", "/mnt/archive/audit")` at module level.
+Fix: use `def _archive_root(): return os.getenv(...)` at call time. Otherwise `patch.dict(os.environ, ...)`
+in tests has no effect — the constant is already baked in at import time.
+Files: shared/audit_trail/chain_writer.py, intent_logger.py, merkle_batch.py
+
+**uuid-utils: always import stdlib uuid for fallback**
+If uuid-utils is installed, `import uuid as _uuid_std` inside the except block won't run.
+Tests that mock `_UUID7_AVAILABLE = False` then get NameError on `_uuid_std`.
+Fix: always `import uuid as _uuid_std` at module top, before the try/except.
+File: shared/audit_trail/chain_writer.py
+
+**pymerkle InmemoryTree.append_entry() takes bytes**
+Pass `payload_hash.encode("utf-8")` not the raw str. The tree hashes the bytes directly.
+`get_state()` returns 32 bytes — call `.hex()` for the 64-char hex string.
+
+**PL/pgSQL dollar-quoting: use $$ not $**
+Single `$` inside a function body causes parse errors. Use `$$` as the delimiter.
+Standard pattern: `CREATE OR REPLACE FUNCTION ... AS $$ ... $$ LANGUAGE plpgsql;`
+
+**PL/pgSQL sha256() returns bytea**
+`sha256(text::bytea)` returns bytea. Wrap with `encode(..., 'hex')` to get TEXT.
+Requires PostgreSQL 11+. Available in PG 16 without any extension.
+
+**ChainWriter: trigger computes prev_hash/chain_hash**
+The BEFORE INSERT trigger in Postgres overwrites prev_hash and chain_hash.
+The Python writer passes GENESIS_HASH as placeholder; trigger replaces both fields.
+After INSERT, use a SELECT to fetch the trigger-computed values back for the JSONL mirror.
+
+**OpenTimestamps binary not installed on Hetzner VPS**
+`ots` is not in apt/pip by default. All Layer 3 code must use `shutil.which("ots")` guard.
+Log INFO (not WARNING) when missing — it's an expected optional dependency.
+Files: shared/audit_trail/merkle_batch.py._try_ots_stamp()
