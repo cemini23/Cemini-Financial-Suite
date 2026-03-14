@@ -22,12 +22,40 @@ Sentiment    : UMCSENT, VIXCLS
 import json
 import logging
 import os
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 
 import psycopg2
 import redis
 import requests
+
+# ── Step 48: Resilience ───────────────────────────────────────────────────────
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+try:
+    from core.resilience import (
+        SyncCircuitBreaker,
+        create_resilient_sync_client,
+        create_retry_decorator,
+        HttpStatusRetryError,
+    )
+    from core.resilience_metrics import record_retry, record_cache_hit, record_cache_miss
+
+    _fred_cb = SyncCircuitBreaker("fred_monitor", fail_max=5, timeout_duration=180.0)
+    _fred_retry = create_retry_decorator(
+        "fred_monitor", max_attempts=3, base_wait=1.0, max_wait=15.0,
+        retryable_statuses=(429, 500, 502, 503, 504),
+    )
+    # Hishel sync client — FRED supports ETag/304, TTL matches poll interval
+    _fred_http = create_resilient_sync_client("fred_monitor", cache_ttl=900, timeout=15.0)
+    _RESILIENCE_AVAILABLE = True
+except ImportError:
+    _RESILIENCE_AVAILABLE = False
+    _fred_cb = None
+    _fred_retry = None
+    _fred_http = None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -123,6 +151,34 @@ def _parse_fred_value(raw) -> "float | None":
         return None
 
 
+def _do_fetch_series_url(url: str) -> list:
+    """Low-level fetch — wrapped by retry decorator when resilience is available."""
+    if _RESILIENCE_AVAILABLE and _fred_http is not None:
+        # nosemgrep: semgrep.missing-rate-limit-requests — caller enforces FRED_RATE_LIMIT_SLEEP
+        resp = _fred_http.get(url)
+        if resp.status_code in (429, 500, 502, 503, 504):
+            record_retry("fred_monitor")
+            raise HttpStatusRetryError(resp.status_code)
+        resp.raise_for_status()
+        # Track 304 Not Modified as cache hit
+        if resp.status_code == 304:
+            record_cache_hit("fred_monitor")
+        else:
+            record_cache_miss("fred_monitor")
+        return resp.json().get("observations", [])
+    else:
+        # nosemgrep: semgrep.missing-rate-limit-requests — caller enforces FRED_RATE_LIMIT_SLEEP
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json().get("observations", [])
+
+
+if _RESILIENCE_AVAILABLE and _fred_retry is not None:
+    _fetch_series_url = _fred_retry(_do_fetch_series_url)
+else:
+    _fetch_series_url = _do_fetch_series_url
+
+
 def _fetch_series(
     series_id: str,
     api_key: str,
@@ -136,10 +192,7 @@ def _fetch_series(
     """
     url = _build_fred_url(series_id, api_key, observation_start, limit)
     try:
-        # nosemgrep: semgrep.missing-rate-limit-requests — caller enforces FRED_RATE_LIMIT_SLEEP
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        observations = resp.json().get("observations", [])
+        observations = _fetch_series_url(url)
         return [
             {"date": obs["date"], "value": _parse_fred_value(obs.get("value", "."))}
             for obs in observations

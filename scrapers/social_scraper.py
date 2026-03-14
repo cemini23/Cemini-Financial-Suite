@@ -5,12 +5,41 @@ import json
 import os
 import random
 import re
+import sys
 import time
 from datetime import datetime
 
 import psycopg2
 import praw
 import redis
+
+# ── Step 48: Resilience ───────────────────────────────────────────────────────
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+try:
+    from core.resilience import SyncCircuitBreaker, create_retry_decorator
+    from core.resilience_metrics import record_retry, record_circuit_open
+
+    # Reddit circuit breaker — 429s ARE retryable for Reddit (transient rate limits)
+    _reddit_cb = SyncCircuitBreaker("social_reddit", fail_max=5, timeout_duration=120.0)
+    _reddit_retry = create_retry_decorator(
+        "social_reddit", max_attempts=3, base_wait=2.0, max_wait=30.0,
+        retryable_statuses=(500, 502, 503, 504),  # 429 excluded for Reddit too (PRAW handles it)
+    )
+
+    # X API circuit breaker — 429 must NOT be retried (budget-relevant)
+    _x_cb = SyncCircuitBreaker("social_x", fail_max=5, timeout_duration=300.0)
+    # X API: empty retryable_statuses = only retry on transport errors, never on HTTP status
+    _x_retry = create_retry_decorator(
+        "social_x", max_attempts=2, base_wait=5.0, max_wait=30.0,
+        retryable_statuses=(),  # 429 is a budget signal — do NOT retry
+    )
+    _RESILIENCE_AVAILABLE = True
+except ImportError:
+    _RESILIENCE_AVAILABLE = False
+    _reddit_cb = None
+    _x_cb = None
 
 try:
     import tweepy
@@ -364,15 +393,24 @@ def main():
         # X API tier polls (only if client is available)
         if x_client:
             if now - last_poll["t1"] >= T1_INTERVAL:
-                poll_x_tier(1, tier1_cfg, x_client, r, cursor)
+                if _RESILIENCE_AVAILABLE and _x_cb is not None:
+                    _x_cb.call(poll_x_tier, 1, tier1_cfg, x_client, r, cursor)
+                else:
+                    poll_x_tier(1, tier1_cfg, x_client, r, cursor)
                 last_poll["t1"] = now
 
             if now - last_poll["t2"] >= T2_INTERVAL:
-                poll_x_tier(2, tier2_cfg, x_client, r, cursor)
+                if _RESILIENCE_AVAILABLE and _x_cb is not None:
+                    _x_cb.call(poll_x_tier, 2, tier2_cfg, x_client, r, cursor)
+                else:
+                    poll_x_tier(2, tier2_cfg, x_client, r, cursor)
                 last_poll["t2"] = now
 
             if now - last_poll["t3"] >= T3_INTERVAL:
-                poll_x_tier(3, tier3_cfg, x_client, r, cursor)
+                if _RESILIENCE_AVAILABLE and _x_cb is not None:
+                    _x_cb.call(poll_x_tier, 3, tier3_cfg, x_client, r, cursor)
+                else:
+                    poll_x_tier(3, tier3_cfg, x_client, r, cursor)
                 last_poll["t3"] = now
 
         time.sleep(30)  # tick every 30 s — fine-grained enough for any interval above

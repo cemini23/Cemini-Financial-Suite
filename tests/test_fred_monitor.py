@@ -103,11 +103,11 @@ def test_fred_parse_observations():
             {"date": "2026-03-11", "value": "0.38"},
         ]
     }
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = sample_json
-    mock_resp.raise_for_status.return_value = None
+    # Step 48: _fetch_series now delegates to _fetch_series_url (hishel-wrapped).
+    # Patch at that level — it returns the raw observations list.
+    raw_obs = [{"date": "2026-03-12", "value": "0.42"}, {"date": "2026-03-11", "value": "0.38"}]
 
-    with patch("scrapers.fred_monitor.requests.get", return_value=mock_resp):
+    with patch("scrapers.fred_monitor._fetch_series_url", return_value=raw_obs):
         result = _fetch_series("T10Y2Y", "testkey")
 
     assert len(result) == 2
@@ -148,11 +148,9 @@ def test_fred_parse_dot_in_fetch():
             {"date": "2026-03-11", "value": "4.33"},
         ]
     }
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = sample_json
-    mock_resp.raise_for_status.return_value = None
+    raw_obs = [{"date": "2026-03-12", "value": "."}, {"date": "2026-03-11", "value": "4.33"}]
 
-    with patch("scrapers.fred_monitor.requests.get", return_value=mock_resp):
+    with patch("scrapers.fred_monitor._fetch_series_url", return_value=raw_obs):
         result = _fetch_series("BAMLH0A0HYM2", "key")
 
     assert result[0]["value"] is None
@@ -294,18 +292,14 @@ def test_fred_http_error_continues_other_series():
 
     call_count = {"n": 0}
 
-    def mock_get(url, timeout=10):
+    def mock_fetch_url(url):
         call_count["n"] += 1
-        mock_resp = MagicMock()
         if "T10Y2Y" in url:
             import requests as req_lib
-            mock_resp.raise_for_status.side_effect = req_lib.exceptions.HTTPError("500")
-        else:
-            mock_resp.raise_for_status.return_value = None
-            mock_resp.json.return_value = {"observations": []}
-        return mock_resp
+            raise req_lib.exceptions.HTTPError("500")
+        return []
 
-    with patch("scrapers.fred_monitor.requests.get", side_effect=mock_get):
+    with patch("scrapers.fred_monitor._fetch_series_url", side_effect=mock_fetch_url):
         with patch("scrapers.fred_monitor.time.sleep"):
             poll_and_publish(mock_cursor, mock_r, "testkey")
 
@@ -322,14 +316,11 @@ def test_fred_backfill_date_range():
 
     captured_urls = []
 
-    def mock_get(url, timeout=10):
+    def mock_fetch_url(url):
         captured_urls.append(url)
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.return_value = None
-        mock_resp.json.return_value = {"observations": []}
-        return mock_resp
+        return []
 
-    with patch("scrapers.fred_monitor.requests.get", side_effect=mock_get):
+    with patch("scrapers.fred_monitor._fetch_series_url", side_effect=mock_fetch_url):
         with patch("scrapers.fred_monitor.time.sleep"):
             backfill(mock_cursor, "testkey")
 

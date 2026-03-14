@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import time
 import requests
 import psycopg2
@@ -12,6 +13,25 @@ try:
     from zoneinfo import ZoneInfo
 except ImportError:
     from backports.zoneinfo import ZoneInfo
+
+# ── Step 48: Resilience ───────────────────────────────────────────────────────
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+try:
+    from core.resilience import SyncCircuitBreaker, create_retry_decorator, HttpStatusRetryError
+    from core.resilience_metrics import record_circuit_open, record_retry
+
+    _polygon_cb = SyncCircuitBreaker("polygon_ingestor", fail_max=3, timeout_duration=120.0)
+    _polygon_retry = create_retry_decorator(
+        "polygon_ingestor", max_attempts=3, base_wait=2.0, max_wait=20.0,
+        retryable_statuses=(429, 500, 502, 503, 504),
+    )
+    _RESILIENCE_AVAILABLE = True
+except ImportError:
+    _RESILIENCE_AVAILABLE = False
+    _polygon_cb = None
+    _polygon_retry = None
 
 _ET = ZoneInfo("America/New_York")
 
@@ -63,6 +83,22 @@ def ensure_table(cursor: psycopg2.extensions.cursor) -> None:
     """)
 
 
+def _fetch_polygon_url(url: str) -> dict:
+    """Fetch a Polygon API URL with retry logic. Raises on non-retryable errors."""
+    resp = requests.get(url, timeout=10)
+    if resp.status_code in (429, 500, 502, 503, 504):
+        if _RESILIENCE_AVAILABLE:
+            record_retry("polygon_ingestor")
+        raise HttpStatusRetryError(resp.status_code) if _RESILIENCE_AVAILABLE else Exception(f"HTTP {resp.status_code}")  # noqa: TRY301
+    resp.raise_for_status()
+    return resp.json()
+
+
+# Apply retry decorator at import time if resilience is available
+if _RESILIENCE_AVAILABLE and _polygon_retry is not None:
+    _fetch_polygon_url = _polygon_retry(_fetch_polygon_url)
+
+
 def fetch_and_insert(
     cursor: psycopg2.extensions.cursor,
     ticker: str,
@@ -79,9 +115,7 @@ def fetch_and_insert(
         f"?adjusted=true&sort=desc&limit=5&apiKey={POLYGON_API_KEY}"
     )
     try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
+        data = _fetch_polygon_url(url)
         results = data.get("results", [])
         if not results:
             return
@@ -158,7 +192,10 @@ def main():
     while True:
         try:
             print("POLYGON_REST: Starting poll cycle...")
-            run_poll_cycle(cursor, conn)
+            if _RESILIENCE_AVAILABLE and _polygon_cb is not None:
+                _polygon_cb.call(run_poll_cycle, cursor, conn)
+            else:
+                run_poll_cycle(cursor, conn)
             print(f"POLYGON_REST: Cycle complete. Sleeping {POLL_INTERVAL}s...")
             time.sleep(POLL_INTERVAL)
         except psycopg2.InterfaceError:

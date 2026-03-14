@@ -1829,6 +1829,16 @@ INHERITS (public.raw_market_ticks);
 
 
 --
+-- Name: _hyper_5_184_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal._hyper_5_184_chunk (
+    CONSTRAINT constraint_173 CHECK ((("timestamp" >= '2026-03-13 00:00:00+00'::timestamp with time zone) AND ("timestamp" < '2026-03-14 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (public.raw_market_ticks);
+
+
+--
 -- Name: _materialized_hypertable_6; Type: TABLE; Schema: _timescaledb_internal; Owner: -
 --
 
@@ -1842,6 +1852,16 @@ CREATE TABLE _timescaledb_internal._materialized_hypertable_6 (
     volume double precision,
     tick_count bigint
 );
+
+
+--
+-- Name: _hyper_6_173_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal._hyper_6_173_chunk (
+    CONSTRAINT constraint_172 CHECK (((bucket >= '2026-03-08 00:00:00+00'::timestamp with time zone) AND (bucket < '2026-03-18 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (_timescaledb_internal._materialized_hypertable_6);
 
 
 --
@@ -1859,6 +1879,336 @@ CREATE VIEW _timescaledb_internal._partial_view_6 AS
     count(*) AS tick_count
    FROM public.raw_market_ticks
   GROUP BY (public.time_bucket('00:01:00'::interval, "timestamp")), symbol;
+
+
+--
+-- Name: compress_hyper_7_172_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_172_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_172_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_174_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_174_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_174_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_175_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_175_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_175_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_176_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_176_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_176_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_177_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_177_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_177_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_178_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_178_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_178_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_179_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_179_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_179_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_180_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_180_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_180_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_181_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_181_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_181_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_182_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_182_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_182_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_183_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_183_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN created_at SET STATISTICS 0;
 
 
 --
@@ -1916,6 +2266,38 @@ ALTER SEQUENCE public.discovery_audit_log_id_seq OWNED BY public.discovery_audit
 
 
 --
+-- Name: fred_observations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.fred_observations (
+    id bigint NOT NULL,
+    series_id text NOT NULL,
+    observation_date date NOT NULL,
+    value double precision,
+    fetched_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: fred_observations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.fred_observations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: fred_observations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.fred_observations_id_seq OWNED BY public.fred_observations.id;
+
+
+--
 -- Name: geopolitical_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1960,6 +2342,40 @@ CREATE SEQUENCE public.geopolitical_logs_id_seq
 --
 
 ALTER SEQUENCE public.geopolitical_logs_id_seq OWNED BY public.geopolitical_logs.id;
+
+
+--
+-- Name: intel_dead_letters; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.intel_dead_letters (
+    id bigint NOT NULL,
+    service_name text NOT NULL,
+    channel text NOT NULL,
+    raw_payload jsonb NOT NULL,
+    error_message text NOT NULL,
+    error_type text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: intel_dead_letters_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.intel_dead_letters_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: intel_dead_letters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.intel_dead_letters_id_seq OWNED BY public.intel_dead_letters.id;
 
 
 --
@@ -7752,6 +8168,20 @@ ALTER TABLE ONLY _timescaledb_internal._hyper_5_171_chunk ALTER COLUMN created_a
 
 
 --
+-- Name: _hyper_5_184_chunk id; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_5_184_chunk ALTER COLUMN id SET DEFAULT nextval('public.raw_market_ticks_id_seq'::regclass);
+
+
+--
+-- Name: _hyper_5_184_chunk created_at; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_5_184_chunk ALTER COLUMN created_at SET DEFAULT now();
+
+
+--
 -- Name: discovery_audit_log id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7759,10 +8189,24 @@ ALTER TABLE ONLY public.discovery_audit_log ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: fred_observations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fred_observations ALTER COLUMN id SET DEFAULT nextval('public.fred_observations_id_seq'::regclass);
+
+
+--
 -- Name: geopolitical_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.geopolitical_logs ALTER COLUMN id SET DEFAULT nextval('public.geopolitical_logs_id_seq'::regclass);
+
+
+--
+-- Name: intel_dead_letters id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intel_dead_letters ALTER COLUMN id SET DEFAULT nextval('public.intel_dead_letters_id_seq'::regclass);
 
 
 --
@@ -7787,11 +8231,35 @@ ALTER TABLE ONLY public.raw_market_ticks ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: fred_observations fred_observations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fred_observations
+    ADD CONSTRAINT fred_observations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fred_observations fred_observations_series_id_observation_date_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fred_observations
+    ADD CONSTRAINT fred_observations_series_id_observation_date_key UNIQUE (series_id, observation_date);
+
+
+--
 -- Name: geopolitical_logs geopolitical_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.geopolitical_logs
     ADD CONSTRAINT geopolitical_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: intel_dead_letters intel_dead_letters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intel_dead_letters
+    ADD CONSTRAINT intel_dead_letters_pkey PRIMARY KEY (id);
 
 
 --
@@ -13418,6 +13886,34 @@ CREATE INDEX _hyper_5_171_chunk_raw_market_ticks_timestamp_idx ON _timescaledb_i
 
 
 --
+-- Name: _hyper_5_184_chunk_idx_rmt_id; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_5_184_chunk_idx_rmt_id ON _timescaledb_internal._hyper_5_184_chunk USING btree (id);
+
+
+--
+-- Name: _hyper_5_184_chunk_raw_market_ticks_timestamp_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_5_184_chunk_raw_market_ticks_timestamp_idx ON _timescaledb_internal._hyper_5_184_chunk USING btree ("timestamp" DESC);
+
+
+--
+-- Name: _hyper_6_173_chunk__materialized_hypertable_6_bucket_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_6_173_chunk__materialized_hypertable_6_bucket_idx ON _timescaledb_internal._hyper_6_173_chunk USING btree (bucket DESC);
+
+
+--
+-- Name: _hyper_6_173_chunk__materialized_hypertable_6_symbol_bucket_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_6_173_chunk__materialized_hypertable_6_symbol_bucket_idx ON _timescaledb_internal._hyper_6_173_chunk USING btree (symbol, bucket DESC);
+
+
+--
 -- Name: _materialized_hypertable_6_bucket_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
 --
 
@@ -13432,10 +13928,101 @@ CREATE INDEX _materialized_hypertable_6_symbol_bucket_idx ON _timescaledb_intern
 
 
 --
+-- Name: compress_hyper_7_172_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_172_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_172_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_174_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_174_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_174_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_175_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_175_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_175_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_176_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_176_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_176_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_177_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_177_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_177_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_178_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_178_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_178_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_179_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_179_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_179_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_180_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_180_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_180_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_181_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_181_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_181_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_182_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_182_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_182_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_183_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_183_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_183_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
 -- Name: discovery_audit_log_timestamp_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX discovery_audit_log_timestamp_idx ON public.discovery_audit_log USING btree ("timestamp" DESC);
+
+
+--
+-- Name: idx_dead_letters_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dead_letters_created ON public.intel_dead_letters USING btree (created_at);
+
+
+--
+-- Name: idx_dead_letters_service; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dead_letters_service ON public.intel_dead_letters USING btree (service_name);
 
 
 --
@@ -13450,6 +14037,13 @@ CREATE INDEX idx_discovery_audit_action ON public.discovery_audit_log USING btre
 --
 
 CREATE INDEX idx_discovery_audit_ticker ON public.discovery_audit_log USING btree (ticker, "timestamp" DESC);
+
+
+--
+-- Name: idx_fred_obs_series_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_fred_obs_series_date ON public.fred_observations USING btree (series_id, observation_date DESC);
 
 
 --
@@ -13538,4 +14132,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260307000001'),
     ('20260307000003'),
     ('20260308000000'),
-    ('20260313000000');
+    ('20260313000000'),
+    ('20260313000001'),
+    ('20260314000000');

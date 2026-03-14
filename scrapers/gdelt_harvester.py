@@ -21,6 +21,7 @@ import io
 import json
 import logging
 import os
+import sys
 import time
 import zipfile
 from datetime import datetime, timezone
@@ -29,6 +30,33 @@ import pandas as pd
 import psycopg2
 import redis
 import requests
+
+# ── Step 48: Resilience ───────────────────────────────────────────────────────
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+try:
+    from core.resilience import (
+        SyncCircuitBreaker,
+        create_resilient_sync_client,
+        create_retry_decorator,
+        HttpStatusRetryError,
+    )
+    from core.resilience_metrics import record_retry, record_cache_hit, record_cache_miss
+
+    _gdelt_cb = SyncCircuitBreaker("gdelt_harvester", fail_max=3, timeout_duration=120.0)
+    _gdelt_retry = create_retry_decorator(
+        "gdelt_harvester", max_attempts=3, base_wait=3.0, max_wait=30.0,
+        retryable_statuses=(429, 500, 502, 503, 504),
+    )
+    # GDELT lastupdate.txt changes every 15 min — short TTL cache
+    _gdelt_http = create_resilient_sync_client("gdelt_harvester", cache_ttl=300, timeout=90.0)
+    _RESILIENCE_AVAILABLE = True
+except ImportError:
+    _RESILIENCE_AVAILABLE = False
+    _gdelt_cb = None
+    _gdelt_retry = None
+    _gdelt_http = None
 
 try:
     from gdeltdoc import GdeltDoc, Filters as GdeltFilters
@@ -338,6 +366,28 @@ def _ensure_table(conn) -> None:
     logger.info("[GDELT] geopolitical_logs table ready")
 
 
+def _gdelt_get(url: str, timeout: float = 15.0) -> bytes:
+    """Perform a single HTTP GET via resilient client (or requests fallback)."""
+    if _RESILIENCE_AVAILABLE and _gdelt_http is not None:
+        resp = _gdelt_http.get(url)
+    else:
+        # nosemgrep: semgrep.missing-rate-limit-requests — GDELT_SCAN_INTERVAL is the rate gate
+        # nosemgrep: python.lang.security.audit.insecure-transport.requests.request-with-http.request-with-http — GDELT CDN is HTTP-only
+        resp = requests.get(url, timeout=timeout)
+    if resp.status_code in (429, 500, 502, 503, 504):
+        if _RESILIENCE_AVAILABLE:
+            record_retry("gdelt_harvester")
+        raise HttpStatusRetryError(resp.status_code) if _RESILIENCE_AVAILABLE else Exception(f"HTTP {resp.status_code}")  # noqa: TRY301
+    resp.raise_for_status()
+    return resp.content
+
+
+if _RESILIENCE_AVAILABLE and _gdelt_retry is not None:
+    _gdelt_get_with_retry = _gdelt_retry(_gdelt_get)
+else:
+    _gdelt_get_with_retry = _gdelt_get
+
+
 def _fetch_gdelt_v2_events() -> pd.DataFrame:
     """
     Download and parse the most recent GDELT 2.0 15-minute event export.
@@ -345,14 +395,14 @@ def _fetch_gdelt_v2_events() -> pd.DataFrame:
     """
     try:
         # nosemgrep: semgrep.missing-rate-limit-requests — GDELT_SCAN_INTERVAL (default 900s) is the rate gate
-        resp = requests.get(GDELT_V2_LASTUPDATE_URL, timeout=15)
-        resp.raise_for_status()
+        content = _gdelt_get_with_retry(GDELT_V2_LASTUPDATE_URL, 15.0)
+        resp_text = content.decode("utf-8", errors="replace")
     except Exception as e:
         logger.warning(f"GDELT lastupdate.txt unreachable: {e}")
         return pd.DataFrame()
 
     events_url = None
-    for line in resp.text.strip().splitlines():
+    for line in resp_text.strip().splitlines():
         parts = line.split()
         if len(parts) >= 3 and "export.CSV.zip" in parts[2]:
             events_url = parts[2]
@@ -365,14 +415,13 @@ def _fetch_gdelt_v2_events() -> pd.DataFrame:
     try:
         # nosemgrep: semgrep.missing-rate-limit-requests — called at most once per SCAN_INTERVAL
         # nosemgrep: python.lang.security.audit.insecure-transport.requests.request-with-http.request-with-http — GDELT CDN is HTTP-only
-        zip_resp = requests.get(events_url, timeout=90)
-        zip_resp.raise_for_status()
+        zip_content = _gdelt_get_with_retry(events_url, 90.0)
     except Exception as e:
         logger.warning(f"GDELT event file download failed: {e}")
         return pd.DataFrame()
 
     try:
-        with zipfile.ZipFile(io.BytesIO(zip_resp.content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
             csv_name = zf.namelist()[0]
             with zf.open(csv_name) as f:
                 df = pd.read_csv(
@@ -566,8 +615,11 @@ def main():
         try:
             now_utc = datetime.now(timezone.utc)
 
-            # 1. Fetch GDELT 2.0 structured event stream
-            df = _fetch_gdelt_v2_events()
+            # 1. Fetch GDELT 2.0 structured event stream (circuit-breaker wrapped)
+            if _RESILIENCE_AVAILABLE and _gdelt_cb is not None:
+                df = _gdelt_cb.call(_fetch_gdelt_v2_events) or pd.DataFrame()
+            else:
+                df = _fetch_gdelt_v2_events()
             events_scored = []
             if not df.empty:
                 for _, row_series in df.iterrows():

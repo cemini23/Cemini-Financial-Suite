@@ -1,3 +1,4 @@
+import sys
 import yfinance as yf
 import redis
 import os
@@ -5,6 +6,25 @@ import time
 import requests
 import psycopg2
 from datetime import datetime
+
+# ── Step 48: Resilience ───────────────────────────────────────────────────────
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+try:
+    from core.resilience import SyncCircuitBreaker, create_retry_decorator, HttpStatusRetryError
+    from core.resilience_metrics import record_retry, record_circuit_open
+
+    _macro_cb = SyncCircuitBreaker("macro_harvester", fail_max=5, timeout_duration=120.0)
+    _macro_retry = create_retry_decorator(
+        "macro_harvester", max_attempts=3, base_wait=2.0, max_wait=30.0,
+        retryable_statuses=(429, 500, 502, 503, 504),
+    )
+    _RESILIENCE_AVAILABLE = True
+except ImportError:
+    _RESILIENCE_AVAILABLE = False
+    _macro_cb = None
+    _macro_retry = None
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 DB_HOST = os.getenv("DB_HOST", "postgres")
@@ -45,14 +65,23 @@ def main():
                 r.set("macro:10y_yield", yield_10y)
 
             # 2. Fear & Greed Index — alternative.me (free, no key required)
-            try:
+            def _fetch_fgi():
                 # nosemgrep: semgrep.missing-rate-limit-requests — main loop sleeps 300s between iterations
-                fgi_resp = requests.get(
-                    "https://api.alternative.me/fng/?limit=1",
-                    timeout=8,
-                )
-                fgi_resp.raise_for_status()
-                new_fgi = float(fgi_resp.json()["data"][0]["value"])
+                resp = requests.get("https://api.alternative.me/fng/?limit=1", timeout=8)
+                if resp.status_code in (429, 500, 502, 503, 504):
+                    if _RESILIENCE_AVAILABLE:
+                        record_retry("macro_harvester")
+                    raise HttpStatusRetryError(resp.status_code) if _RESILIENCE_AVAILABLE else Exception(f"HTTP {resp.status_code}")  # noqa: TRY301
+                resp.raise_for_status()
+                return float(resp.json()["data"][0]["value"])
+
+            if _RESILIENCE_AVAILABLE and _macro_retry is not None:
+                _fetch_fgi_with_retry = _macro_retry(_fetch_fgi)
+            else:
+                _fetch_fgi_with_retry = _fetch_fgi
+
+            try:
+                new_fgi = _fetch_fgi_with_retry()
                 r.set("macro:fear_greed", new_fgi)
             except Exception as fgi_err:
                 new_fgi = float(r.get("macro:fear_greed") or 50.0)

@@ -53,3 +53,4 @@ perm_test.txt
 survivor_ledger.csv
 
 # --- DOCKER ---
+.hypothesis/

@@ -29,6 +29,7 @@ REDIS_HOST             Redis hostname.
 
 import logging
 import os
+import sys
 import time
 
 import numpy as np
@@ -36,6 +37,21 @@ import pandas as pd
 import yfinance as yf
 
 from trading_playbook.kill_switch import KillSwitch
+
+# ── Step 48: Resilience ───────────────────────────────────────────────────────
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+try:
+    from core.resilience import SyncCircuitBreaker
+
+    _db_cb = SyncCircuitBreaker("playbook_db", fail_max=5, timeout_duration=60.0)
+    _yf_cb = SyncCircuitBreaker("playbook_yfinance", fail_max=5, timeout_duration=60.0)
+    _RESILIENCE_AVAILABLE = True
+except ImportError:
+    _RESILIENCE_AVAILABLE = False
+    _db_cb = None
+    _yf_cb = None
 from trading_playbook.macro_regime import classify_regime
 from trading_playbook.playbook_logger import PlaybookLogger
 from trading_playbook.risk_engine import CVaRCalculator, DrawdownMonitor, FractionalKelly
@@ -80,9 +96,15 @@ OHLCV_PERIOD = "6mo"   # enough for all detectors (VCP needs 60+ bars)
 # ----- helpers -------------------------------------------------------------- #
 def _fetch_ohlcv(symbol: str) -> pd.DataFrame:
     """Return OHLCV DataFrame for *symbol* or an empty DataFrame on failure."""
-    try:
+    def _do_fetch():
         df = yf.Ticker(symbol).history(period=OHLCV_PERIOD, timeout=15)
         return df.reset_index(drop=True) if not df.empty else pd.DataFrame()
+
+    try:
+        if _RESILIENCE_AVAILABLE and _yf_cb is not None:
+            result = _yf_cb.call(_do_fetch)
+            return result if result is not None else pd.DataFrame()
+        return _do_fetch()
     except Exception as exc:
         logger.debug("[Runner] yfinance failed for %s: %s", symbol, exc)
         return pd.DataFrame()
@@ -97,7 +119,8 @@ def _fetch_pnl_returns() -> np.ndarray:
     """
     if not _PG_AVAILABLE:
         return np.array([])
-    try:
+
+    def _do_fetch_pnl():
         conn = psycopg2.connect(
             host=os.getenv("DB_HOST", "postgres"),
             port=5432,
@@ -123,6 +146,12 @@ def _fetch_pnl_returns() -> np.ndarray:
             return np.array([])
         # Approximate returns as pct changes between successive sell prices
         return np.diff(prices) / prices[:-1]
+
+    try:
+        if _RESILIENCE_AVAILABLE and _db_cb is not None:
+            result = _db_cb.call(_do_fetch_pnl)
+            return result if result is not None else np.array([])
+        return _do_fetch_pnl()
     except Exception as exc:
         logger.debug("[Runner] PnL fetch failed: %s", exc)
         return np.array([])

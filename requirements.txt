@@ -109,6 +109,12 @@ opentelemetry-instrumentation-fastapi>=0.45b0
 opentelemetry-instrumentation-redis>=0.45b0
 opentelemetry-instrumentation-psycopg2>=0.45b0
 
+# --- Step 48: Data Pipeline Resilience ---
+hishel[httpx,async]>=1.0.0
+aiobreaker>=1.2.0
+tenacity>=8.2.0
+apscheduler>=3.10.0
+
 # --- Dev / Testing ---
 pytest>=8.0.0
 ruff>=0.4.0

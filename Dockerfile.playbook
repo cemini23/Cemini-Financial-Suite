@@ -7,6 +7,12 @@ RUN pip install --no-cache-dir \
     pandas \
     redis \
     psycopg2-binary \
-    requests
+    requests \
+    beartype>=0.18.0 \
+    scipy \
+    hishel[httpx,async]>=1.0.0 \
+    aiobreaker>=1.2.0 \
+    tenacity>=8.2.0 \
+    apscheduler>=3.10.0
 # Code is volume-mounted from the host (same pattern as logger/analyzer)
 CMD ["python", "-m", "trading_playbook.runner"]

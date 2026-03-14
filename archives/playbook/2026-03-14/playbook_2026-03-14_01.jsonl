@@ -1,0 +1,2 @@
+{"timestamp": 1773452978.7743814, "log_type": "regime", "regime": "RED", "payload": {"regime": "RED", "spy_price": 662.29, "ema21": 679.7661, "sma50": 686.3824, "jnk_tlt_flag": false, "confidence": 0.8, "timestamp": 1773452978.7743201, "reason": "SPY 662.29 < SMA50 686.38"}}
+{"timestamp": 1773452981.0185912, "log_type": "risk", "regime": "RED", "payload": {"cvar_99": 0.0, "kelly_size": 0.0, "nav": 0.0, "drawdown_snapshot": {"portfolio": {"peak_equity": 662.2899780273438, "halted": false, "halt_reason": ""}}}}
