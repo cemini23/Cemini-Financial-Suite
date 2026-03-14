@@ -1,0 +1,96 @@
+site_name: Cemini Financial Suite — Technical Documentation
+site_description: Proprietary Algorithmic Trading Platform — Due Diligence Package
+site_author: Cemini Financial Suite
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Architecture:
+    - System Overview: architecture/overview.md
+    - Docker Services: architecture/services.md
+    - Redis Intel Bus: architecture/redis-intel-bus.md
+    - Data Pipeline: architecture/data-pipeline.md
+  - Trading Engines:
+    - Root Orchestrator: engines/orchestrator.md
+    - QuantOS: engines/quantos.md
+    - Kalshi by Cemini: engines/kalshi.md
+    - Trading Playbook: engines/playbook.md
+  - Intelligence Layer:
+    - Signal Catalog: intelligence/signal-catalog.md
+    - Macro Regime Classification: intelligence/regime.md
+    - Risk Engine: intelligence/risk-engine.md
+    - Kill Switch: intelligence/kill-switch.md
+    - Opportunity Discovery: intelligence/discovery.md
+  - Data Sources:
+    - Overview: data-sources/overview.md
+    - Market Data (Polygon): data-sources/polygon.md
+    - FRED Macro: data-sources/fred.md
+    - SEC EDGAR: data-sources/edgar.md
+    - Social & Sentiment: data-sources/social.md
+    - GDELT Geopolitical: data-sources/gdelt.md
+    - Weather (Visual Crossing): data-sources/weather.md
+  - Verification & Audit:
+    - Cryptographic Audit Trail: verification/audit-trail.md
+    - Hash Chain Verification: verification/verify-script.md
+    - OpenTimestamps: verification/opentimestamps.md
+  - Quality Assurance:
+    - Test Suite Overview: qa/test-suite.md
+    - Property-Based Testing: qa/hypothesis.md
+    - API Fuzz Testing: qa/schemathesis.md
+    - Mutation Testing: qa/mutmut.md
+    - CI/CD Pipeline: qa/ci-cd.md
+  - Infrastructure:
+    - DevOps & Security: infrastructure/devops.md
+    - Observability (LGTM): infrastructure/observability.md
+    - Schema Migrations: infrastructure/migrations.md
+    - Pipeline Resilience: infrastructure/resilience.md
+  - Appendices:
+    - Dependency Licenses: appendices/licenses.md
+    - Technical Debt Register: appendices/tech-debt.md
+    - Glossary: appendices/glossary.md

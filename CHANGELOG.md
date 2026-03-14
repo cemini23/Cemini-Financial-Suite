@@ -4,6 +4,30 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 14, 2026] — Step 41: IP Sale Documentation Site
+
+### Added
+- `mkdocs.yml` at project root — MkDocs-Material slate/amber theme, mermaid2 plugin, full nav
+- `docs/` directory with 36 buyer-facing documentation pages:
+  - **Architecture**: System overview (2 Mermaid diagrams), Docker services table, Redis Intel Bus channel map, data pipeline flow
+  - **Engines**: Root orchestrator, QuantOS, Kalshi by Cemini, Trading Playbook (observation-only emphasis)
+  - **Intelligence**: Signal catalog (all 6 detectors), macro regime (traffic light), risk engine (Kelly/CVaR/Drawdown), kill switch (CANCEL_ALL), opportunity discovery
+  - **Data Sources**: Polygon, FRED, SEC EDGAR, social/sentiment, GDELT, Visual Crossing weather
+  - **Verification & Audit**: Cryptographic audit trail (3-layer architecture diagram), hash chain verification buyer guide, OpenTimestamps Bitcoin anchoring
+  - **Quality Assurance**: Test suite overview, Hypothesis property-based testing, Schemathesis API fuzzing, mutmut mutation testing, CI/CD pipeline (Mermaid flowchart)
+  - **Infrastructure**: DevOps & security (network segmentation diagram), LGTM observability stack, schema migrations (dbmate), data pipeline resilience (4-layer diagram)
+  - **Appendices**: Dependency license inventory (LGPL/GPL flags with isolation notes), technical debt register (C1–C6 + M/L items), glossary (30+ terms)
+- `tests/test_docs.py` — 24 pure filesystem tests (nav integrity, Mermaid syntax, content quality)
+- `mkdocs build --strict` passes with zero warnings; 38 HTML pages generated in `site/`
+- 13 Mermaid diagrams across the site
+
+### Stats
+- Tests: 754 → **778 passing** (+24)
+- Markdown files: 36 in docs/
+- Mermaid diagrams: 13+
+
+---
+
 ## [Mar 14, 2026]
 
 ### Added — Step 43: Cryptographic Audit Trail

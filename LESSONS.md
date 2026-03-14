@@ -308,3 +308,21 @@ After INSERT, use a SELECT to fetch the trigger-computed values back for the JSO
 `ots` is not in apt/pip by default. All Layer 3 code must use `shutil.which("ots")` guard.
 Log INFO (not WARNING) when missing — it's an expected optional dependency.
 Files: shared/audit_trail/merkle_batch.py._try_ots_stamp()
+
+---
+
+## MkDocs / Documentation (Step 41)
+
+**yaml.safe_load fails on mkdocs.yml with !!python/name: tags**
+Mistake: used `yaml.safe_load()` to parse mkdocs.yml in tests.
+Fix: use `text.read_text()` + simple string checks (`"site_name:" in content`).
+The `!!python/name:mermaid2.fence_mermaid_custom` tag causes `ConstructorError`.
+Files: tests/test_docs.py
+
+**ROADMAP.md in docs/ generates INFO (not a warning)**
+MkDocs prints "- ROADMAP.md" when a file is in docs/ but not in nav. This is INFO-level,
+not a WARNING. `mkdocs build --strict` does NOT abort for this. Harmless.
+
+**MkDocs Material "MkDocs 2.0" banner is not a build warning**
+The red ⚠ banner is a marketing notice from the Material team; it does not affect
+`--strict` mode or abort the build. Filter it from output in CI log parsing if noisy.

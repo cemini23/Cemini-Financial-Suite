@@ -51,8 +51,19 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
 21 (SKILL.md), 24 (Visual Crossing Weather), 26 (Opportunity Discovery), 27 (MCP Server),
 28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
-38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 42 (Advanced Testing),
-43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience).
+38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 41 (IP Sale Docs),
+42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience).
+
+## Step 41: IP Sale Documentation Site
+
+- **Config**: `mkdocs.yml` at project root — MkDocs-Material theme, mermaid2 plugin
+- **Docs**: `docs/` — 36 pages across architecture, engines, intelligence, data-sources, verification, QA, infrastructure, appendices
+- **Build**: `mkdocs build --strict` (passes zero warnings); output in `site/`
+- **Serve locally**: `mkdocs serve` (port 8000)
+- **Tests**: `tests/test_docs.py` — 24 pure filesystem tests
+- **Missing pages that were added**: verification/opentimestamps.md, qa/{test-suite,hypothesis,schemathesis,mutmut,ci-cd}.md, infrastructure/{devops,observability,migrations,resilience}.md, appendices/{licenses,tech-debt,glossary}.md
+- **License inventory**: `docs/appendices/licenses.md` — generated via `pip-licenses --format=markdown`
+- **YAML safe_load pitfall**: mkdocs.yml contains `!!python/name:` tags — use text-based checks in tests (not `yaml.safe_load`)
 
 ## Step 43: Cryptographic Audit Trail
 
@@ -77,7 +88,7 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
 
 - All tests in `/opt/cemini/tests/` — pure, no network/Redis/Postgres
 - Run: `pytest tests/ -v && ruff check .`
-- Current count: 754 tests passing (66 new in test_audit_trail.py + 2 bug fixes), ruff clean
+- Current count: 778 tests passing (24 new in test_docs.py for Step 41), ruff clean
 
 ## Token Efficiency
 Always use RTK (installed globally) to compress verbose CLI output before sending to context.
