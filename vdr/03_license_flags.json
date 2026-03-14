@@ -1,0 +1,249 @@
+{
+  "scan_date": "2026-03-14",
+  "total_dependencies": 297,
+  "green": 273,
+  "yellow": 13,
+  "red": 11,
+  "flags": [
+    {
+      "package": "chardet",
+      "version": "4.0.0",
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "classification": "yellow",
+      "usage": "Character encoding detection \u2014 transitive dependency via requests/other packages",
+      "isolation_status": "Transitive dep \u2014 not directly imported by Cemini core code",
+      "notes": "LGPL. Not directly imported by Cemini source. Transitive dependency via HTTP libraries. charset-normalizer (MIT) already installed as alternative.",
+      "replacement": "charset-normalizer (MIT License) \u2014 already installed"
+    },
+    {
+      "package": "cloud-init",
+      "version": "25.2",
+      "license": "Dual-licensed under GPLv3 or Apache 2.0",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "docutils",
+      "version": "0.22.4",
+      "license": "BSD License; GNU General Public License (GPL); Public Domain",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "frozendict",
+      "version": "2.4.7",
+      "license": "GNU Lesser General Public License v3 (LGPLv3)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "launchpadlib",
+      "version": "1.10.16",
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "lazr.restfulclient",
+      "version": "0.14.4",
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "lazr.uri",
+      "version": "1.0.6",
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "opentimestamps",
+      "version": "0.4.5",
+      "license": "GNU Lesser General Public License v3 or later (LGPLv3+)",
+      "classification": "yellow",
+      "usage": "shared/audit_trail/merkle_batch.py \u2014 optional Bitcoin timestamp anchoring (Layer 3)",
+      "isolation_status": "Optional feature \u2014 system runs fully without it; called via API only",
+      "notes": "LGPLv3+ applies to modifications. Called via public Python API, no source modifications. Entire OTS functionality is optional and can be removed without affecting core trading platform.",
+      "replacement": "Remove entirely \u2014 OTS is best-effort audit enhancement only"
+    },
+    {
+      "package": "opentimestamps-client",
+      "version": "0.7.2",
+      "license": "GNU Lesser General Public License v3 or later (LGPLv3+)",
+      "classification": "yellow",
+      "usage": "shared/audit_trail/merkle_batch.py \u2014 CLI client invoked via shutil.which('ots')",
+      "isolation_status": "Subprocess isolation \u2014 called as external process, not linked",
+      "notes": "Used as external CLI subprocess via shutil.which('ots'). Subprocess boundary provides complete isolation. Gracefully skipped if not installed.",
+      "replacement": "Remove entirely \u2014 OTS is best-effort audit enhancement only"
+    },
+    {
+      "package": "psycopg2-binary",
+      "version": "2.9.11",
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "classification": "yellow",
+      "usage": "Database adapter used throughout all services",
+      "isolation_status": "Dynamic linking \u2014 LGPL applies to the compiled C extension only",
+      "notes": "LGPL applies to the compiled C extension (.so). Python application code linking against it is not subject to LGPL. The -binary distribution ships a pre-compiled adapter. This is standard commercial practice accepted by thousands of production Python applications.",
+      "replacement": "asyncpg (Apache 2.0) for async services; psycopg3 (LGPL-2.1, same situation)"
+    },
+    {
+      "package": "PyGObject",
+      "version": "3.42.1",
+      "license": "GNU Lesser General Public License v2 or later (LGPLv2+)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "pymerkle",
+      "version": "6.1.0",
+      "license": "GNU General Public License v3 or later (GPLv3+)",
+      "classification": "red",
+      "usage": "shared/audit_trail/merkle_batch.py \u2014 Merkle tree construction for cryptographic audit trail",
+      "isolation_status": "API caller only \u2014 no modifications to pymerkle source",
+      "notes": "GPLv3+ applies to modifications of pymerkle itself. Calling its public API from proprietary code is permissible under the standard library-use interpretation. No source modifications made.",
+      "replacement": "stdlib hashlib + custom ~50-line Merkle tree, or merkletools (MIT)"
+    },
+    {
+      "package": "python-apt",
+      "version": "2.4.0+ubuntu4.1",
+      "license": "GNU GPL",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "python-bitcoinlib",
+      "version": "0.12.2",
+      "license": "GNU Lesser General Public License v3 or later (LGPLv3+)",
+      "classification": "yellow",
+      "usage": "Transitive dependency of opentimestamps-client",
+      "isolation_status": "Transitive dep \u2014 not directly imported by Cemini code",
+      "notes": "LGPLv3+ applies to modifications. Not directly used by Cemini code \u2014 pulled in as a transitive dependency of opentimestamps-client. Removing opentimestamps packages eliminates this dependency.",
+      "replacement": "Removed automatically when opentimestamps packages are removed"
+    },
+    {
+      "package": "python-debian",
+      "version": "0.1.43+ubuntu1.1",
+      "license": "DFSG approved; GNU General Public License v2 or later (GPLv2+)",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "semgrep",
+      "version": "1.154.0",
+      "license": "LGPL-2.1-or-later",
+      "classification": "yellow",
+      "usage": "Static analysis CI tool \u2014 .github/workflows/deploy.yml and scripts/semgrep-scan.sh only",
+      "isolation_status": "Dev-only \u2014 not present in any production Docker image",
+      "notes": "LGPL-2.1-or-later. Used exclusively as a CLI tool in CI/CD pipeline. Not imported, not linked, not shipped in any production container image. No copyleft implications.",
+      "replacement": "bandit (Apache 2.0) already covers security scanning; Semgrep is supplementary"
+    },
+    {
+      "package": "sos",
+      "version": "4.9.2",
+      "license": "GPLv2+",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "ssh-import-id",
+      "version": "5.11",
+      "license": "GPLv3",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "systemd-python",
+      "version": "234",
+      "license": "GNU Lesser General Public License v2 or later (LGPLv2+)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "ubuntu-drivers-common",
+      "version": "0.0.0",
+      "license": "gpl",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "ubuntu-pro-client",
+      "version": "8001",
+      "license": "GPLv3",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "ufw",
+      "version": "0.36.1",
+      "license": "GPL-3",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "wadllib",
+      "version": "1.3.6",
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "classification": "yellow",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    },
+    {
+      "package": "xkit",
+      "version": "0.0.0",
+      "license": "GPL v2 or later",
+      "classification": "red",
+      "usage": "See pip-licenses output",
+      "isolation_status": "Review required",
+      "notes": "",
+      "replacement": ""
+    }
+  ]
+}

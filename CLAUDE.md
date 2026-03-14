@@ -52,7 +52,8 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
 28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
 38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 41 (IP Sale Docs),
-42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience).
+42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience),
+51 (License Compliance & Virtual Data Room).
 
 ## Step 41: IP Sale Documentation Site
 
@@ -84,11 +85,33 @@ Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewar
 - **Archive README**: `/mnt/archive/audit/README.md` — buyer verification instructions
 - **Env var**: `AUDIT_ARCHIVE_DIR` (default `/mnt/archive/audit`) — read at call time (not import time)
 
+## Step 51: License Compliance & Virtual Data Room
+
+- **SBOM**: `scripts/license_audit.py` → `vdr/02_sbom.md`, `vdr/03_license_flags.json`, `vdr/04_isolation_report.md`
+  - pip-licenses binary at `/usr/local/bin/pip-licenses` uses `/usr/bin/python3` (3.10) shebang — use `shutil.which("pip-licenses")` not `sys.executable -m pip_licenses`
+  - Green/Yellow/Red classification: Yellow check BEFORE Red (LGPL contains 'gpl' substring)
+  - 297 total packages: 273 Green, 13 Yellow, 11 Red (as of Mar 14, 2026)
+  - Known flags hand-curated in `KNOWN_FLAGS` dict: pymerkle (Red), psycopg2-binary/opentimestamps/chardet/semgrep (Yellow)
+- **CVE scan**: `scripts/cve_audit.py` → `vdr/05_cve_report.md`
+  - pip-audit binary at `/usr/local/bin/pip-audit` — use `shutil.which("pip-audit")` not `sys.executable -m pip_audit`
+  - 32 vulnerabilities found (system packages + dev tools); focus on production requirements.txt for real risk
+  - cryptography 3.4.8 is the main production concern — upgrade to 42+ resolves all CVEs
+- **Authorship**: `scripts/authorship_proof.py` → `vdr/06_authorship_proof.md`, `vdr/07_git_stats.json`
+  - 76 human commits by Cemini23 + 28 bot commits by github-actions[bot]
+  - Filter bots by checking for `[bot]` in author name
+  - Section 1235 statement in authorship proof — informational only, not legal advice
+- **VDR**: `vdr/` directory with 13 files (README + 01-12)
+  - Static files: README, 01, 08, 09, 10, 11, 12
+  - Generated files: 02, 03, 04, 05, 06, 07 (re-run `python3 scripts/generate_vdr.py`)
+- **MkDocs**: Due Diligence section added (4 pages under `docs/due-diligence/`)
+  - `mkdocs build --strict` passes with 0 warnings
+- **Tests**: `tests/test_vdr.py` — 26 pure filesystem tests
+
 ## Testing
 
 - All tests in `/opt/cemini/tests/` — pure, no network/Redis/Postgres
 - Run: `pytest tests/ -v && ruff check .`
-- Current count: 778 tests passing (24 new in test_docs.py for Step 41), ruff clean
+- Current count: 804 tests passing (26 new in test_vdr.py for Step 51), ruff clean
 
 ## Token Efficiency
 Always use RTK (installed globally) to compress verbose CLI output before sending to context.

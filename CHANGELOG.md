@@ -4,6 +4,33 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 14, 2026] — Step 51: License Compliance & Virtual Data Room
+
+### Added
+- `scripts/license_audit.py` — SBOM generator with Green/Yellow/Red license classification
+  - Calls pip-licenses binary (shutil.which), classifies 297 packages: 273 Green, 13 Yellow, 11 Red
+  - Outputs: `vdr/02_sbom.md`, `vdr/03_license_flags.json`, `vdr/04_isolation_report.md`
+- `scripts/cve_audit.py` — CVE scanner (pip-audit) → `vdr/05_cve_report.md`
+  - 32 vulnerabilities found (system packages + dev tools); cryptography 3.4.8 main production risk
+- `scripts/authorship_proof.py` — Git authorship proof → `vdr/06_authorship_proof.md`, `vdr/07_git_stats.json`
+  - 76 human commits (Cemini23), 28 bot commits filtered; IRC Section 1235 statement
+- `scripts/generate_vdr.py` — One-command VDR assembler; verifies all 13 files
+- `vdr/` directory with 13 files (README + 01_executive_summary through 12_deployment_guide)
+- `docs/due-diligence/` — 4 MkDocs pages (vdr-overview, license-compliance, cve-audit, authorship)
+- `tests/test_vdr.py` — 26 pure filesystem tests for VDR integrity
+
+### Changed
+- `mkdocs.yml` — Added "Due Diligence" navigation section with 4 pages
+- `CLAUDE.md` — Added Step 51 section with key patterns
+- `LESSONS.md` — Added License Compliance / VDR section with pip-licenses/pip-audit gotchas
+
+### Stats
+- Tests: 778 → **804 passing** (+26)
+- VDR files: 13
+- MkDocs pages: 36 → 40
+
+---
+
 ## [Mar 14, 2026] — Step 41: IP Sale Documentation Site
 
 ### Added

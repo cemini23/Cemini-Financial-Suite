@@ -94,3 +94,8 @@ nav:
     - Dependency Licenses: appendices/licenses.md
     - Technical Debt Register: appendices/tech-debt.md
     - Glossary: appendices/glossary.md
+  - Due Diligence:
+    - Virtual Data Room: due-diligence/vdr-overview.md
+    - License Compliance: due-diligence/license-compliance.md
+    - CVE Security Audit: due-diligence/cve-audit.md
+    - Authorship Proof: due-diligence/authorship.md

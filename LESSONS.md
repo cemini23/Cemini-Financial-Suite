@@ -326,3 +326,35 @@ not a WARNING. `mkdocs build --strict` does NOT abort for this. Harmless.
 **MkDocs Material "MkDocs 2.0" banner is not a build warning**
 The red ⚠ banner is a marketing notice from the Material team; it does not affect
 `--strict` mode or abort the build. Filter it from output in CI log parsing if noisy.
+
+---
+
+## License Compliance / VDR (Step 51)
+
+**pip-licenses binary uses /usr/bin/python3 shebang, not sys.executable**
+pip-licenses is installed with `#! /usr/bin/python3` (the system Python 3.10).
+Calling `sys.executable -m pip_licenses` fails on Python 3.11+ environments.
+Fix: `shutil.which("pip-licenses")` to get the binary path; call it directly.
+Same pattern applies to pip-audit binary.
+Files: scripts/license_audit.py, scripts/cve_audit.py
+
+**LGPL/GPL classification: check yellow BEFORE red**
+"LGPL" and "GNU Lesser" both contain the substring "gpl".
+If you check red keywords first, LGPL packages get misclassified as red.
+Always check yellow (LGPL keywords) before red (GPL keywords) in the classification function.
+Files: scripts/license_audit.py classify()
+
+**pip-audit exits non-zero when vulnerabilities are found — that's expected**
+Use `check=False` in subprocess.run() when calling pip-audit.
+A non-zero exit means "found vulns", not "command failed".
+Always parse stdout even when returncode != 0.
+
+**docutils appears GPL but is actually BSD/GPL/Public Domain multi-licensed**
+pip-licenses reports `"BSD License; GNU General Public License (GPL); Public Domain"`.
+The GPL component applies only to specific docutils components; the BSD license governs
+library use. This is a nuance worth noting in any legal review.
+
+**git log bot filtering: check for "[bot]" substring in author name**
+github-actions[bot] commits appear in git log --all. Filter with `is_bot()` function
+checking for "[bot]" in author name before computing Section 1235 stats.
+76 human commits (Cemini23), 28 bot commits, 104 total as of Mar 14, 2026.
