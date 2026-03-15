@@ -24,3 +24,5 @@ from cemini_contracts.pricing import *       # noqa: F401,F403
 from cemini_contracts.fred import *          # noqa: F401,F403
 from cemini_contracts.sector import *        # noqa: F401,F403
 from cemini_contracts.earnings import *      # noqa: F401,F403
+from cemini_contracts.options import *       # noqa: F401,F403
+from cemini_contracts.discord import *       # noqa: F401,F403

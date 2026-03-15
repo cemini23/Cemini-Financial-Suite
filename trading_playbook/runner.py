@@ -58,6 +58,12 @@ from trading_playbook.risk_engine import CVaRCalculator, DrawdownMonitor, Fracti
 from trading_playbook.sector_rotation import run_sector_rotation
 from trading_playbook.signal_catalog import scan_symbol
 
+try:
+    from options_greeks.vol_monitor import run_vol_monitor
+    _VOL_MONITOR_AVAILABLE = True
+except ImportError:
+    _VOL_MONITOR_AVAILABLE = False
+
 # ----- logging setup -------------------------------------------------------- #
 logging.basicConfig(
     level=logging.INFO,
@@ -93,8 +99,9 @@ WATCHLIST: list = [
 
 OHLCV_PERIOD = "6mo"   # enough for all detectors (VCP needs 60+ bars)
 
-# Sector rotation runs every Nth cycle (6 × 5 min = 30 min refresh)
+# Sector rotation and vol monitor run every Nth cycle (6 × 5 min = 30 min refresh)
 SECTOR_ROTATION_CYCLE_INTERVAL = 6
+VOL_MONITOR_CYCLE_INTERVAL = 6
 
 
 # ----- helpers -------------------------------------------------------------- #
@@ -162,6 +169,28 @@ def _fetch_pnl_returns() -> np.ndarray:
 
 
 # ----- main loop ------------------------------------------------------------ #
+def _run_vol_monitor_nonblocking() -> None:
+    """Run volatility surface monitor in a non-blocking, fail-silent wrapper."""
+    if not _PG_AVAILABLE or not _VOL_MONITOR_AVAILABLE:
+        logger.debug("[Runner] vol_monitor not available — skipping")
+        return
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "postgres"),
+            port=5432,
+            user=os.getenv("POSTGRES_USER", "admin"),
+            password=os.getenv("POSTGRES_PASSWORD", "quest"),
+            database=os.getenv("POSTGRES_DB", "qdb"),
+        )
+        conn.autocommit = True
+        try:
+            run_vol_monitor(conn)
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("[Runner] Vol monitor failed (non-blocking): %s", exc)
+
+
 def _run_sector_rotation_nonblocking() -> None:
     """Run sector rotation scan in a non-blocking, fail-silent wrapper."""
     if not _PG_AVAILABLE:
@@ -257,6 +286,11 @@ def run_playbook_cycle(
     if cycle_count % SECTOR_ROTATION_CYCLE_INTERVAL == 0:
         logger.info("[Runner] Running sector rotation scan (cycle %d)", cycle_count)
         _run_sector_rotation_nonblocking()
+
+    # 6. Volatility surface monitor (same 30-min cadence; non-blocking)
+    if cycle_count % VOL_MONITOR_CYCLE_INTERVAL == 0:
+        logger.info("[Runner] Running vol surface monitor (cycle %d)", cycle_count)
+        _run_vol_monitor_nonblocking()
 
     elapsed = time.time() - cycle_start
     logger.info("[Runner] Cycle complete in %.1f s  |  signals=%d", elapsed, len(signals_found))

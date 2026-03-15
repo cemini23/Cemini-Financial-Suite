@@ -578,3 +578,19 @@ a new one per alert, otherwise rate limiting has no effect.
 **Files**: `core/discord_notifier.py`, `cemini_contracts/discord.py`, `analyzer.py`,
 `ems/kalshi_rest.py`, `QuantOS/core/notifier.py`, `QuantOS/signal_generator.py`,
 `scripts/kalshi_rewards.py`, `shared/safety/hitl_gate.py`.
+
+---
+
+## Options Math (Step 23)
+
+**Constant geometric returns have zero variance**
+Mistake: `test_spy_vs_spy_beta_is_one` used `1.005**i` price series → all log returns
+identical → var(r_spy) < 1e-12 → rolling_beta returns NaN.
+Fix: Use alternating multipliers (e.g. 1.01 / 0.98 every 3 bars) so variance is non-zero.
+Files: `tests/test_options_greeks.py`.
+
+**ruff B905: zip() needs strict=**
+Mistake: `for h, lo in zip(highs, lows):` triggers ruff B905.
+Fix: Use `zip(highs, lows, strict=False)` for mismatched-length tolerance, or `strict=True`
+if lengths must match.
+Files: `options_greeks/realized_vol.py`.

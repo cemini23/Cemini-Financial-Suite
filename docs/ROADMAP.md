@@ -3,7 +3,7 @@
 **Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 34 of 51 steps complete — 1182 tests — 0 failures
+**Progress:** 35 of 51 steps complete — 1256 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -34,7 +34,7 @@
 | 20 | Skill Vetting Protocol | ✓ DONE (Mar 1) | approved_skills.json, vet_skill.py |
 | 21 | Cemini SKILL.md | ✓ DONE (Mar 7) | 565-line transferable architecture package |
 | 22 | Alpaca Data Spine | READY | $99/mo sub required; replaces Polygon free tier |
-| 23 | Options Greeks Engine | READY | Black-Scholes / local vol |
+| 23 | Options Greeks Engine | ✓ DONE (Mar 15) | options_greeks/; BS pricing + 5 Greeks; IV solver; binary Greeks; realized/Parkinson/EWM vol; vol_regime; beta; intel:vol_surface (TTL=3600) |
 | 24 | Visual Crossing Weather | ✓ DONE | weather_alpha, 5 sources, agricultural metrics |
 | 25 | Sector Rotation Monitor | ✓ DONE (Mar 15) | RRG-style RS/momentum for 11 SPDR ETFs vs SPY; RISK_ON/RISK_OFF/NEUTRAL bias; intel:sector_rotation (TTL=3600) |
 | 26 | Opportunity Discovery Engine | ✓ DONE (Mar 7) | FastAPI :8003, 50-ticker watchlist, Bayesian LR |
