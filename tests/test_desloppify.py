@@ -16,6 +16,11 @@ from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 
 import pytest
+from pathlib import Path
+
+# Repo root: one level up from the tests/ directory.
+# Works on both the server (/opt/cemini) and any CI checkout path.
+_REPO_ROOT = str(Path(__file__).parent.parent)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +61,7 @@ class TestD1KalshiAdapterPath:
                 if "core.brokers.kalshi" in sys.modules:
                     del sys.modules["core.brokers.kalshi"]
 
-                sys.path.insert(0, "/opt/cemini/QuantOS")
+                sys.path.insert(0, _REPO_ROOT + "/QuantOS")
                 import core.brokers.kalshi as mod  # noqa: PLC0415
                 sys.path.pop(0)
                 # Clean up to avoid polluting other tests
@@ -106,7 +111,7 @@ class TestD2BuyingPowerFallback:
 
     def _make_adapter(self, key_exists: bool = True):
         """Build a KalshiRESTAdapter with a mocked private key."""
-        sys.path.insert(0, "/opt/cemini")
+        sys.path.insert(0, _REPO_ROOT)
 
         # Stub heavy crypto imports
         fake_crypto = MagicMock()
@@ -139,11 +144,11 @@ class TestD2BuyingPowerFallback:
             if "core.ems.adapters.kalshi_rest" in sys.modules:
                 del sys.modules["core.ems.adapters.kalshi_rest"]
 
-            sys.path.insert(0, "/opt/cemini")
+            sys.path.insert(0, _REPO_ROOT)
             import importlib.util
             spec = importlib.util.spec_from_file_location(
                 "core.ems.adapters.kalshi_rest",
-                "/opt/cemini/core/ems/adapters/kalshi_rest.py",
+                _REPO_ROOT + "/core/ems/adapters/kalshi_rest.py",
             )
             mod = importlib.util.module_from_spec(spec)
 
@@ -487,7 +492,7 @@ class TestD8WilderRSI:
 
     def test_rsi_brain_file_uses_wilder_smma(self):
         """Verify brain.py source contains the Wilder smoothing formula, not np.mean."""
-        brain_path = "/opt/cemini/QuantOS/core/brain.py"
+        brain_path = _REPO_ROOT + "/QuantOS/core/brain.py"
         with open(brain_path) as f:
             src = f.read()
         # The Wilder formula: (prev * (period-1) + current) / period
@@ -606,7 +611,7 @@ class TestD11CeminiVersion:
     """cemini_version.py must exist at repo root with __version__ and SERVICE_VERSIONS."""
 
     def test_cemini_version_module_importable(self):
-        sys.path.insert(0, "/opt/cemini")
+        sys.path.insert(0, _REPO_ROOT)
         try:
             import cemini_version  # noqa: PLC0415
             assert hasattr(cemini_version, "__version__")
@@ -618,7 +623,7 @@ class TestD11CeminiVersion:
                 del sys.modules["cemini_version"]
 
     def test_service_versions_dict_present(self):
-        sys.path.insert(0, "/opt/cemini")
+        sys.path.insert(0, _REPO_ROOT)
         try:
             import cemini_version  # noqa: PLC0415
             assert hasattr(cemini_version, "SERVICE_VERSIONS")
