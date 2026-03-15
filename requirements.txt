@@ -87,6 +87,14 @@ colorama>=0.4.6
 cryptography>=42.0.5
 python-dotenv>=1.0.1
 
+# --- Security: transitive dependency pins (Dependabot / pip-audit) ---
+# Explicit safe lower bounds for transitive deps with known CVEs.
+# These are pulled in by tweepy, google-auth, and build tooling.
+oauthlib>=3.2.1          # PYSEC-2022-269 (was 3.2.0 via tweepy)
+configobj>=5.0.9         # CVE-2023-26112 (was 5.0.6)
+setuptools>=78.1.1       # CVE-2024-6345 / PYSEC-2025-49 (was 59.6.0)
+wheel>=0.38.1            # PYSEC-2022-43017 (was 0.37.1)
+
 # --- Advanced Storage ---
 arcticdb>=4.3.0
 

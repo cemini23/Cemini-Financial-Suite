@@ -16,7 +16,7 @@ requests
 yfinance
 pydantic-settings
 feedparser
-cryptography
+cryptography>=42.0.5
 websockets>=14.0
 ccxt
 sqlalchemy
@@ -24,6 +24,11 @@ aiosqlite
 tweepy
 textblob
 python-multipart
+
+# --- Security: transitive dependency pins ---
+oauthlib>=3.2.1
+setuptools>=78.1.1
+wheel>=0.38.1
 
 # --- Observability (Step 35) ---
 prometheus-fastapi-instrumentator>=7.0.0

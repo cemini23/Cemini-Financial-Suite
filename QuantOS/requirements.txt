@@ -29,7 +29,12 @@ colorama>=0.4.6
 pyinstaller>=6.0.0
 nest_asyncio>=1.5.0
 aiohttp>=3.9.0
-cryptography>=42.0.0
+cryptography>=42.0.5
+
+# --- Security: transitive dependency pins ---
+oauthlib>=3.2.1
+setuptools>=78.1.1
+wheel>=0.38.1
 
 # --- Observability (Step 35) ---
 prometheus-fastapi-instrumentator>=7.0.0

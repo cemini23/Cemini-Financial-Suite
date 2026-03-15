@@ -40,6 +40,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Upgrade pip, setuptools, wheel to safe versions
+        run: pip install --upgrade "pip>=25.3" "setuptools>=78.1.1" "wheel>=0.38.1"
+
       - name: Install pip-audit
         run: pip install pip-audit
 
