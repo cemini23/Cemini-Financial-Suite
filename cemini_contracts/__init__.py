@@ -22,3 +22,4 @@ from cemini_contracts.vector import *        # noqa: F401,F403
 __version__ = "1.0.0"
 from cemini_contracts.pricing import *       # noqa: F401,F403
 from cemini_contracts.fred import *          # noqa: F401,F403
+from cemini_contracts.sector import *        # noqa: F401,F403

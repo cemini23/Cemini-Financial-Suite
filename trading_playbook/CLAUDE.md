@@ -12,13 +12,14 @@ Does NOT place orders.
 | `risk_engine.py` | Fractional Kelly (25% cap), CVaR (99th), DrawdownMonitor |
 | `kill_switch.py` | PnL velocity, order rate, latency, price deviation → CANCEL_ALL |
 | `playbook_logger.py` | Postgres (playbook_logs), JSONL (/mnt/archive/playbook/), Redis |
-| `runner.py` | 5-min scan loop entry point |
+| `runner.py` | 5-min scan loop; sector rotation runs every 6th cycle (30 min) |
+| `sector_rotation.py` | RRG-style RS ratio/momentum/quadrant for 11 SPDR sector ETFs vs SPY; publishes `intel:sector_rotation` (TTL=3600) |
 
 ## Data Flow
 
 - Reads: `raw_market_ticks`, `macro_logs` from Postgres
-- Writes: `playbook_logs` (JSONB payload) to Postgres
-- Publishes: `intel:playbook_snapshot` to Redis
+- Writes: `playbook_logs` (JSONB payload), `sector_rotation_log` (JSONB) to Postgres
+- Publishes: `intel:playbook_snapshot`, `intel:sector_rotation` to Redis
 
 ## Regime Gate Thresholds
 

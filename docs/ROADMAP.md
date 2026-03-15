@@ -3,7 +3,7 @@
 **Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 30 of 51 steps complete — 1025 tests — 0 failures
+**Progress:** 31 of 51 steps complete — 1070 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -36,7 +36,7 @@
 | 22 | Alpaca Data Spine | READY | $99/mo sub required; replaces Polygon free tier |
 | 23 | Options Greeks Engine | READY | Black-Scholes / local vol |
 | 24 | Visual Crossing Weather | ✓ DONE | weather_alpha, 5 sources, agricultural metrics |
-| 25 | Sector Rotation Monitor | READY | XL* ETFs vs SPY |
+| 25 | Sector Rotation Monitor | ✓ DONE (Mar 15) | RRG-style RS/momentum for 11 SPDR ETFs vs SPY; RISK_ON/RISK_OFF/NEUTRAL bias; intel:sector_rotation (TTL=3600) |
 | 26 | Opportunity Discovery Engine | ✓ DONE (Mar 7) | FastAPI :8003, 50-ticker watchlist, Bayesian LR |
 | 27 | MCP Intelligence Server | ✓ DONE (Mar 6) | FastMCP 3.1.0, 9 read-only tools, port 8002 |
 | 28 | Pydantic Data Contracts | ✓ DONE (Mar 6) | cemini_contracts/, safe_validate/safe_dump at all Intel Bus boundaries |

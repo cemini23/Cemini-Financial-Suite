@@ -37,6 +37,8 @@ import json
 import logging
 import os
 import time
+from typing import Optional
+
 from beartype import beartype
 
 logger = logging.getLogger("intel_bus")
@@ -75,8 +77,13 @@ class IntelPublisher:
 
     @staticmethod
     @beartype
-    def publish(key: str, value, source_system: str, confidence: float = 1.0) -> None:
-        """Synchronous publish. Use from threads and sync scripts (analyzer.py, bq_signals.py)."""
+    def publish(key: str, value, source_system: str, confidence: float = 1.0, ttl: Optional[int] = None) -> None:
+        """Synchronous publish. Use from threads and sync scripts (analyzer.py, bq_signals.py).
+
+        Args:
+            ttl: Custom TTL in seconds. Defaults to INTEL_TTL (300 s).
+                 Use higher values for slow-refresh signals (e.g. sector rotation = 3600 s).
+        """
         if not _REDIS_AVAILABLE:
             return
         payload = json.dumps({
@@ -85,9 +92,10 @@ class IntelPublisher:
             "timestamp": time.time(),
             "confidence": confidence,
         })
+        effective_ttl = ttl if ttl is not None else INTEL_TTL
         try:
             r = _sync_client()
-            r.set(key, payload, ex=INTEL_TTL)
+            r.set(key, payload, ex=effective_ttl)
             r.close()
         except Exception as e:
             logger.debug(f"[IntelBus] publish failed ({key}): {e}")

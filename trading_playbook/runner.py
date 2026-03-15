@@ -55,6 +55,7 @@ except ImportError:
 from trading_playbook.macro_regime import classify_regime
 from trading_playbook.playbook_logger import PlaybookLogger
 from trading_playbook.risk_engine import CVaRCalculator, DrawdownMonitor, FractionalKelly
+from trading_playbook.sector_rotation import run_sector_rotation
 from trading_playbook.signal_catalog import scan_symbol
 
 # ----- logging setup -------------------------------------------------------- #
@@ -91,6 +92,9 @@ WATCHLIST: list = [
 ] or DEFAULT_WATCHLIST
 
 OHLCV_PERIOD = "6mo"   # enough for all detectors (VCP needs 60+ bars)
+
+# Sector rotation runs every Nth cycle (6 × 5 min = 30 min refresh)
+SECTOR_ROTATION_CYCLE_INTERVAL = 6
 
 
 # ----- helpers -------------------------------------------------------------- #
@@ -158,12 +162,35 @@ def _fetch_pnl_returns() -> np.ndarray:
 
 
 # ----- main loop ------------------------------------------------------------ #
+def _run_sector_rotation_nonblocking() -> None:
+    """Run sector rotation scan in a non-blocking, fail-silent wrapper."""
+    if not _PG_AVAILABLE:
+        logger.debug("[Runner] psycopg2 not available — skipping sector rotation")
+        return
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "postgres"),
+            port=5432,
+            user=os.getenv("POSTGRES_USER", "admin"),
+            password=os.getenv("POSTGRES_PASSWORD", "quest"),
+            database=os.getenv("POSTGRES_DB", "qdb"),
+        )
+        conn.autocommit = True
+        try:
+            run_sector_rotation(conn)
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("[Runner] Sector rotation scan failed (non-blocking): %s", exc)
+
+
 def run_playbook_cycle(
     kill_switch: KillSwitch,
     kelly: FractionalKelly,
     cvar_calc: CVaRCalculator,
     dd_monitor: DrawdownMonitor,
     pb_logger: PlaybookLogger,
+    cycle_count: int = 0,
 ) -> None:
     """Execute one full playbook scan cycle."""
 
@@ -226,6 +253,11 @@ def run_playbook_cycle(
     if ks_reason:
         pb_logger.log_kill_switch_event(kill_switch.state_snapshot())
 
+    # 5. Sector rotation (every 6th cycle = ~30 min; non-blocking)
+    if cycle_count % SECTOR_ROTATION_CYCLE_INTERVAL == 0:
+        logger.info("[Runner] Running sector rotation scan (cycle %d)", cycle_count)
+        _run_sector_rotation_nonblocking()
+
     elapsed = time.time() - cycle_start
     logger.info("[Runner] Cycle complete in %.1f s  |  signals=%d", elapsed, len(signals_found))
 
@@ -244,16 +276,18 @@ def main() -> None:
     pb_logger = PlaybookLogger()
 
     last_cycle = 0.0
+    cycle_count = 0
 
     try:
         while True:
             now = time.time()
             if now - last_cycle >= SCAN_INTERVAL:
                 try:
-                    run_playbook_cycle(kill_switch, kelly, cvar_calc, dd_monitor, pb_logger)
+                    run_playbook_cycle(kill_switch, kelly, cvar_calc, dd_monitor, pb_logger, cycle_count)
                 except Exception as exc:
                     logger.error("[Runner] Unhandled exception in cycle: %s", exc, exc_info=True)
                 last_cycle = time.time()
+                cycle_count += 1
 
             # Check kill switch state between cycles too
             if kill_switch.triggered:

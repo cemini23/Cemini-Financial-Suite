@@ -488,3 +488,25 @@ so `redis.pipeline.return_value` must have `.incrbyfloat`, `.expire`, `.execute`
 it directly from an async context — use `await asyncio.to_thread(gate.wait_for_decision, id)`.
 The poll interval is 0.5s; in tests, pass `timeout=0` to return TIMEOUT immediately.
 **File**: `shared/safety/hitl_gate.py`.
+
+---
+
+## Sector Rotation — IntelPublisher TTL Extension (Step 25)
+
+**Pattern**: Default `IntelPublisher.publish()` used module-level `INTEL_TTL=300`.
+Sector rotation refreshes every 30 min but needs TTL=3600 so the key doesn't expire
+between refreshes. Added optional `ttl: Optional[int] = None` kwarg to both
+`publish()` and updated beartype annotation; falls back to INTEL_TTL when not set.
+**Files**: `core/intel_bus.py`, `trading_playbook/sector_rotation.py`.
+
+**Rule**: Always set `ttl > refresh_interval` for slow-updating Intel Bus keys.
+sector_rotation: refresh=1800s, TTL=3600s. Matches existing LESSONS.md TTL-mismatch rule.
+
+---
+
+## Sector Rotation — Postgres Via DB_HOST (not localhost)
+
+**Pattern**: Postgres runs in Docker on DB_HOST="postgres" (not localhost).
+Raw `psycopg2.connect(host='localhost')` will refuse connection.
+Runner uses `os.getenv("DB_HOST", "postgres")` — always follow this pattern.
+**Files**: `trading_playbook/runner.py`, `ingestion/polygon_ingestor.py`.

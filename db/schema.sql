@@ -57,6 +57,40 @@ CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
 COMMENT ON EXTENSION vector IS 'vector data type and ivfflat and hnsw access methods';
 
 
+--
+-- Name: audit_chain_hash_trigger(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.audit_chain_hash_trigger() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    last_hash TEXT;
+BEGIN
+    -- Find the chain_hash of the most recent entry
+    SELECT chain_hash INTO last_hash
+    FROM audit_hash_chain
+    ORDER BY sequence_num DESC
+    LIMIT 1;
+
+    -- Genesis entry uses 64 zero chars as prev_hash
+    IF last_hash IS NULL THEN
+        NEW.prev_hash := repeat('0', 64);
+    ELSE
+        NEW.prev_hash := last_hash;
+    END IF;
+
+    -- chain_hash = SHA-256(prev_hash || payload_hash)
+    NEW.chain_hash := encode(
+        sha256((NEW.prev_hash || NEW.payload_hash)::bytea),
+        'hex'
+    );
+
+    RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -1869,6 +1903,16 @@ INHERITS (public.raw_market_ticks);
 
 
 --
+-- Name: _hyper_5_187_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal._hyper_5_187_chunk (
+    CONSTRAINT constraint_175 CHECK ((("timestamp" >= '2026-03-14 00:00:00+00'::timestamp with time zone) AND ("timestamp" < '2026-03-15 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (public.raw_market_ticks);
+
+
+--
 -- Name: _materialized_hypertable_6; Type: TABLE; Schema: _timescaledb_internal; Owner: -
 --
 
@@ -2242,6 +2286,66 @@ ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_183_chunk ALTER COLUMN c
 
 
 --
+-- Name: compress_hyper_7_186_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_186_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_186_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
+-- Name: compress_hyper_7_188_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal.compress_hyper_7_188_chunk (
+    _ts_meta_count integer,
+    symbol character varying(20),
+    _ts_meta_v2_bloomh_id _timescaledb_internal.bloom1,
+    id _timescaledb_internal.compressed_data,
+    price _timescaledb_internal.compressed_data,
+    volume _timescaledb_internal.compressed_data,
+    _ts_meta_min_1 timestamp with time zone,
+    _ts_meta_max_1 timestamp with time zone,
+    "timestamp" _timescaledb_internal.compressed_data,
+    created_at _timescaledb_internal.compressed_data
+)
+WITH (toast_tuple_target='128');
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN _ts_meta_count SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN symbol SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN _ts_meta_v2_bloomh_id SET STORAGE EXTERNAL;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN id SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN price SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN volume SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN _ts_meta_min_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN _ts_meta_max_1 SET STATISTICS 1000;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN "timestamp" SET STATISTICS 0;
+ALTER TABLE ONLY _timescaledb_internal.compress_hyper_7_188_chunk ALTER COLUMN created_at SET STATISTICS 0;
+
+
+--
 -- Name: ai_trade_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2253,6 +2357,94 @@ CREATE TABLE public.ai_trade_logs (
     size double precision,
     reasoning text,
     "timestamp" timestamp with time zone
+);
+
+
+--
+-- Name: audit_batch_commitments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_batch_commitments (
+    id uuid NOT NULL,
+    batch_date date NOT NULL,
+    merkle_root text NOT NULL,
+    entry_count integer NOT NULL,
+    first_entry_id uuid,
+    last_entry_id uuid,
+    first_sequence bigint,
+    last_sequence bigint,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: audit_hash_chain; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_hash_chain (
+    id uuid NOT NULL,
+    sequence_num bigint NOT NULL,
+    source_table text NOT NULL,
+    source_id text NOT NULL,
+    payload_canonical text NOT NULL,
+    payload_hash text NOT NULL,
+    prev_hash text NOT NULL,
+    chain_hash text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: audit_hash_chain_sequence_num_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.audit_hash_chain_sequence_num_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: audit_hash_chain_sequence_num_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.audit_hash_chain_sequence_num_seq OWNED BY public.audit_hash_chain.sequence_num;
+
+
+--
+-- Name: audit_intent_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_intent_log (
+    id uuid NOT NULL,
+    signal_source text NOT NULL,
+    signal_type text NOT NULL,
+    ticker text,
+    intent_hash text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: debate_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.debate_sessions (
+    id uuid NOT NULL,
+    ticker text NOT NULL,
+    regime text NOT NULL,
+    verdict text NOT NULL,
+    confidence numeric NOT NULL,
+    bull_score numeric NOT NULL,
+    bear_score numeric NOT NULL,
+    tie_break_used boolean DEFAULT false NOT NULL,
+    phase_count integer DEFAULT 5 NOT NULL,
+    payload jsonb NOT NULL,
+    started_at timestamp with time zone NOT NULL,
+    completed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2273,6 +2465,22 @@ CREATE SEQUENCE public.discovery_audit_log_id_seq
 --
 
 ALTER SEQUENCE public.discovery_audit_log_id_seq OWNED BY public.discovery_audit_log.id;
+
+
+--
+-- Name: edgar_alerts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.edgar_alerts (
+    id uuid NOT NULL,
+    ticker text NOT NULL,
+    alert_type text NOT NULL,
+    significance_score integer NOT NULL,
+    summary text NOT NULL,
+    filing_url text,
+    payload jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
 
 
 --
@@ -8285,6 +8493,27 @@ ALTER TABLE ONLY _timescaledb_internal._hyper_5_184_chunk ALTER COLUMN created_a
 
 
 --
+-- Name: _hyper_5_187_chunk id; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_5_187_chunk ALTER COLUMN id SET DEFAULT nextval('public.raw_market_ticks_id_seq'::regclass);
+
+
+--
+-- Name: _hyper_5_187_chunk created_at; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_5_187_chunk ALTER COLUMN created_at SET DEFAULT now();
+
+
+--
+-- Name: audit_hash_chain sequence_num; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_hash_chain ALTER COLUMN sequence_num SET DEFAULT nextval('public.audit_hash_chain_sequence_num_seq'::regclass);
+
+
+--
 -- Name: discovery_audit_log id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8345,6 +8574,54 @@ ALTER TABLE ONLY public.playbook_logs ALTER COLUMN id SET DEFAULT nextval('publi
 --
 
 ALTER TABLE ONLY public.raw_market_ticks ALTER COLUMN id SET DEFAULT nextval('public.raw_market_ticks_id_seq'::regclass);
+
+
+--
+-- Name: audit_batch_commitments audit_batch_commitments_batch_date_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_batch_commitments
+    ADD CONSTRAINT audit_batch_commitments_batch_date_key UNIQUE (batch_date);
+
+
+--
+-- Name: audit_batch_commitments audit_batch_commitments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_batch_commitments
+    ADD CONSTRAINT audit_batch_commitments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: audit_hash_chain audit_hash_chain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_hash_chain
+    ADD CONSTRAINT audit_hash_chain_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: audit_intent_log audit_intent_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_intent_log
+    ADD CONSTRAINT audit_intent_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: debate_sessions debate_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_sessions
+    ADD CONSTRAINT debate_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: edgar_alerts edgar_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.edgar_alerts
+    ADD CONSTRAINT edgar_alerts_pkey PRIMARY KEY (id);
 
 
 --
@@ -14070,6 +14347,20 @@ CREATE INDEX _hyper_5_184_chunk_raw_market_ticks_timestamp_idx ON _timescaledb_i
 
 
 --
+-- Name: _hyper_5_187_chunk_idx_rmt_id; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_5_187_chunk_idx_rmt_id ON _timescaledb_internal._hyper_5_187_chunk USING btree (id);
+
+
+--
+-- Name: _hyper_5_187_chunk_raw_market_ticks_timestamp_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_5_187_chunk_raw_market_ticks_timestamp_idx ON _timescaledb_internal._hyper_5_187_chunk USING btree ("timestamp" DESC);
+
+
+--
 -- Name: _hyper_6_173_chunk__materialized_hypertable_6_bucket_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
 --
 
@@ -14175,10 +14466,59 @@ CREATE INDEX compress_hyper_7_183_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON 
 
 
 --
+-- Name: compress_hyper_7_186_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_186_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_186_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
+-- Name: compress_hyper_7_188_chunk_symbol__ts_meta_min_1__ts_meta_m_idx; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX compress_hyper_7_188_chunk_symbol__ts_meta_min_1__ts_meta_m_idx ON _timescaledb_internal.compress_hyper_7_188_chunk USING btree (symbol, _ts_meta_min_1 DESC, _ts_meta_max_1 DESC);
+
+
+--
 -- Name: discovery_audit_log_timestamp_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX discovery_audit_log_timestamp_idx ON public.discovery_audit_log USING btree ("timestamp" DESC);
+
+
+--
+-- Name: idx_audit_batch_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_audit_batch_date ON public.audit_batch_commitments USING btree (batch_date);
+
+
+--
+-- Name: idx_audit_chain_sequence; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_audit_chain_sequence ON public.audit_hash_chain USING btree (sequence_num);
+
+
+--
+-- Name: idx_audit_chain_source; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_audit_chain_source ON public.audit_hash_chain USING btree (source_table, created_at);
+
+
+--
+-- Name: idx_audit_intent_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_audit_intent_created ON public.audit_intent_log USING btree (created_at);
+
+
+--
+-- Name: idx_audit_intent_source; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_audit_intent_source ON public.audit_intent_log USING btree (signal_source, signal_type);
 
 
 --
@@ -14196,6 +14536,27 @@ CREATE INDEX idx_dead_letters_service ON public.intel_dead_letters USING btree (
 
 
 --
+-- Name: idx_debate_sessions_regime; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_sessions_regime ON public.debate_sessions USING btree (regime, created_at);
+
+
+--
+-- Name: idx_debate_sessions_ticker; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_sessions_ticker ON public.debate_sessions USING btree (ticker, created_at);
+
+
+--
+-- Name: idx_debate_sessions_verdict; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_sessions_verdict ON public.debate_sessions USING btree (verdict, created_at);
+
+
+--
 -- Name: idx_discovery_audit_action; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -14207,6 +14568,27 @@ CREATE INDEX idx_discovery_audit_action ON public.discovery_audit_log USING btre
 --
 
 CREATE INDEX idx_discovery_audit_ticker ON public.discovery_audit_log USING btree (ticker, "timestamp" DESC);
+
+
+--
+-- Name: idx_edgar_alerts_score; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_alerts_score ON public.edgar_alerts USING btree (significance_score DESC);
+
+
+--
+-- Name: idx_edgar_alerts_ticker; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_alerts_ticker ON public.edgar_alerts USING btree (ticker, created_at);
+
+
+--
+-- Name: idx_edgar_alerts_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_edgar_alerts_type ON public.edgar_alerts USING btree (alert_type, created_at);
 
 
 --
@@ -14322,6 +14704,13 @@ CREATE INDEX raw_market_ticks_timestamp_idx ON public.raw_market_ticks USING btr
 
 
 --
+-- Name: audit_hash_chain trg_audit_chain_hash; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_audit_chain_hash BEFORE INSERT ON public.audit_hash_chain FOR EACH ROW EXECUTE FUNCTION public.audit_chain_hash_trigger();
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -14340,4 +14729,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260313000000'),
     ('20260313000001'),
     ('20260314000000'),
-    ('20260314130000');
+    ('20260314130000'),
+    ('20260314200000'),
+    ('20260315100000'),
+    ('20260315120000');

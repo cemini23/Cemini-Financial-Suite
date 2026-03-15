@@ -53,6 +53,8 @@ STOCK_SYMBOLS = [
     "COIN", "MSTR", "MARA",
     "JPM", "BAC", "GS",
     "DIS", "NFLX", "UBER",
+    # Step 25: SPDR sector ETFs for sector rotation monitor
+    "XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY",
 ]
 
 # Polygon free tier: 5 calls/minute → sleep 13s between calls to stay safe
