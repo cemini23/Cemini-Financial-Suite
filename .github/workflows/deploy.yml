@@ -136,7 +136,17 @@ jobs:
           python-version: "3.11"
 
       - name: Install test dependencies
-        run: pip install pytest pytest-xdist pytest-timeout hypothesis vcrpy numpy pandas scipy pydantic beartype psycopg2-binary redis requests
+        run: |
+          pip install \
+            pytest pytest-xdist pytest-timeout hypothesis vcrpy \
+            numpy pandas scipy pydantic beartype \
+            psycopg2-binary redis requests \
+            httpx "hishel[httpx,async]" aiobreaker tenacity apscheduler \
+            uuid-utils pymerkle \
+            cryptography \
+            yfinance \
+            polars orjson \
+            fastapi
 
       - name: Run test suite (parallel, exclude fuzz)
         run: python3 -m pytest tests/ -n auto -m "not fuzz" -q --timeout=60

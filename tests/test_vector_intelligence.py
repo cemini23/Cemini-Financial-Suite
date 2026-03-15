@@ -78,21 +78,19 @@ class TestEmbedder:
         import intelligence.embedder as emb
         fake_model = _make_fake_model()
 
-        # SentenceTransformer is imported inside _get_model(), so patch at the source
-        with patch("sentence_transformers.SentenceTransformer", return_value=fake_model):
-            # Patch _get_model to return our fake model directly (avoids import path issues)
-            original_get_model = emb._get_model
+        # Patch _get_model directly to avoid importing sentence_transformers in CI
+        original_get_model = emb._get_model
 
-            def _patched_get():
-                emb._model = fake_model
-                return fake_model
+        def _patched_get():
+            emb._model = fake_model
+            return fake_model
 
-            emb._get_model = _patched_get
-            try:
-                emb.embed("hello")
-                assert emb.is_model_loaded() is True
-            finally:
-                emb._get_model = original_get_model
+        emb._get_model = _patched_get
+        try:
+            emb.embed("hello")
+            assert emb.is_model_loaded() is True
+        finally:
+            emb._get_model = original_get_model
 
 
 # ─────────────────────────────────────────────────────────────────────────────
