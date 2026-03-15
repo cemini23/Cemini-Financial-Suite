@@ -150,7 +150,7 @@ jobs:
             async-timeout
 
       - name: Run test suite (parallel, exclude fuzz)
-        run: python3 -m pytest tests/ -n auto -m "not fuzz" -q --timeout=60
+        run: python3 -m pytest tests/ -n auto -m "not fuzz" --timeout=60 --tb=short -q
 
   audit-and-deploy:
     # Core quality gates: lint + dep audit + tests must pass before secrets scan + deploy.
