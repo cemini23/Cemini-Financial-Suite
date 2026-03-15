@@ -510,3 +510,24 @@ sector_rotation: refresh=1800s, TTL=3600s. Matches existing LESSONS.md TTL-misma
 Raw `psycopg2.connect(host='localhost')` will refuse connection.
 Runner uses `os.getenv("DB_HOST", "postgres")` — always follow this pattern.
 **Files**: `trading_playbook/runner.py`, `ingestion/polygon_ingestor.py`.
+
+---
+
+## Earnings Calendar — EDGAR Submissions JSON Structure (Step 19)
+
+**Pattern**: `submissions/CIK{cik}.json` stores filings as parallel arrays under
+`filings.recent.{form, filingDate, accessionNumber, ...}`. NOT a list of objects.
+Always iterate by index, not by dict key. Same structure as edgar_harvester._parse_recent_filings().
+**Files**: `scrapers/earnings_calendar.py`, `scrapers/edgar/edgar_harvester.py`.
+
+**Rule**: For earnings date estimation, use average interval between consecutive 10-Q/10-K
+filings (not hardcoded 90 days). Coefficient of variation of intervals gives confidence score:
+low variation = high confidence. Min 2 filings needed for interval computation.
+
+## Earnings Calendar — APScheduler Job Pattern (Step 19)
+
+**Pattern**: When adding a new job to an existing APScheduler setup (edgar_harvester),
+define the job as a nested async def inside `main()` so it captures `_http_client` and
+`_CIK_MAP` from the enclosing scope. Import `_CIK_MAP` inside the job at call time
+(not at module load) — it's populated after `load_cik_map()` runs.
+**Files**: `scrapers/edgar/edgar_harvester.py`.

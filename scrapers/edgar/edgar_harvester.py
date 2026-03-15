@@ -48,6 +48,7 @@ from scrapers.edgar.cik_mapping import (  # noqa: E402
     get_cik,
     load_cik_map,
 )
+from scrapers.earnings_calendar import run_earnings_calendar  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -627,10 +628,24 @@ async def main() -> None:
         fundamentals_job, "cron", hour=6, minute=0,
         timezone="UTC", id="edgar_fundamentals", replace_existing=True,
     )
+    # 2d: Earnings calendar — hourly, run 5 min after start (Step 19)
+    async def _earnings_calendar_job() -> None:
+        from scrapers.edgar.cik_mapping import _CIK_MAP
+        try:
+            await run_earnings_calendar(_http_client, _CIK_MAP)
+        except Exception as exc:
+            logger.warning("EDGAR: Earnings calendar job failed (non-blocking): %s", exc)
+
+    scheduler.add_job(
+        _earnings_calendar_job, "interval", seconds=3600,
+        id="earnings_calendar", replace_existing=True,
+        next_run_time=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5),
+    )
 
     scheduler.start()
     logger.info(
-        "EDGAR: APScheduler started — filings every %ds, insider every %ds, fundamentals daily 06:00 UTC",
+        "EDGAR: APScheduler started — filings every %ds, insider every %ds, "
+        "fundamentals daily 06:00 UTC, earnings calendar hourly",
         FILING_MONITOR_INTERVAL, INSIDER_SCAN_INTERVAL,
     )
 

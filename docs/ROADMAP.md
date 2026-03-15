@@ -3,7 +3,7 @@
 **Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 31 of 51 steps complete — 1070 tests — 0 failures
+**Progress:** 32 of 51 steps complete — 1119 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -30,7 +30,7 @@
 | 16 | Kalshi WebSocket | ✓ DONE | rover_scanner, websockets v16 |
 | 17 | SEC EDGAR Monitor — Filing Alerts | ✓ DONE (Mar 15) | Filing significance scoring, insider cluster detection, intel:edgar_alert |
 | 18 | Options Flow Harvester | BLOCKED | Needs data subscription |
-| 19 | Earnings Calendar Integration | READY | EDGAR already in (Step 40) |
+| 19 | Earnings Calendar Integration | ✓ DONE (Mar 15) | EDGAR submissions cadence estimation; REPORTING_THIS_WEEK/SOON/JUST_REPORTED; cluster detection; intel:earnings_calendar (TTL=7200) |
 | 20 | Skill Vetting Protocol | ✓ DONE (Mar 1) | approved_skills.json, vet_skill.py |
 | 21 | Cemini SKILL.md | ✓ DONE (Mar 7) | 565-line transferable architecture package |
 | 22 | Alpaca Data Spine | READY | $99/mo sub required; replaces Polygon free tier |
