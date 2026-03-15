@@ -146,7 +146,8 @@ jobs:
             cryptography \
             yfinance \
             polars orjson \
-            fastapi
+            fastapi \
+            async-timeout
 
       - name: Run test suite (parallel, exclude fuzz)
         run: python3 -m pytest tests/ -n auto -m "not fuzz" -q --timeout=60
