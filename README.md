@@ -403,7 +403,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ## 🔬 Test & Security Status
 
 <!-- AUTO:TEST_SUMMARY -->
-**Tests:** 440 passing
+**Tests:** 479 passing
 **pip-audit:** not available locally (check CI)
 **bandit (SAST):** see CI
 **CI gates:** lint → pip-audit → bandit → TruffleHog → deploy (all required)
@@ -412,7 +412,7 @@ All inter-service communication uses Redis pub/sub and key-value. No direct HTTP
 ---
 
 <!-- AUTO:LAST_UPDATED -->
-*Auto-generated: 2026-03-15 14:30 UTC*
+*Auto-generated: 2026-03-15 14:55 UTC*
 <!-- /AUTO:LAST_UPDATED -->
 
 **Copyright (c) 2026 Cemini23 / Claudio Barone Jr.**
