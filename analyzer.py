@@ -11,6 +11,7 @@ import os
 import json
 import requests
 from core.intel_bus import IntelPublisher
+from core.discord_notifier import get_notifier
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
@@ -66,7 +67,12 @@ def send_discord_report(win_rate: float, mode: str, total_trades: int) -> None:
         }],
     }
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+        get_notifier().send_alert(
+            "📊 Performance Report",
+            f"Mode: {mode.capitalize()} | Win Rate: {win_rate:.1%} | Trades: {total_trades}",
+            alert_type="INFO",
+            enrich=True,
+        )
     except Exception:
         pass
 
@@ -82,7 +88,13 @@ def send_heatseeker_alert(symbol: str, spike_ratio: float) -> None:
         ),
     }
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+        get_notifier().send_alert(
+            "🔥 HEATSEEKER ALERT",
+            f"${symbol} mention density spiked {spike_ratio:.1f}x in the last 15m! Watching for SMA crossover.",
+            alert_type="SIGNAL",
+            ticker=symbol,
+            enrich=True,
+        )
     except Exception:
         pass
 
@@ -98,7 +110,12 @@ def send_decoupling_alert(pair: str, old_corr: float, new_corr: float) -> None:
         ),
     }
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+        get_notifier().send_alert(
+            "⚠️ DECOUPLING ALERT",
+            f"{pair} correlation dropped from {old_corr:.2f} to {new_corr:.2f}. Regime shift detected.",
+            alert_type="WARNING",
+            enrich=True,
+        )
     except Exception:
         pass
 

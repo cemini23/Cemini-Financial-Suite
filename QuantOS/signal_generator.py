@@ -1,6 +1,12 @@
 # CEMINI FINANCIAL SUITE™
 # Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 # All Rights Reserved.
+import sys
+from pathlib import Path
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 import psycopg2
 import redis
 import json
@@ -15,6 +21,12 @@ from sqlalchemy import create_engine, text
 DB_HOST = os.getenv("DB_HOST", "localhost")
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
+try:
+    from core.discord_notifier import DiscordNotifier as _DiscordNotifier
+    _NOTIFIER_AVAILABLE = True
+except Exception:
+    _NOTIFIER_AVAILABLE = False
 
 # --- State Management ---
 active_positions = {}
@@ -76,14 +88,31 @@ def update_portfolio_db(conn):
     except Exception as e: print(f"⚠️ Portfolio Sync Error: {e}")
 
 def send_discord_alert(action, symbol, price, reason=None, rsi=None):
-    if not DISCORD_WEBHOOK_URL: return
-    color = 3066993 if action.upper() == "BUY" else 15158332
-    fields = [{"name": "Symbol", "value": symbol, "inline": True}, {"name": "Price", "value": f"${price:.2f}", "inline": True}]
-    if rsi: fields.append({"name": "RSI", "value": f"{rsi:.2f}", "inline": True})
-    if reason: fields.append({"name": "Reason", "value": reason, "inline": False})
-    payload = {"username": "Cemini Brain", "embeds": [{"title": f"🚨 TRADE SIGNAL: {action.upper()}", "color": color, "fields": fields, "footer": {"text": "Cemini Financial Suite | Intelligence Layer v1.1"}}]}
-    try: requests.post(DISCORD_WEBHOOK_URL, json=payload)
-    except Exception as e: print(f"⚠️ Discord Alert Failed: {e}")
+    if not DISCORD_WEBHOOK_URL:
+        return
+    extra = [{"name": "Price", "value": f"${price:.2f}", "inline": True}]
+    if rsi:
+        extra.append({"name": "RSI", "value": f"{rsi:.2f}", "inline": True})
+    if reason:
+        extra.append({"name": "Reason", "value": reason, "inline": False})
+    if _NOTIFIER_AVAILABLE:
+        notifier = _DiscordNotifier(username="Cemini Brain")
+        notifier.send_alert(
+            f"🚨 TRADE SIGNAL: {action.upper()}",
+            f"{action.upper()} {symbol} at ${price:.2f}",
+            alert_type="TRADE",
+            ticker=symbol,
+            enrich=True,
+            fields=extra,
+        )
+    else:
+        color = 3066993 if action.upper() == "BUY" else 15158332
+        fields = [{"name": "Symbol", "value": symbol, "inline": True}] + extra
+        payload = {"username": "Cemini Brain", "embeds": [{"title": f"🚨 TRADE SIGNAL: {action.upper()}", "color": color, "fields": fields, "footer": {"text": "Cemini Financial Suite | Intelligence Layer v1.1"}}]}
+        try:
+            requests.post(DISCORD_WEBHOOK_URL, json=payload)
+        except Exception as e:
+            print(f"⚠️ Discord Alert Failed: {e}")
 
 def get_recent_ticks(conn, symbol, limit=30):
     query = text(

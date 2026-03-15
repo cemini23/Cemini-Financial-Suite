@@ -554,3 +554,27 @@ For the replay viewer, use regime rows as the timeline backbone (one per cycle),
 then fetch signals and risk within ±3 minutes of the selected timestamp.
 The cemini_os container has no /mnt/archive/playbook/ volume — use Postgres only.
 **Files**: `trading_playbook/playbook_logger.py`, `ui/replay.py`.
+
+---
+
+## Discord Alert Enrichment — Centralized Notifier Pattern (Step 36)
+
+**Pattern**: All Discord webhook calls now route through `core/discord_notifier.py`
+(DiscordNotifier class). Never import `requests` and call webhook URLs directly.
+Use `get_notifier().send_alert(title, message, alert_type, ticker, enrich=True)`.
+
+**Retrofit rule**: Services that already import from `core.*` (analyzer.py,
+kalshi_rewards.py) get direct imports. Services without sys.path setup (QuantOS,
+ems, shared) get a try/except import with fallback to raw requests.
+
+**Test patch targets**: After retrofit, tests must patch `core.discord_notifier.requests.post`
+(not `scripts.kalshi_rewards.requests.post`). Also patch
+`core.discord_notifier._default_notifier` to None and set DISCORD_WEBHOOK_URL env var
+to force a fresh singleton with the test webhook URL.
+
+**Rate limiting**: Per-instance, 2-second floor. Each service should reuse the same
+notifier instance (via get_notifier() or as an instance attr) rather than creating
+a new one per alert, otherwise rate limiting has no effect.
+**Files**: `core/discord_notifier.py`, `cemini_contracts/discord.py`, `analyzer.py`,
+`ems/kalshi_rest.py`, `QuantOS/core/notifier.py`, `QuantOS/signal_generator.py`,
+`scripts/kalshi_rewards.py`, `shared/safety/hitl_gate.py`.

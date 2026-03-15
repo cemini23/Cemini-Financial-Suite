@@ -409,21 +409,26 @@ class TestSendDiscordAlert:
                 mock_post.assert_not_called()
 
     def test_sends_alert_on_new_programs(self):
-        with patch("scripts.kalshi_rewards.DISCORD_WEBHOOK_URL", "https://discord.invalid/hook"):
-            with patch("scripts.kalshi_rewards.requests.post") as mock_post:
-                mock_post.return_value = MagicMock(status_code=204)
-                send_discord_alert({"new_ids": ["prog-001"], "lost_ids": []}, [SAMPLE_PROGRAM_1])
-                mock_post.assert_called_once()
-                payload = mock_post.call_args[1]["json"]
-                assert payload["username"] == "Kalshi Rewards Tracker"
-                assert len(payload["embeds"]) == 1
+        with patch("scripts.kalshi_rewards.DISCORD_WEBHOOK_URL", "https://discord.invalid/hook"), \
+             patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.invalid/hook"}), \
+             patch("core.discord_notifier._default_notifier", None), \
+             patch("core.discord_notifier.requests.post") as mock_post, \
+             patch("core.discord_notifier.IntelReader.read", return_value=None):
+            mock_post.return_value = MagicMock(status_code=204)
+            send_discord_alert({"new_ids": ["prog-001"], "lost_ids": []}, [SAMPLE_PROGRAM_1])
+            mock_post.assert_called_once()
+            payload = mock_post.call_args[1]["json"]
+            assert len(payload["embeds"]) == 1
 
     def test_sends_alert_on_lost_programs(self):
-        with patch("scripts.kalshi_rewards.DISCORD_WEBHOOK_URL", "https://discord.invalid/hook"):
-            with patch("scripts.kalshi_rewards.requests.post") as mock_post:
-                mock_post.return_value = MagicMock(status_code=204)
-                send_discord_alert({"new_ids": [], "lost_ids": ["old-001"]}, [])
-                mock_post.assert_called_once()
+        with patch("scripts.kalshi_rewards.DISCORD_WEBHOOK_URL", "https://discord.invalid/hook"), \
+             patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.invalid/hook"}), \
+             patch("core.discord_notifier._default_notifier", None), \
+             patch("core.discord_notifier.requests.post") as mock_post, \
+             patch("core.discord_notifier.IntelReader.read", return_value=None):
+            mock_post.return_value = MagicMock(status_code=204)
+            send_discord_alert({"new_ids": [], "lost_ids": ["old-001"]}, [])
+            mock_post.assert_called_once()
 
     def test_does_not_raise_on_request_failure(self):
         with patch("scripts.kalshi_rewards.DISCORD_WEBHOOK_URL", "https://discord.invalid/hook"):

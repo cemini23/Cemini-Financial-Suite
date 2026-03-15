@@ -2,10 +2,22 @@
 # Copyright (c) 2026 Cemini23 / Claudio Barone Jr.
 # All Rights Reserved.
 import os
+import sys
 import time
 import requests
 import base64
 import json
+from pathlib import Path
+
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+try:
+    from core.discord_notifier import DiscordNotifier as _DiscordNotifier
+    _NOTIFIER_AVAILABLE = True
+except Exception:
+    _NOTIFIER_AVAILABLE = False
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
@@ -23,6 +35,7 @@ class KalshiRESTv2:
         self.base_url = "https://demo-api.kalshi.co/trade-api/v2" if environment == "demo" else "https://api.elections.kalshi.com/trade-api/v2"
         self.private_key = self._load_private_key(private_key_path)
         self.discord_url = os.getenv("DISCORD_WEBHOOK_URL")
+        self._notifier = _DiscordNotifier(username="Kalshi Executioner") if _NOTIFIER_AVAILABLE else None
 
     def _load_private_key(self, path):
         try:
@@ -48,21 +61,33 @@ class KalshiRESTv2:
         }
 
     def send_discord_alert(self, ticker, action, order_id):
-        if not self.discord_url: return
-        payload = {
-            "username": "Kalshi Executioner",
-            "embeds": [{
-                "title": "⚡ Kalshi REST Order Placed",
-                "color": 3066993 if action.lower() == "buy" else 15158332,
-                "fields": [
-                    {"name": "Ticker", "value": ticker, "inline": True},
-                    {"name": "Action", "value": action.upper(), "inline": True},
-                    {"name": "Order ID", "value": order_id, "inline": False}
-                ]
-            }]
-        }
-        try: requests.post(self.discord_url, json=payload)
-        except: pass
+        if not self.discord_url:
+            return
+        if self._notifier:
+            self._notifier.send_alert(
+                "⚡ Kalshi REST Order Placed",
+                f"Action: {action.upper()} | Order ID: {order_id}",
+                alert_type="TRADE",
+                ticker=ticker,
+                enrich=True,
+            )
+        else:
+            payload = {
+                "username": "Kalshi Executioner",
+                "embeds": [{
+                    "title": "⚡ Kalshi REST Order Placed",
+                    "color": 3066993 if action.lower() == "buy" else 15158332,
+                    "fields": [
+                        {"name": "Ticker", "value": ticker, "inline": True},
+                        {"name": "Action", "value": action.upper(), "inline": True},
+                        {"name": "Order ID", "value": order_id, "inline": False},
+                    ],
+                }],
+            }
+            try:
+                requests.post(self.discord_url, json=payload)
+            except Exception:
+                pass
 
     def place_order(self, ticker, action, qty=1, price=50):
         path = "/portfolio/orders"

@@ -175,11 +175,37 @@ class HITLGate:
         if not webhook_url:
             return
         try:
-            import requests  # local import — optional dep
-
             ticker = details.get("ticker", "?")
             action = details.get("action", "?")
             conf = details.get("confidence", 0.0)
+
+            try:
+                import sys as _sys
+                import os as _os_inner
+                _repo = _os_inner.path.abspath(
+                    _os_inner.path.join(_os_inner.path.dirname(__file__), "..", "..")
+                )
+                if _repo not in _sys.path:
+                    _sys.path.insert(0, _repo)
+                from core.discord_notifier import DiscordNotifier  # noqa: N814
+                notifier = DiscordNotifier(webhook_url=webhook_url, username="Cemini HITL Gate")
+                notifier.send_alert(
+                    f"🔔 HITL Approval Required: {ticker}",
+                    f"Action: {action} | Signal ID: {signal_id}",
+                    alert_type="WARNING",
+                    ticker=str(ticker) if ticker != "?" else None,
+                    enrich=True,
+                    fields=[
+                        {"name": "Confidence", "value": f"{conf:.1%}", "inline": True},
+                        {"name": "Signal ID", "value": signal_id, "inline": False},
+                        {"name": "Expires in", "value": f"{self.timeout_seconds}s", "inline": True},
+                    ],
+                )
+                return
+            except Exception:
+                pass  # fall through to raw requests below
+
+            import requests
             payload = {
                 "embeds": [
                     {

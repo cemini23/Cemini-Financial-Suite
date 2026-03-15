@@ -55,6 +55,7 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from core.intel_bus import _sync_client  # noqa: E402  (repo-root import)
+from core.discord_notifier import get_notifier  # noqa: E402
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -325,20 +326,18 @@ def send_discord_alert(changes: dict, active_programs: list) -> None:
         "inline": True,
     })
 
-    payload = {
-        "username": "Kalshi Rewards Tracker",
-        "embeds": [{
-            "title": "🏆 Kalshi Incentive Program Update",
-            "color": 3066993 if new_count else 15158332,
-            "fields": fields,
-            "footer": {"text": "intel:kalshi_rewards"},
-        }],
-    }
-    try:
-        resp = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
-        logger.info("🔔 [kalshi_rewards] Discord alert sent (HTTP %s)", resp.status_code)
-    except Exception as exc:
-        logger.warning("⚠️ [kalshi_rewards] Discord alert failed: %s", exc)
+    notifier = get_notifier()
+    ok = notifier.send_alert(
+        "🏆 Kalshi Incentive Program Update",
+        f"{new_count} new / {lost_count} ended incentive program(s).",
+        alert_type="INFO",
+        enrich=True,
+        fields=fields,
+    )
+    if ok:
+        logger.info("🔔 [kalshi_rewards] Discord alert sent")
+    else:
+        logger.warning("⚠️ [kalshi_rewards] Discord alert failed or rate-limited")
 
 
 # ── Summarise a program list ───────────────────────────────────────────────────
