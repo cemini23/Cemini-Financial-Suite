@@ -54,13 +54,26 @@ Trading Playbook — observation-only regime/signal/risk layer
 ## Completed Steps
 
 Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewards),
-6 (Equity Ticks), 14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 20 (Skill Vetting),
-21 (SKILL.md), 24 (Visual Crossing Weather), 26 (Opportunity Discovery), 27 (MCP Server),
-28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
+6 (Equity Ticks), 14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 17 (EDGAR Monitor),
+20 (Skill Vetting), 21 (SKILL.md), 24 (Visual Crossing Weather), 26 (Opportunity Discovery),
+27 (MCP Server), 28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
 38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 41 (IP Sale Docs),
 42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience),
 50 (Polars Feature Engineering), 51 (License Compliance & Virtual Data Room).
+
+## Step 17: SEC EDGAR Monitor
+
+- **Module**: `edgar_monitor/` — `alert_rules.py`, `insider_cluster.py`, `metric_extractor.py`, `models.py`, `subscriber.py`
+- **Alert threshold**: significance_score >= 60 → publishes `intel:edgar_alert` (SET, TTL 3600s)
+- **Scoring**: form-type base scores (S-1=80, 8-K=70, SC 13D=65) + 8-K item boosters + after-hours/watchlist bonuses
+- **Insider cluster**: 2+ distinct insiders buying within 7 days, min $100K total; 3+ insiders base=85
+- **DB**: `edgar_alerts` table — migration `20260315100000_add_edgar_alerts.sql`
+- **Archive**: `/mnt/archive/edgar_alerts/YYYY-MM-DD.jsonl`
+- **Audit**: `shared.audit_trail.chain_writer` (source_table="edgar_alerts")
+- **Integration**: `run_monitor_cycle()` is the scheduler entry point — call every 90s from edgar_pipeline service
+- **PITFALL**: `Field(ge=0, le=100)` rejects out-of-range in Pydantic v2 before validators run — use `mode="before"` validators without ge/le constraints if clamping is desired
+- **52 tests** in `tests/test_edgar_monitor.py`
 
 ## Step 41: IP Sale Documentation Site
 

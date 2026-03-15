@@ -412,3 +412,26 @@ File: QuantOS/core/engine.py
 The canonical roadmap moved to `docs/ROADMAP.md` on March 14, 2026.
 Update it on every step commit per the rule in CLAUDE.md.
 Google Doc is deprecated — do not maintain it going forward.
+
+---
+
+## Pydantic v2 — Clamping vs Rejecting
+
+**Mistake**: Using `Field(ge=0, le=100)` when you want clamping behaviour.
+`ge`/`le` constraints in Pydantic v2 run BEFORE field validators — so an
+out-of-range value triggers a `ValidationError` before any clamping validator
+can fire.
+**Fix**: Remove `ge`/`le` from the `Field()` call and use a `@field_validator`
+with `mode="before"` to clamp: `max(0, min(100, int(val)))`.
+**Files**: `edgar_monitor/models.py` — `FilingSignificance.clamp_score`.
+
+---
+
+## EDGAR Monitor — Insider Cluster Algorithm
+
+**Mistake**: Iterating sorted trades oldest-first when building cluster windows.
+For 3 trades (days 5, 3, 1), the oldest anchor only sees itself in its window;
+the cluster is missed.
+**Fix**: Sort descending (most recent anchor first). The freshest anchor's
+backward window covers the widest set of in-window trades.
+**File**: `edgar_monitor/insider_cluster.py` — `detect_clusters()`.

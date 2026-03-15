@@ -68,6 +68,7 @@ nav:
     - Risk Engine: intelligence/risk-engine.md
     - Kill Switch: intelligence/kill-switch.md
     - Opportunity Discovery: intelligence/discovery.md
+    - EDGAR Filing Alerts: intelligence/edgar-alerts.md
   - Data Sources:
     - Overview: data-sources/overview.md
     - Market Data (Polygon): data-sources/polygon.md

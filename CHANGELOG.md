@@ -4,6 +4,24 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 15, 2026] — Step 17: SEC EDGAR Monitor — Filing Alerts + Insider Cluster Detection
+
+### Added
+- `edgar_monitor/` package: `alert_rules.py`, `insider_cluster.py`, `metric_extractor.py`,
+  `models.py`, `subscriber.py`, `CLAUDE.md`
+- Filing significance scoring (0-100 scale, threshold 60; 8-K item boosters, after-hours bonus)
+- Insider cluster detection (2+ insiders, 7-day window, CEO/CFO bonus, >$500K bonus)
+- 8-K item number → event type mapping (earnings, executive_change, acquisition, etc.)
+- Pydantic v2 models: `EdgarAlert`, `FilingSignificance`, `InsiderCluster`
+- `intel:edgar_alert` Intel Bus channel (SET, TTL 3600s)
+- `edgar_alerts` Postgres table (migration `20260315100000_add_edgar_alerts.sql`)
+- JSONL archive at `/mnt/archive/edgar_alerts/YYYY-MM-DD.jsonl`
+- Audit hash chain integration via `shared.audit_trail.chain_writer`
+- 52 new tests (846 → 898 total)
+- `docs/intelligence/edgar-alerts.md` with Mermaid flow diagram
+
+---
+
 ## [Mar 14, 2026] — Known Issue Resolution: C1, C3, L3, L4, A4, A6, S5 + CVaR Test
 
 ### Fixed

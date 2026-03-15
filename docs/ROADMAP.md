@@ -1,9 +1,9 @@
 # Cemini Financial Suite — Development Roadmap
 
-**Version:** v12.1 — March 14, 2026
+**Version:** v12.2 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 27 of 51 steps complete — 846 tests — 0 failures
+**Progress:** 28 of 51 steps complete — 898 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -28,7 +28,7 @@
 | 14 | GDELT Geopolitical Harvester | ✓ DONE (Mar 1) | scrapers/gdelt_harvester.py |
 | 15 | Auto-Documentation CI | ✓ DONE (Mar 1) | scripts/generate_docs.py, auto-update markers |
 | 16 | Kalshi WebSocket | ✓ DONE | rover_scanner, websockets v16 |
-| 17 | Sentiment Analysis Pipeline | READY | FinBERT integration, X harvester feeds |
+| 17 | SEC EDGAR Monitor — Filing Alerts | ✓ DONE (Mar 15) | Filing significance scoring, insider cluster detection, intel:edgar_alert |
 | 18 | Options Flow Harvester | BLOCKED | Needs data subscription |
 | 19 | Earnings Calendar Integration | READY | EDGAR already in (Step 40) |
 | 20 | Skill Vetting Protocol | ✓ DONE (Mar 1) | approved_skills.json, vet_skill.py |
@@ -146,6 +146,7 @@ PARALLEL ANYTIME (no blockers):
 
 | Date | Event | Commit | Test Delta |
 |------|-------|--------|------------|
+| Mar 15, 2026 | Step 17 (EDGAR Monitor) complete | — | 846 → 898 |
 | Mar 14, 2026 | Steps 40, 41, 43, 50, 51 complete | various | 686 → 846 |
 | Mar 14, 2026 | Known Issues sprint: C1/C3/L3/L4/A6/CVaR resolved | 457f415 | +1 (CVaR fix) |
 | Mar 14, 2026 | cryptography 3.4.8 → 46.0.5 (32 → 18 CVEs) | 78779db | — |
