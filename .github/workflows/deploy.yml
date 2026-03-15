@@ -151,9 +151,21 @@ jobs:
 
       - name: Run test suite (parallel, exclude fuzz)
         run: |
-          python3 -m pytest tests/ -n auto -m "not fuzz" --timeout=60 --tb=short -q \
+          python3 --version
+          python3 -c "import sys; print('sys.path:', sys.path[:3])"
+          python3 -m pytest tests/ -n auto -m "not fuzz" --timeout=60 --tb=short \
             --junit-xml=test-results.xml 2>&1 | tee test-output.txt
           exit ${PIPESTATUS[0]}
+
+      - name: Show test summary on failure
+        if: failure()
+        run: |
+          echo "### Test Failures" >> $GITHUB_STEP_SUMMARY
+          grep -E "FAILED|ERROR|ModuleNotFoundError|ImportError" test-output.txt \
+            | head -60 >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -30 test-output.txt >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload test results on failure
         if: failure()
