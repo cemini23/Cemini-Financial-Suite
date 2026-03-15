@@ -150,7 +150,19 @@ jobs:
             async-timeout
 
       - name: Run test suite (parallel, exclude fuzz)
-        run: python3 -m pytest tests/ -n auto -m "not fuzz" --timeout=60 --tb=short -q
+        run: |
+          python3 -m pytest tests/ -n auto -m "not fuzz" --timeout=60 --tb=short -q \
+            --junit-xml=test-results.xml 2>&1 | tee test-output.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results.xml
+            test-output.txt
 
   audit-and-deploy:
     # Core quality gates: lint + dep audit + tests must pass before secrets scan + deploy.
