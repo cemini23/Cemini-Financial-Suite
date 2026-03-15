@@ -531,3 +531,26 @@ define the job as a nested async def inside `main()` so it captures `_http_clien
 `_CIK_MAP` from the enclosing scope. Import `_CIK_MAP` inside the job at call time
 (not at module load) — it's populated after `load_cik_map()` runs.
 **Files**: `scrapers/edgar/edgar_harvester.py`.
+
+---
+
+## Playbook Replay — Streamlit Module Pattern (Step 37)
+
+**Pattern**: Existing ui/app.py uses sidebar radio + module.render() delegation
+(same as performance.py). To add a new page: (1) import the new module, (2) add
+entry to sidebar radio list, (3) add elif branch calling module.render().
+Do NOT use st.tabs() at app.py level — each page module manages its own layout.
+**Files**: `ui/app.py`, `ui/replay.py`, `ui/replay_helpers.py`.
+
+**Key**: Extract all data-processing logic into a helpers module (replay_helpers.py)
+with zero Streamlit imports. This lets tests run without the Streamlit runtime.
+Test the helpers; trust Streamlit for rendering.
+
+## Playbook Replay — playbook_logs Log Types (Step 37)
+
+**Pattern**: playbook_logs has 4 log_type values: regime / signal / risk / kill_switch.
+Each cycle produces: 1 regime row + N signal rows (0+ per symbol) + 1 risk row.
+For the replay viewer, use regime rows as the timeline backbone (one per cycle),
+then fetch signals and risk within ±3 minutes of the selected timestamp.
+The cemini_os container has no /mnt/archive/playbook/ volume — use Postgres only.
+**Files**: `trading_playbook/playbook_logger.py`, `ui/replay.py`.

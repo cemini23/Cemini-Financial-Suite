@@ -7,6 +7,7 @@ import random
 import yfinance as yf
 from datetime import datetime
 import performance
+import replay
 
 # --- Page Config ---
 st.set_page_config(page_title="Cemini OS", layout="wide", initial_sidebar_state="expanded")
@@ -59,7 +60,7 @@ def get_musk_sentiment():
 
 # --- Sidebar Navigation ---
 st.sidebar.title("🚀 Cemini OS")
-page = st.sidebar.radio("Navigation", ["Mission Control", "Stock Portfolio", "Satoshi Vision", "Weather Alpha", "Musk Monitor", "Performance Dashboard"])
+page = st.sidebar.radio("Navigation", ["Mission Control", "Stock Portfolio", "Satoshi Vision", "Weather Alpha", "Musk Monitor", "Performance Dashboard", "Playbook Replay"])
 st.sidebar.markdown("---")
 st.sidebar.subheader("System Status")
 st.sidebar.success("📡 Market Data: ONLINE")
@@ -160,3 +161,7 @@ elif page == "Musk Monitor":
 # --- Performance Dashboard ---
 elif page == "Performance Dashboard":
     performance.render()
+
+# --- Playbook Replay ---
+elif page == "Playbook Replay":
+    replay.render()

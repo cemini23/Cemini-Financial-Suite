@@ -3,7 +3,7 @@
 **Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 32 of 51 steps complete — 1119 tests — 0 failures
+**Progress:** 33 of 51 steps complete — 1158 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -48,7 +48,7 @@
 | 34 | DevOps Hardening | ✓ DONE (Mar 7) | Ruff, Trivy, Semgrep, beartype (23 fns), Swarm, Portainer |
 | 35 | Observability Stack (LGTM) | ✓ DONE (Mar 13) | Prometheus, Loki, Alloy, Tempo, Grafana, 8 alert rules |
 | 36 | Discord Alert Enrichment | READY | Add regime/signal context to alerts |
-| 37 | Playbook Replay Viewer | READY | Streamlit tab for JSONL replay |
+| 37 | Playbook Replay Viewer | ✓ DONE (Mar 15) | Streamlit sidebar page; time-travel snapshot viewer; regime/signal/risk history; sector rotation panel; raw JSON expander |
 | 38 | Schema Migrations (dbmate) | ✓ DONE (Mar 7) | dbmate 2.31.0, 9 migrations, db/schema.sql |
 | 39 | FRED Macro Data Integration | ✓ DONE (Mar 13) | 8 series, daily cron, fred_observations table |
 | 40 | SEC EDGAR Direct Pipeline | ✓ DONE (Mar 14) | Form 4, XBRL fundamentals, edgar_harvester.py |
