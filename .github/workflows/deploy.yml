@@ -123,8 +123,10 @@ jobs:
   test:
     # Step 42: Run pure test suite (no network/Redis/Postgres needed).
     # Parallel execution via pytest-xdist (-n auto). Fuzz tests excluded.
+    # ubuntu-22.04: pinned to match server OS (Ubuntu 22.04 LTS) to avoid
+    # ubuntu-24.04 glibc/environment compatibility issues with manylinux wheels.
     needs: [lint, pip-audit]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
