@@ -93,6 +93,7 @@ nav:
     - Observability (LGTM): infrastructure/observability.md
     - Schema Migrations: infrastructure/migrations.md
     - Pipeline Resilience: infrastructure/resilience.md
+    - Pre-Live Safety Hardening: infrastructure/safety-hardening.md
   - Appendices:
     - Dependency Licenses: appendices/licenses.md
     - Technical Debt Register: appendices/tech-debt.md

@@ -3,7 +3,7 @@
 This register is maintained transparently so buyers can assess remaining work.
 Issues are classified by severity: **Low**, **Medium**, **High**.
 
-Last updated: March 14, 2026 — 7 issues resolved (C1, C3, L3, L4, A4, A6, S5)
+Last updated: March 15, 2026 — 10 issues resolved (C1, C3, C6, L1, L2, L3, L4, A4, A6, S5)
 
 ---
 
@@ -51,19 +51,48 @@ Set `QUANTOS_ROOT=/opt/cemini/QuantOS` in Docker env to override.
 ### C6: Hardcoded Buying Power ($1,000)
 
 **Severity:** Medium
-**Status:** Open — paper trading only
+**Status:** RESOLVED (Mar 15, 2026)
 
-`get_buying_power()` in the EMS returns a hardcoded $1,000 rather than querying
-the live Alpaca balance. This is intentional during paper trading (prevents
-accidental live orders above $1,000).
-
-**Fix:** Add `LIVE_TRADING=true` environment variable check. When set, query
-Alpaca `/account` endpoint for real buying power. When unset (default), return
-configured paper trading limit.
+`shared/safety/exposure_gate.py` `ExposureGate` now uses `LIVE_TRADING=true` to
+switch from the paper trading limit ($1,000 default) to the buying_power value
+passed by the broker adapter.  When `LIVE_TRADING` is not set (default),
+ExposureGate uses `paper_buying_power=1000.0` as the sizing ceiling.  When set,
+callers must pass the real balance from `adapter.get_buying_power()`.
+ExposureGate is **fail-closed**: zero/unknown buying power → order blocked.
 
 ---
 
 ## Logic Issues (L-series)
+
+### L1: Engine Restarts With Empty executed_trades
+
+**Severity:** Medium
+**Status:** RESOLVED (Mar 15, 2026)
+
+On service restart, `TradingEngine` came up with an empty `executed_trades` dict,
+potentially re-executing already-filled orders before Redis hydration completed.
+
+`shared/safety/state_hydrator.py` `StateHydrator.hydrate()` now provides a
+single authoritative call that loads both `executed_trades` and `active_positions`
+from Redis before the engine begins processing signals.  Returns `HydratedState`
+with `loaded=False` if Redis is unavailable (safe — engine starts clean).
+
+---
+
+### L2: Exposure Gate Was Observation-Only
+
+**Severity:** Medium
+**Status:** RESOLVED (Mar 15, 2026)
+
+The per-ticker exposure check in the order path logged warnings but never
+hard-blocked orders that would exceed the configured ceiling.
+
+`shared/safety/exposure_gate.py` `ExposureGate.check()` now hard-blocks
+(returns `False`) when `current_exposure + proposed_spend > max_exposure`.
+This is the default behaviour — no env var override needed.  The gate is
+fail-closed: if buying power cannot be determined, the order is blocked.
+
+---
 
 ### L3: check_exposure() Never Blocks
 

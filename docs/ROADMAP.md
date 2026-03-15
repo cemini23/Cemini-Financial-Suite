@@ -3,7 +3,7 @@
 **Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 29 of 51 steps complete — 955 tests — 0 failures
+**Progress:** 30 of 51 steps complete — 1025 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -60,7 +60,7 @@
 | 46 | IP HoldCo Formation | READY | Legal filing ~$150, parallel to any step |
 | 47 | Devil's Advocate Debate Protocol | ✓ DONE (Mar 15) | 5-agent debate, Redis blackboard, deterministic tie-breaking, audit trail |
 | 48 | Data Pipeline Resilience | ✓ DONE (Mar 14) | Hishel, Aiobreaker, Tenacity, APScheduler, dead-letter queue |
-| 49 | Pre-Live Safety Hardening | READY | Full persistence, kill switch hardening, live-mode gate |
+| 49 | Pre-Live Safety Hardening | ✓ DONE (Mar 15) | IdempotencyGuard, StateHydrator, ExposureGate, HITLGate, MFAHandler, SelfMatchLock; C6/L1/L2 resolved |
 | 50 | Polars Feature Engineering | ✓ DONE (Mar 14) | 18-feature RL obs space, Wilder RSI, multi-timeframe join_asof |
 | 51 | License Compliance & VDR | ✓ DONE (Mar 14) | SBOM, isolation report, authorship proof, 12-file VDR |
 
@@ -103,10 +103,10 @@ PARALLEL ANYTIME (no blockers):
 | C3 | Mac-only path in verify_install.py | Medium | RESOLVED — os.getenv + relative fallback |
 | C4 | Hardcoded DB password | Medium | RESOLVED — POSTGRES_PASSWORD env var (Step 33) |
 | C5 | Social alpha uses simulated tweets | Medium | RESOLVED — SOCIAL_ALPHA_LIVE guard (Step 33) |
-| C6 | get_buying_power() returns $1000 hardcoded | Medium | → Step 49 (live Kalshi balance API call) |
+| C6 | get_buying_power() returns $1000 hardcoded | Medium | RESOLVED — ExposureGate + LIVE_TRADING flag (Step 49) |
 | C7 | Weather alpha uses simulated prices | Medium | RESOLVED — WEATHER_ALPHA_LIVE guard (Step 33) |
-| L1 | fresh_start_pending Redis-backed | Low | RESOLVED — Redis-backed, explicit trigger only |
-| L2 | Position sizing uses cash not equity | Medium | → Step 49 |
+| L1 | Engine restarts with empty executed_trades | Medium | RESOLVED — StateHydrator.hydrate() (Step 49) |
+| L2 | Exposure gate was observation-only | Medium | RESOLVED — ExposureGate hard-blocking fail-closed (Step 49) |
 | L3 | check_exposure() never blocked | Medium | RESOLVED — wired as pre-trade gate (obs mode) |
 | L4 | strategy_mode based on win rate not regime | Medium | RESOLVED — reads intel:playbook_snapshot |
 | A4 | BigQuery table name mismatch | Low | RESOLVED — already consistent in codebase |
@@ -146,6 +146,7 @@ PARALLEL ANYTIME (no blockers):
 
 | Date | Event | Commit | Test Delta |
 |------|-------|--------|------------|
+| Mar 15, 2026 | Step 49 (Pre-Live Safety Hardening) complete | — | 955 → 1025 |
 | Mar 15, 2026 | Step 47 (Debate Protocol) complete | — | 898 → 955 |
 | Mar 15, 2026 | Step 17 (EDGAR Monitor) complete | — | 846 → 898 |
 | Mar 14, 2026 | Steps 40, 41, 43, 50, 51 complete | various | 686 → 846 |

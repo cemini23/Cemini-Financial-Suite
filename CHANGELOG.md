@@ -4,6 +4,28 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 15, 2026] — Step 49: Pre-Live Safety Hardening
+
+### Added
+- `shared/safety/` package: `idempotency.py`, `state_hydrator.py`, `exposure_gate.py`,
+  `hitl_gate.py`, `mfa_handler.py`, `self_match_lock.py`, `CLAUDE.md`, `__init__.py`
+- **49a** `IdempotencyGuard`: Redis SET NX dedup on `idempotency:order:{sha256[:16]}` (TTL 24h)
+- **49b** `config/redis.conf`: added `maxmemory 512mb` (AOF + RDB preamble already active)
+- **49c** `StateHydrator`: single `hydrate()` call loads `executed_trades` + `active_positions`
+- **49d** `ExposureGate`: hard-blocking per-ticker exposure ceiling (fail-closed, LIVE_TRADING flag)
+- **49e** `HITLGate`: human-in-the-loop approval queue (Redis LIST + Discord alert, auto-reject at timeout)
+- **49f** `MFAHandler`: Robinhood TOTP via pyotp (fail-silent if pyotp not installed)
+- **49g** `SelfMatchLock`: Kalshi self-match prevention for CFTC compliance
+- 70 new tests in `tests/test_safety.py` (955 → 1025 total; 5 skipped — pyotp not installed)
+- `docs/infrastructure/safety-hardening.md` with Mermaid defense-in-depth diagram
+
+### Resolved
+- **C6** Hardcoded buying power ($1,000) — ExposureGate now uses `LIVE_TRADING` flag + adapter BP
+- **L1** fresh_start empty state on restart — StateHydrator hydrates before signal processing
+- **L2** Exposure check was observation-only — ExposureGate is now hard-blocking fail-closed
+
+---
+
 ## [Mar 15, 2026] — Step 47: Devil's Advocate Debate Protocol
 
 ### Added

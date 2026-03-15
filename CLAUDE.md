@@ -42,6 +42,9 @@ Trading Playbook — observation-only regime/signal/risk layer
 - A4 RESOLVED (Mar 14): BQ_TABLE_ID defaults both `market_ticks` (already consistent)
 - A6 RESOLVED (Mar 14): QuantOS `executed_trades` Redis-backed (24h TTL, hydrate on startup)
 - S5 RESOLVED (Mar 14): No duplicate ib_insync imports found in router.py
+- C6 RESOLVED (Mar 15): ExposureGate uses `LIVE_TRADING=true` for real buying power; paper default $1000
+- L1 RESOLVED (Mar 15): StateHydrator.hydrate() loads executed_trades+positions before signal processing
+- L2 RESOLVED (Mar 15): ExposureGate is now hard-blocking fail-closed (no env var needed)
 
 ## Networks
 
@@ -56,12 +59,31 @@ Trading Playbook — observation-only regime/signal/risk layer
 Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewards),
 6 (Equity Ticks), 14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 17 (EDGAR Monitor),
 20 (Skill Vetting), 21 (SKILL.md), 24 (Visual Crossing Weather), 26 (Opportunity Discovery),
-47 (Debate Protocol),
+47 (Debate Protocol), 49 (Pre-Live Safety Hardening),
 27 (MCP Server), 28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
 38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 41 (IP Sale Docs),
 42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience),
 50 (Polars Feature Engineering), 51 (License Compliance & Virtual Data Room).
+
+## Step 49: Pre-Live Safety Hardening
+
+- **Module**: `shared/safety/` — 6 safety classes + `__init__.py` + `CLAUDE.md`
+- **49a** `IdempotencyGuard`: `idempotency:order:{sha256[:16]}` SET NX TTL 24h — fail-open on Redis error
+- **49b** Redis: `config/redis.conf` now adds `maxmemory 512mb` (AOF + RDB preamble from Step 35)
+- **49c** `StateHydrator`: `hydrate()` → `HydratedState(executed_trades, active_positions, loaded)`
+- **49d** `ExposureGate`: `check(ticker, alloc_pct, buying_power)` → bool; `record_fill()` after confirm
+  - `LIVE_TRADING=true` → caller must pass real buying_power; paper default = $1000
+  - Fail-closed: buying_power ≤ 0 or unknown → block; Redis error on read → allow (0 assumed)
+- **49e** `HITLGate`: `evaluate(id, confidence, details)` → `HITLDecision` enum
+  - Queue: `safety:hitl:pending` LIST; decision: `safety:hitl:decision:{id}` TTL 300s
+  - Auto-reject at `HITL_TIMEOUT_SECONDS` (default 300); Discord alert via `DISCORD_WEBHOOK_URL`
+- **49f** `MFAHandler`: `get_current_code()` → 6-digit string; requires `ROBINHOOD_MFA_SECRET` + `pip install pyotp`
+- **49g** `SelfMatchLock`: `check(market_id, "YES"|"NO")` → bool; `record_open()`/`record_close()`
+  - Key: `safety:self_match:{market_id}` TTL 3600s; blocks YES↔NO; allows same direction
+- **70 tests** in `tests/test_safety.py` (5 skipped — pyotp not installed)
+- **PITFALL**: ExposureGate uses `pipeline()` for `incrbyfloat + expire` — mock pipeline as `MagicMock()` not context manager
+- **PITFALL**: HITLGate.wait_for_decision() blocks the calling thread — wrap in `asyncio.to_thread()` in async contexts
 
 ## Step 47: Devil's Advocate Debate Protocol
 

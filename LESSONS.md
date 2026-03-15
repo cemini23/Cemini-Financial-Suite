@@ -457,3 +457,34 @@ For GREEN/1.2× with threshold=0.10: need bull*1.2 - bear > 0.10 → e.g. bull=0
 MacroAgent uses `_read_redis_key(redis_client, key)` which is synchronous.
 Never pass an async client to synchronous code or vice versa.
 **File**: `debate_protocol/agents/macro_agent.py`, `debate_protocol/state_machine.py`.
+
+---
+
+## Safety Hardening — Idempotency Bucket Boundary
+
+**Mistake**: Testing that ts1 and ts2 (both near a bucket boundary) fall into the
+same bucket by using `ts2 = base + _BUCKET_GRANULARITY - 1`. This fails if `base`
+is not itself bucket-aligned (floor remainder is non-zero, so `base+59` crosses to
+the next bucket).
+**Fix**: Compute `bucket_start = floor(base / granularity) * granularity`, then
+use `ts1 = bucket_start + 5` and `ts2 = bucket_start + 55` — guaranteed same bucket.
+**File**: `tests/test_safety.py` — `TestMakeIdempotencyKey.test_timestamps_in_same_bucket_produce_same_key`.
+
+---
+
+## Safety Hardening — ExposureGate Pipeline Mock
+
+**Pattern**: `ExposureGate.record_fill()` uses `redis.pipeline()` to atomically
+run `incrbyfloat + expire`. In tests, mock the pipeline as a plain `MagicMock()` —
+not a context manager. The code calls `pipe = self.redis.pipeline()` then `pipe.incrbyfloat(...)`,
+so `redis.pipeline.return_value` must have `.incrbyfloat`, `.expire`, `.execute` attributes.
+**File**: `tests/test_safety.py` — `TestExposureGate._make_redis()`.
+
+---
+
+## Safety Hardening — HITLGate Blocks Calling Thread
+
+**Pattern**: `HITLGate.wait_for_decision()` is a blocking poll loop. Do not call
+it directly from an async context — use `await asyncio.to_thread(gate.wait_for_decision, id)`.
+The poll interval is 0.5s; in tests, pass `timeout=0` to return TIMEOUT immediately.
+**File**: `shared/safety/hitl_gate.py`.
