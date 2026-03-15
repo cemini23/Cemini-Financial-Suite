@@ -65,6 +65,35 @@ PRICE_FEATURES: list[FeatureDef] = [
     FeatureDef("log_return_1h", "raw_market_ticks", "close", NormMethod.LOG_RETURN, 60, "1-hour log return"),
 ]
 
+VOL_SURFACE_FEATURES: list[FeatureDef] = [
+    FeatureDef("realized_vol_21d", "vol_surface_log", "payload", NormMethod.ZSCORE_CLIP, 21,
+               "21-day realized vol (Parkinson preferred) from vol_surface_log"),
+    FeatureDef("vol_regime_low", "vol_surface_log", "payload", NormMethod.ONEHOT, 0,
+               "Vol regime one-hot: LOW"),
+    FeatureDef("vol_regime_normal", "vol_surface_log", "payload", NormMethod.ONEHOT, 0,
+               "Vol regime one-hot: NORMAL (default)"),
+    FeatureDef("vol_regime_high", "vol_surface_log", "payload", NormMethod.ONEHOT, 0,
+               "Vol regime one-hot: HIGH"),
+    FeatureDef("beta_to_spy", "vol_surface_log", "payload", NormMethod.PASSTHROUGH, 0,
+               "Rolling beta vs SPY, clipped to [-3, 3], default 1.0"),
+]
+
+SECTOR_ROTATION_FEATURES: list[FeatureDef] = [
+    FeatureDef("rot_risk_on", "sector_rotation_log", "rotation_bias", NormMethod.ONEHOT, 0,
+               "Sector rotation one-hot: RISK_ON"),
+    FeatureDef("rot_risk_off", "sector_rotation_log", "rotation_bias", NormMethod.ONEHOT, 0,
+               "Sector rotation one-hot: RISK_OFF"),
+    FeatureDef("rot_neutral", "sector_rotation_log", "rotation_bias", NormMethod.ONEHOT, 0,
+               "Sector rotation one-hot: NEUTRAL (default)"),
+]
+
+EARNINGS_FEATURES: list[FeatureDef] = [
+    FeatureDef("earnings_proximity", "earnings_calendar", "estimated_date", NormMethod.PASSTHROUGH, 0,
+               "1/(days_until_earnings+1), range [0,1], 0.0 if CLEAR or no data"),
+    FeatureDef("earnings_cluster", "earnings_calendar", "estimated_date", NormMethod.PASSTHROUGH, 0,
+               "Binary: 1 if 3+ symbols report within 7 days of ticker earnings"),
+]
+
 ALL_FEATURES: list[FeatureDef] = (
     MOMENTUM_FEATURES
     + VOLATILITY_FEATURES
@@ -73,9 +102,35 @@ ALL_FEATURES: list[FeatureDef] = (
     + MACRO_FEATURES
     + REGIME_FEATURES
     + PRICE_FEATURES
+    + VOL_SURFACE_FEATURES
+    + SECTOR_ROTATION_FEATURES
+    + EARNINGS_FEATURES
 )
 
 FEATURE_VECTOR_DIM: int = len(ALL_FEATURES)
+
+# Feature registry: single source of truth for Step 7 (RL training) and
+# Step 44 (Captum feature attribution). Normalization specs and defaults documented here.
+FEATURE_REGISTRY: dict[str, dict] = {
+    feat.name: {
+        "index": i,
+        "norm": feat.norm_method.value,
+        "source": feat.source_table,
+        "description": feat.description,
+    }
+    for i, feat in enumerate(ALL_FEATURES)
+}
+# Augment expansion features with range/default metadata
+FEATURE_REGISTRY["realized_vol_21d"].update({"default": 0.0})
+FEATURE_REGISTRY["vol_regime_low"].update({"default": 0})
+FEATURE_REGISTRY["vol_regime_normal"].update({"default": 1})
+FEATURE_REGISTRY["vol_regime_high"].update({"default": 0})
+FEATURE_REGISTRY["beta_to_spy"].update({"norm": "clip", "range": [-3, 3], "default": 1.0})
+FEATURE_REGISTRY["rot_risk_on"].update({"default": 0})
+FEATURE_REGISTRY["rot_risk_off"].update({"default": 0})
+FEATURE_REGISTRY["rot_neutral"].update({"default": 1})
+FEATURE_REGISTRY["earnings_proximity"].update({"range": [0, 1], "default": 0.0})
+FEATURE_REGISTRY["earnings_cluster"].update({"norm": "binary", "default": 0})
 
 TIMEFRAMES: dict[str, int] = {
     "1h": 60,

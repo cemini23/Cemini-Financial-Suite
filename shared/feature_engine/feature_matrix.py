@@ -58,6 +58,74 @@ def build_feature_matrix(
             pl.lit(0.0).alias("regime_red"),
         ])
 
+    # ── Step 50b: Vol Surface (join_asof backward, ~30-min cadence) ───────────
+    _vol_joined = False
+    try:
+        vol_df = data_loader.load_vol_surface(ticker, start, end)
+        if not vol_df.is_empty():
+            mtf = mtf.join_asof(vol_df.sort("timestamp"), on="timestamp", strategy="backward")
+            _vol_joined = True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load vol_surface_log: %s", exc)
+
+    if _vol_joined and "vol_regime_str" in mtf.columns:
+        mtf = mtf.with_columns(pl.col("vol_regime_str").fill_null("NORMAL"))
+        mtf = mtf.with_columns([
+            (pl.col("vol_regime_str") == "LOW").cast(pl.Float64).alias("vol_regime_low"),
+            (pl.col("vol_regime_str") == "NORMAL").cast(pl.Float64).alias("vol_regime_normal"),
+            (pl.col("vol_regime_str") == "HIGH").cast(pl.Float64).alias("vol_regime_high"),
+        ])
+        mtf = mtf.with_columns([
+            pl.col("realized_vol_21d").fill_null(0.0),
+            pl.col("beta_to_spy").fill_null(1.0).clip(-3.0, 3.0),
+        ])
+    else:
+        mtf = mtf.with_columns([
+            pl.lit(0.0).alias("vol_regime_low"),
+            pl.lit(1.0).alias("vol_regime_normal"),
+            pl.lit(0.0).alias("vol_regime_high"),
+            pl.lit(0.0).alias("realized_vol_21d"),
+            pl.lit(1.0).alias("beta_to_spy"),
+        ])
+
+    # ── Step 50b: Sector Rotation (join_asof backward, ~30-min cadence) ──────
+    _rot_joined = False
+    try:
+        rot_df = data_loader.load_sector_rotation(start, end)
+        if not rot_df.is_empty():
+            mtf = mtf.join_asof(rot_df.sort("timestamp"), on="timestamp", strategy="backward")
+            _rot_joined = True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load sector_rotation_log: %s", exc)
+
+    if _rot_joined and "rotation_bias" in mtf.columns:
+        mtf = mtf.with_columns(pl.col("rotation_bias").fill_null("NEUTRAL"))
+        mtf = mtf.with_columns([
+            (pl.col("rotation_bias") == "RISK_ON").cast(pl.Float64).alias("rot_risk_on"),
+            (pl.col("rotation_bias") == "RISK_OFF").cast(pl.Float64).alias("rot_risk_off"),
+            (pl.col("rotation_bias") == "NEUTRAL").cast(pl.Float64).alias("rot_neutral"),
+        ])
+    else:
+        mtf = mtf.with_columns([
+            pl.lit(0.0).alias("rot_risk_on"),
+            pl.lit(0.0).alias("rot_risk_off"),
+            pl.lit(1.0).alias("rot_neutral"),
+        ])
+
+    # ── Step 50b: Earnings Features (static for training window) ─────────────
+    try:
+        ep, ec = data_loader.load_earnings_proximity(ticker, end)
+        mtf = mtf.with_columns([
+            pl.lit(ep).alias("earnings_proximity"),
+            pl.lit(float(ec)).alias("earnings_cluster"),
+        ])
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load earnings_calendar: %s", exc)
+        mtf = mtf.with_columns([
+            pl.lit(0.0).alias("earnings_proximity"),
+            pl.lit(0.0).alias("earnings_cluster"),
+        ])
+
     if "fear_greed_index" in mtf.columns:
         mtf = mtf.rename({"fear_greed_index": "fgi_normalized"})
     elif "fgi_normalized" not in mtf.columns:

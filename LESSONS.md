@@ -594,3 +594,25 @@ Mistake: `for h, lo in zip(highs, lows):` triggers ruff B905.
 Fix: Use `zip(highs, lows, strict=False)` for mismatched-length tolerance, or `strict=True`
 if lengths must match.
 Files: `options_greeks/realized_vol.py`.
+
+---
+
+## Feature Engine Expansion (Step 50b)
+
+**Polars string → Datetime cast fails**
+Mistake: `pl.Series(["2026-03-01 09:00:00"]).cast(pl.Datetime)` raises
+`InvalidOperationError` in Polars.
+Fix: Use Python `datetime` objects directly in test DataFrames:
+`pl.DataFrame({"timestamp": [datetime(2026, 3, 1, 9, 0)]})`.
+Files: `tests/test_obs_space_expansion.py`.
+
+**join_asof on empty right DataFrame adds null columns**
+Behaviour: `ticks.join_asof(empty_df, ...)` still adds right-side column names but
+fills them all with null. Use a boolean flag (`_vol_joined = False`) to distinguish
+"joined with data" from "join skipped" — then apply defaults in the `else` branch.
+Files: `shared/feature_engine/feature_matrix.py`.
+
+**JSONB parameterized query in psycopg2**
+Postgres JSONB key access via variable: `payload->'symbols'->%s->>'field'` works
+with psycopg2 parameterized queries. Wrap in `_psycopg2_fetch(query, params)` helper.
+Files: `shared/feature_engine/data_loader.py`.

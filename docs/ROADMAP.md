@@ -3,7 +3,7 @@
 **Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 35 of 51 steps complete — 1256 tests — 0 failures
+**Progress:** 36 of 51 steps complete — 1284 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -61,7 +61,7 @@
 | 47 | Devil's Advocate Debate Protocol | ✓ DONE (Mar 15) | 5-agent debate, Redis blackboard, deterministic tie-breaking, audit trail |
 | 48 | Data Pipeline Resilience | ✓ DONE (Mar 14) | Hishel, Aiobreaker, Tenacity, APScheduler, dead-letter queue |
 | 49 | Pre-Live Safety Hardening | ✓ DONE (Mar 15) | IdempotencyGuard, StateHydrator, ExposureGate, HITLGate, MFAHandler, SelfMatchLock; C6/L1/L2 resolved |
-| 50 | Polars Feature Engineering | ✓ DONE (Mar 14) | 18-feature RL obs space, Wilder RSI, multi-timeframe join_asof |
+| 50 | Polars Feature Engineering | ✓ DONE (Mar 14) | 28-feature RL obs space (expanded Mar 15 with vol surface, sector rotation, earnings features); Wilder RSI, multi-timeframe join_asof; FEATURE_REGISTRY |
 | 51 | License Compliance & VDR | ✓ DONE (Mar 14) | SBOM, isolation report, authorship proof, 12-file VDR |
 
 ---
