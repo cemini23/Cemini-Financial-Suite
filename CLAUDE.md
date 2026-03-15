@@ -56,11 +56,26 @@ Trading Playbook — observation-only regime/signal/risk layer
 Steps 1 (CI/CD), 2 (Docker Networks), 3 (Performance Dashboard), 4 (Kalshi Rewards),
 6 (Equity Ticks), 14 (GDELT), 15 (Auto-Docs), 16 (Kalshi WS), 17 (EDGAR Monitor),
 20 (Skill Vetting), 21 (SKILL.md), 24 (Visual Crossing Weather), 26 (Opportunity Discovery),
+47 (Debate Protocol),
 27 (MCP Server), 28 (Pydantic Contracts), 29 (Vector DB), 30 (Logit Pricing), 32 (CLAUDE.md),
 33 (Safety Guards C4+C5+C7), 34 (DevOps Hardening), 35 (LGTM Observability),
 38 (Schema Migrations), 39 (FRED Monitor), 40 (SEC EDGAR), 41 (IP Sale Docs),
 42 (Advanced Testing), 43 (Cryptographic Audit Trail), 48 (Data Pipeline Resilience),
 50 (Polars Feature Engineering), 51 (License Compliance & Virtual Data Room).
+
+## Step 47: Devil's Advocate Debate Protocol
+
+- **Module**: `debate_protocol/` — 5-agent debate, Redis Shared Blackboard, deterministic tie-breaking
+- **Agents**: MacroAgent (gather), BullAgent (argue for), BearAgent (argue against), RiskAgent (challenge), TraderAgent (decide)
+- **Blackboard**: `debate:{session_id}` STRING key, TTL 3600s (async Redis only in blackboard; sync Redis for Intel reads)
+- **Tie-breaking**: `tie_breaker.resolve(bull, bear, regime)` → GREEN=1.2×bull, RED=1.2×bear, threshold=0.10 → HOLD
+- **Output**: `DebateVerdict` (action/confidence/scores/regime/tie_break_used) + `intel:debate_verdict` (TTL 1800s)
+- **DB**: `debate_sessions` table — migration `20260315120000_add_debate_sessions.sql`
+- **Archive**: `/mnt/archive/debates/YYYY-MM-DD.jsonl` (override via `DEBATE_ARCHIVE_DIR`)
+- **API**: `await run_debate("AAPL", redis_client=rdb_async, db_conn=pg, sync_redis=rdb_sync)`
+- **No LLM required** — deterministic agents; LLM upgrade is a future drop-in to agent `execute()` methods
+- **57 tests** in `tests/test_debate_protocol.py`
+- **PITFALL**: `redis_client` for Blackboard must be async (`redis.asyncio.Redis`); `sync_redis` for Intel Bus reads must be sync
 
 ## Step 17: SEC EDGAR Monitor
 

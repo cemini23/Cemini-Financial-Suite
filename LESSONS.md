@@ -435,3 +435,25 @@ the cluster is missed.
 **Fix**: Sort descending (most recent anchor first). The freshest anchor's
 backward window covers the widest set of in-window trades.
 **File**: `edgar_monitor/insider_cluster.py` — `detect_clusters()`.
+
+---
+
+## Debate Protocol — Tie-Breaker Threshold Calibration
+
+**Mistake**: Testing tie-breaker with inputs where the post-multiplier margin
+is still less than the threshold, expecting a non-HOLD result.
+Example: bull=0.55, bear=0.60 in GREEN → 0.55×1.2=0.66, margin=0.06 < 0.10 → HOLD (not BUY).
+**Fix**: Choose test inputs where `score * multiplier - other_score > threshold`.
+For GREEN/1.2× with threshold=0.10: need bull*1.2 - bear > 0.10 → e.g. bull=0.55, bear=0.50.
+**File**: `tests/test_debate_protocol.py` — `TestTieBreaker`.
+
+---
+
+## Debate Protocol — Async Blackboard vs Sync Intel Bus
+
+**Pattern**: Two Redis clients needed in the debate protocol:
+  1. `redis_client` (async `redis.asyncio.Redis`) — for the Blackboard writes/reads
+  2. `sync_redis` (sync `redis.Redis`) — for MacroAgent Intel Bus reads + verdict publish
+MacroAgent uses `_read_redis_key(redis_client, key)` which is synchronous.
+Never pass an async client to synchronous code or vice versa.
+**File**: `debate_protocol/agents/macro_agent.py`, `debate_protocol/state_machine.py`.

@@ -1,9 +1,9 @@
 # Cemini Financial Suite — Development Roadmap
 
-**Version:** v12.2 — March 15, 2026
+**Version:** v12.3 — March 15, 2026
 **Phase:** Paper trading / data accumulation
 **Paradigm:** Intelligence-in, ticker-out
-**Progress:** 28 of 51 steps complete — 898 tests — 0 failures
+**Progress:** 29 of 51 steps complete — 955 tests — 0 failures
 **Stack:** Python 3.12, FastAPI, Polars, Redis, PostgreSQL/TimescaleDB, Pydantic v2, Docker Swarm
 
 ---
@@ -58,7 +58,7 @@
 | 44 | RL Interpretability | BLOCKED | Needs Step 7 |
 | 45 | Meta-Adaptive Ensemble Controller | BLOCKED | Needs Step 7 |
 | 46 | IP HoldCo Formation | READY | Legal filing ~$150, parallel to any step |
-| 47 | Devil's Advocate Debate Protocol | READY | After Step 7 |
+| 47 | Devil's Advocate Debate Protocol | ✓ DONE (Mar 15) | 5-agent debate, Redis blackboard, deterministic tie-breaking, audit trail |
 | 48 | Data Pipeline Resilience | ✓ DONE (Mar 14) | Hishel, Aiobreaker, Tenacity, APScheduler, dead-letter queue |
 | 49 | Pre-Live Safety Hardening | READY | Full persistence, kill switch hardening, live-mode gate |
 | 50 | Polars Feature Engineering | ✓ DONE (Mar 14) | 18-feature RL obs space, Wilder RSI, multi-timeframe join_asof |
@@ -146,6 +146,7 @@ PARALLEL ANYTIME (no blockers):
 
 | Date | Event | Commit | Test Delta |
 |------|-------|--------|------------|
+| Mar 15, 2026 | Step 47 (Debate Protocol) complete | — | 898 → 955 |
 | Mar 15, 2026 | Step 17 (EDGAR Monitor) complete | — | 846 → 898 |
 | Mar 14, 2026 | Steps 40, 41, 43, 50, 51 complete | various | 686 → 846 |
 | Mar 14, 2026 | Known Issues sprint: C1/C3/L3/L4/A6/CVaR resolved | 457f415 | +1 (CVaR fix) |

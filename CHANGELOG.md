@@ -4,6 +4,26 @@ All notable changes are recorded here. Dates are UTC.
 
 ---
 
+## [Mar 15, 2026] — Step 47: Devil's Advocate Debate Protocol
+
+### Added
+- `debate_protocol/` package: `models.py`, `blackboard.py`, `config.py`, `tie_breaker.py`,
+  `debate_logger.py`, `state_machine.py`, `CLAUDE.md`
+- `debate_protocol/agents/`: `base.py`, `macro_agent.py`, `bull_agent.py`, `bear_agent.py`,
+  `risk_agent.py`, `trader_agent.py`
+- 5-phase state machine: gather → argue → cross-examine → rebut → decide
+- Redis Shared Blackboard (`debate:{session_id}`, TTL 3600s)
+- Devil's Advocate cross-examination: regime contradiction, insider data, concentration risk
+- Deterministic regime-weighted tie-breaking (GREEN=1.2×bull, RED=1.2×bear, YELLOW=pure)
+- `debate_sessions` Postgres table (migration `20260315120000_add_debate_sessions.sql`)
+- JSONL archive at `/mnt/archive/debates/YYYY-MM-DD.jsonl`
+- Audit hash chain integration (source_table="debate_sessions")
+- `intel:debate_verdict` Intel Bus channel (SET, TTL 1800s)
+- 57 new tests (898 → 955 total)
+- `docs/intelligence/debate-protocol.md` with Mermaid 5-phase flow diagram
+
+---
+
 ## [Mar 15, 2026] — Step 17: SEC EDGAR Monitor — Filing Alerts + Insider Cluster Detection
 
 ### Added
