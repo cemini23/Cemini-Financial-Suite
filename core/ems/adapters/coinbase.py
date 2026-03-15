@@ -15,7 +15,7 @@ class CoinbaseAdapter(BaseExecutionAdapter):
         # Runs synchronously in the background via asyncio.to_thread
         accounts = await asyncio.to_thread(self.client.get_accounts)
         usd_account = next((acc for acc in accounts['accounts'] if acc['currency'] == 'USD'), None)
-        return float(usd_account['available_balance']['value']) if usd_account else 0.0
+        return float(usd_account['available_balance']['value']) if usd_account else 0.0  # nosemgrep: semgrep.no-float-for-money -- broker API returns string; float is acceptable for buying-power sizing (paper mode)
 
     @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:

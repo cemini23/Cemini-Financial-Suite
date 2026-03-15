@@ -21,7 +21,7 @@ def load_model_async():
     global ml_model
     if os.path.exists(MODEL_PATH):
         try:
-            ml_model = joblib.load(MODEL_PATH)
+            ml_model = joblib.load(MODEL_PATH)  # nosemgrep: trailofbits.python.scikit-joblib-load.scikit-joblib-load -- loads project-owned model from fixed path, not user-controlled input
             logger.info("ML Model loaded successfully in Analysis Engine.")
         except Exception as e:
             logger.error(f"Failed to load ML model: {e}")

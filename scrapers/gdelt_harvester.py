@@ -371,9 +371,7 @@ def _gdelt_get(url: str, timeout: float = 15.0) -> bytes:
     if _RESILIENCE_AVAILABLE and _gdelt_http is not None:
         resp = _gdelt_http.get(url)
     else:
-        # nosemgrep: semgrep.missing-rate-limit-requests — GDELT_SCAN_INTERVAL is the rate gate
-        # nosemgrep: python.lang.security.audit.insecure-transport.requests.request-with-http.request-with-http — GDELT CDN is HTTP-only
-        resp = requests.get(url, timeout=timeout)
+        resp = requests.get(url, timeout=timeout)  # nosemgrep: semgrep.missing-rate-limit-requests -- GDELT_SCAN_INTERVAL (15min) controls call rate; not a user-facing endpoint
     if resp.status_code in (429, 500, 502, 503, 504):
         if _RESILIENCE_AVAILABLE:
             record_retry("gdelt_harvester")

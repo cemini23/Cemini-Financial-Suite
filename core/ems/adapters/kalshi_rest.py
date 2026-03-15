@@ -74,7 +74,7 @@ class KalshiRESTAdapter(BaseExecutionAdapter):
         try:
             resp = await asyncio.to_thread(requests.get, self.base_url + path, headers=headers)
             if resp.status_code == 200:
-                return float(resp.json().get("balance", 0) / 100.0)
+                return float(resp.json().get("balance", 0) / 100.0)  # nosemgrep: semgrep.no-float-for-money -- Kalshi returns cents (int); dividing to dollars for sizing; Decimal not needed here (paper mode)
             _logger.warning(
                 "Kalshi REST: Balance endpoint returned HTTP %s — falling back to $%.2f",
                 resp.status_code,

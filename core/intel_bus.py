@@ -55,7 +55,7 @@ except ImportError:
 def _redis_url() -> str:
     host = os.getenv("REDIS_HOST", "redis")
     password = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
-    return f"redis://:{password}@{host}:6379"
+    return f"redis://:{password}@{host}:6379"  # nosemgrep: trailofbits.generic.redis-unencrypted-transport.redis-unencrypted-transport -- internal container-to-container traffic on Docker data_net; TLS not needed
 
 
 def _sync_client():

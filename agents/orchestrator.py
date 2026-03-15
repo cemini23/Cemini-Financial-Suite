@@ -553,10 +553,8 @@ async def publish_signal_to_bus(state: TradingState):
         # Publish to Redis
         redis_host = os.getenv("REDIS_HOST", "redis")
         redis_pass = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
-        r = aioredis.from_url(
-            f"redis://:{redis_pass}@{redis_host}:6379",
-            decode_responses=True,
-        )
+        _redis_url = f"redis://:{redis_pass}@{redis_host}:6379"  # nosemgrep: trailofbits.generic.redis-unencrypted-transport.redis-unencrypted-transport -- internal Docker data_net; no external exposure
+        r = aioredis.from_url(_redis_url, decode_responses=True)
         try:
             _signal_dict = {
                 "pydantic_signal": {

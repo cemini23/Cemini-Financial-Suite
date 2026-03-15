@@ -71,7 +71,7 @@ TRADE_SUBSCRIBE_MAX = 200    # subscribe trade events for top-N markets
 def _redis_url() -> str:
     host = os.getenv("REDIS_HOST", "redis")
     password = os.getenv("REDIS_PASSWORD", "cemini_redis_2026")
-    return f"redis://:{password}@{host}:6379"
+    return f"redis://:{password}@{host}:6379"  # nosemgrep: trailofbits.generic.redis-unencrypted-transport.redis-unencrypted-transport -- internal Docker data_net
 
 
 class WebSocketRover:

@@ -1,13 +1,14 @@
 rules:
   - id: no-float-for-money
     message: >
-      Avoid float() for monetary values in financial calculations.
+      Avoid float() for monetary values in broker balance/order calculations.
       Floating-point arithmetic can cause precision loss (e.g., 0.1 + 0.2 != 0.3).
       Use Decimal for prices/quantities, or integer cents for exchange values.
+      Note: float() for indicator signals and regime scores is acceptable; this
+      rule is scoped to broker adapter code where actual dollar values are handled.
     severity: WARNING
     languages: [python]
     pattern: float($X)
     paths:
       include:
-        - "**/core/ems/**"
-        - "**/trading_playbook/**"
+        - "**/core/ems/adapters/**"

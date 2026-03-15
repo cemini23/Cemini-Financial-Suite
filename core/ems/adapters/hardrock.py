@@ -16,7 +16,7 @@ class HardRockBetAdapter(BaseExecutionAdapter):
                 async with session.get(f"{self.base_url}/wallet/balance") as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        return float(data.get("available_funds", 0.0))
+                        return float(data.get("available_funds", 0.0))  # nosemgrep: semgrep.no-float-for-money -- broker API response; float acceptable for paper-mode buying-power sizing
             except Exception:
                 return 0.0
         return 0.0

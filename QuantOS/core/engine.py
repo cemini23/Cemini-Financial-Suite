@@ -257,7 +257,7 @@ class TradingEngine:
                 try:
                     redis_host = os.getenv('REDIS_HOST', 'redis')
                     _redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
-                    _r = aioredis.from_url(f"redis://:{_redis_pass}@{redis_host}:6379", decode_responses=True)
+                    _r = aioredis.from_url(f"redis://:{_redis_pass}@{redis_host}:6379", decode_responses=True)  # nosemgrep: trailofbits.generic.redis-unencrypted-transport.redis-unencrypted-transport -- internal Docker data_net
                     try:
                         fresh_requested = await _r.get('quantos:fresh_start_requested')
                         if fresh_requested and fresh_requested.lower() == 'true':
@@ -378,7 +378,7 @@ class TradingEngine:
             import json as _json
             redis_host = os.getenv('REDIS_HOST', 'redis')
             redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
-            _r = aioredis.from_url(f"redis://:{redis_pass}@{redis_host}:6379", decode_responses=True)
+            _r = aioredis.from_url(f"redis://:{redis_pass}@{redis_host}:6379", decode_responses=True)  # nosemgrep: trailofbits.generic.redis-unencrypted-transport.redis-unencrypted-transport -- internal Docker data_net
             try:
                 positions = ledger.get_open_positions()
                 await _r.set('quantos:active_positions', _json.dumps(positions))

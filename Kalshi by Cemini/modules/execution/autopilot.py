@@ -49,7 +49,7 @@ class CeminiAutopilot:
         self._exit_price_history: dict = {}  # ticker -> list[float] mid-price in [0, 1]
         _redis_host = os.getenv('REDIS_HOST', 'redis')
         _redis_pass = os.getenv('REDIS_PASSWORD', 'cemini_redis_2026')
-        self._redis_url = f"redis://:{_redis_pass}@{_redis_host}:6379"
+        self._redis_url = f"redis://:{_redis_pass}@{_redis_host}:6379"  # nosemgrep: trailofbits.generic.redis-unencrypted-transport.redis-unencrypted-transport -- internal Docker data_net
 
     async def _load_state(self):
         """Restore executed_trades and blacklist from Redis on startup."""

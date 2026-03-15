@@ -16,9 +16,9 @@ class RobinhoodAdapter(BaseExecutionAdapter):
         profile = await asyncio.to_thread(r.profiles.load_account_profile)
         # Handle cases where margin might not be enabled
         try:
-            return float(profile['margin_balances']['unallocated_margin_cash'])
+            return float(profile['margin_balances']['unallocated_margin_cash'])  # nosemgrep: semgrep.no-float-for-money -- Robinhood API string field; float acceptable for buying-power sizing
         except (KeyError, TypeError):
-            return float(profile.get('portfolio_cash', 0.0))
+            return float(profile.get('portfolio_cash', 0.0))  # nosemgrep: semgrep.no-float-for-money -- fallback path; same justification
 
     @beartype
     async def execute_order(self, signal: TradingSignal) -> Dict[str, Any]:

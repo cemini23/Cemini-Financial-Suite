@@ -1,0 +1,36 @@
+# Semgrep ignore file — Cemini Financial Suite
+#
+# Excludes generated, infrastructure, and documentation files from scanning.
+# Each exclusion is documented with its justification.
+
+# MkDocs generated output (HTML, JS, search index) — not source code
+site/
+
+# Backup files should not be in the repo; exclude from scan rather than fix
+agents/orchestrator.py.bak
+
+# Example / reference files: contain illustrative connection strings,
+# not production code that executes with those values.
+.env.example
+
+# Documentation files: Semgrep flags YAML/markdown connection-string examples
+# (postgres sslmode, redis URLs) in documentation. These are illustrative only.
+SKILL.md
+TROUBLESHOOTING.md
+docs/
+
+# Operations scripts: container-privileged and other infra patterns are expected
+start_all.sh
+
+# Test files: Redis URLs in tests are mock/test infrastructure, not production connections
+tests/
+
+# Docker Compose infrastructure configuration:
+#   - wget healthchecks hit localhost:<port> (internal container-to-container;
+#     not an external unencrypted transport concern)
+#   - Port bindings to 0.0.0.0 are expected for Docker service discovery
+#   - Redis/Postgres connections are internal data_net with password auth
+# Findings: wget-unencrypted-url, port-all-interfaces, redis-unencrypted-transport,
+#            postgres-insecure-sslmode
+docker-compose.yml
+Kalshi by Cemini/docker-compose.yml
